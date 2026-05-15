@@ -1,0 +1,22 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.log
+
+# Angular
+EcomApp/dist/
+EcomApp/node_modules/
+EcomApp/.angular/
+EcomApp/.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo

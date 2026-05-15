@@ -1,0 +1,88 @@
+<div class="products-container">
+  <h1>Products</h1>
+  <button class="btn-primary" (click)="openAddModal()">Add Product</button>
+
+  <table class="products-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Price</th>
+        <th>Stock</th>
+        <th>Category</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (products().length === 0) {
+        <tr>
+          <td colspan="7">Loading...</td>
+        </tr>
+      }
+      @for (product of products(); track product.id) {
+        <tr>
+          <td>{{ product.id }}</td>
+          <td>{{ product.name }}</td>
+          <td>{{ product.description }}</td>
+          <td>{{ product.price | currency }}</td>
+          <td>{{ product.stock }}</td>
+          <td>{{ product.category }}</td>
+          <td>
+            <button class="btn-secondary" (click)="openEditModal(product)">Edit</button>
+            <button class="btn-danger" (click)="deleteProduct(product.id)">Delete</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    <span>Showing {{ (pageNumber() - 1) * pageSize() + 1 }} to {{ Math.min(pageNumber() * pageSize(), totalCount()) }} of {{ totalCount() }} entries</span>
+    <div class="pagination-controls">
+      <button [disabled]="!hasPreviousPage()" (click)="previousPage()">Previous</button>
+      @for (page of getPages(); track page) {
+        <button
+          [class.active]="page === pageNumber()"
+          (click)="goToPage(page)">
+          {{ page }}
+        </button>
+      }
+      <button [disabled]="!hasNextPage()" (click)="nextPage()">Next</button>
+    </div>
+  </div>
+</div>
+
+@if (showModal) {
+  <div class="modal-overlay">
+    <div class="modal">
+      <h2>{{ editingProduct ? 'Edit Product' : 'Add Product' }}</h2>
+      <form (ngSubmit)="saveProduct()">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" [(ngModel)]="newProduct.name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="newProduct.description" name="description" required />
+        </div>
+        <div class="form-group">
+          <label>Price</label>
+          <input type="number" [(ngModel)]="newProduct.price" name="price" required />
+        </div>
+        <div class="form-group">
+          <label>Stock</label>
+          <input type="number" [(ngModel)]="newProduct.stock" name="stock" required />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" [(ngModel)]="newProduct.category" name="category" required />
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Save</button>
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
