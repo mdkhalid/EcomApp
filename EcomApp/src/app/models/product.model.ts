@@ -5,6 +5,7 @@ export interface Product {
   price: number;
   stock: number;
   category: string;
+  imageUrl?: string;
 }
 
 export interface CreateProduct {
@@ -21,4 +22,5 @@ export interface UpdateProduct {
   price: number;
   stock: number;
   category: string;
+  imageUrl?: string;
 }

@@ -18,12 +18,12 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5)
+    public async Task<ActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5, [FromQuery] string? search = null, [FromQuery] string? category = null, [FromQuery] decimal? minPrice = null, [FromQuery] decimal? maxPrice = null)
     {
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 5;
 
-        var (items, totalCount) = await _repository.GetAllAsync(pageNumber, pageSize);
+        var (items, totalCount) = await _repository.GetAllAsync(pageNumber, pageSize, search, category, minPrice, maxPrice);
 
         return Ok(new
         {
@@ -70,5 +70,36 @@ public class ProductsController : ControllerBase
         if (!deleted)
             return NotFound();
         return NoContent();
+    }
+
+    [HttpPost("{id}/image")]
+    public async Task<ActionResult<ProductDto>> UploadImage(int id, IFormFile file)
+    {
+        var product = await _repository.GetByIdAsync(id);
+        if (product == null)
+            return NotFound();
+
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+            return BadRequest(new { error = "Invalid file type. Allowed: jpg, jpeg, png, webp." });
+
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { error = "File size exceeds 5MB limit." });
+
+        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        Directory.CreateDirectory(uploadsDir);
+
+        var fileName = $"{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        product.ImageUrl = $"/uploads/{fileName}";
+        var updated = await _repository.UpdateAsync(product);
+        return Ok(updated.Adapt<ProductDto>());
     }
 }

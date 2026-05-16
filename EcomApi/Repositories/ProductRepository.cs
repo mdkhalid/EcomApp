@@ -13,10 +13,24 @@ public class ProductRepository : IProductRepository
         _context = context;
     }
 
-    public async Task<(IEnumerable<Product> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize)
+    public async Task<(IEnumerable<Product> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null, string? category = null, decimal? minPrice = null, decimal? maxPrice = null)
     {
-        var totalCount = await _context.Products.CountAsync();
-        var items = await _context.Products
+        var query = _context.Products.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(p => p.Name.Contains(search) || p.Description.Contains(search));
+
+        if (!string.IsNullOrWhiteSpace(category))
+            query = query.Where(p => p.Category == category);
+
+        if (minPrice.HasValue)
+            query = query.Where(p => p.Price >= minPrice.Value);
+
+        if (maxPrice.HasValue)
+            query = query.Where(p => p.Price <= maxPrice.Value);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
             .OrderBy(p => p.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)

@@ -1,5 +1,6 @@
 using EcomApi.Data;
 using EcomApi.Mapping;
+using EcomApi.Middleware;
 using EcomApi.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,7 +45,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ecom API v1"));
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseCors("AllowAngular");
+app.UseStaticFiles();
 
 app.MapControllers();
 

@@ -13,6 +13,10 @@ export interface PaginatedResponse<T> {
 export interface PaginationParams {
   pageNumber: number;
   pageSize: number;
+  search?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 @Injectable({
@@ -23,9 +27,13 @@ export class ProductService {
   private readonly apiUrl = 'http://localhost:5068/api/products';
 
   getAll(params: PaginationParams): Observable<PaginatedResponse<Product>> {
-    const httpParams = new HttpParams()
+    let httpParams = new HttpParams()
       .set('pageNumber', params.pageNumber.toString())
       .set('pageSize', params.pageSize.toString());
+    if (params.search) httpParams = httpParams.set('search', params.search);
+    if (params.category) httpParams = httpParams.set('category', params.category);
+    if (params.minPrice != null) httpParams = httpParams.set('minPrice', params.minPrice.toString());
+    if (params.maxPrice != null) httpParams = httpParams.set('maxPrice', params.maxPrice.toString());
     return this.http.get<PaginatedResponse<Product>>(this.apiUrl, { params: httpParams });
   }
 
@@ -43,5 +51,11 @@ export class ProductService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  uploadImage(id: number, file: File): Observable<Product> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<Product>(`${this.apiUrl}/${id}/image`, formData);
   }
 }

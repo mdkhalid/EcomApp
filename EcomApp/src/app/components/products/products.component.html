@@ -1,10 +1,35 @@
+<div class="toast-container">
+  @for (n of notifications(); track n.id) {
+    <div class="toast" [class]="'toast-' + n.type">
+      <span>{{ n.message }}</span>
+      <button class="toast-close" (click)="notification.dismiss(n.id)">&times;</button>
+    </div>
+  }
+</div>
+
 <div class="products-container">
   <h1>Products</h1>
-  <button class="btn-primary" (click)="openAddModal()">Add Product</button>
+
+  <div class="toolbar">
+    <input
+      type="text"
+      placeholder="Search by name or description..."
+      [value]="searchTerm()"
+      (input)="onSearch($any($event.target).value)"
+      class="search-input" />
+    <select [value]="categoryFilter()" (change)="onCategoryChange($any($event.target).value)" class="category-select">
+      <option value="">All Categories</option>
+      @for (cat of categories; track cat) {
+        <option [value]="cat">{{ cat }}</option>
+      }
+    </select>
+    <button class="btn-primary" (click)="openAddModal()">Add Product</button>
+  </div>
 
   <table class="products-table">
     <thead>
       <tr>
+        <th>Image</th>
         <th>ID</th>
         <th>Name</th>
         <th>Description</th>
@@ -17,11 +42,18 @@
     <tbody>
       @if (products().length === 0) {
         <tr>
-          <td colspan="7">Loading...</td>
+          <td colspan="8">Loading...</td>
         </tr>
       }
       @for (product of products(); track product.id) {
         <tr>
+          <td>
+            @if (product.imageUrl) {
+              <img [src]="getFullImageUrl(product.imageUrl)" [alt]="product.name" class="product-thumbnail" />
+            } @else {
+              <span class="no-image">No image</span>
+            }
+          </td>
           <td>{{ product.id }}</td>
           <td>{{ product.name }}</td>
           <td>{{ product.description }}</td>
@@ -57,29 +89,56 @@
   <div class="modal-overlay">
     <div class="modal">
       <h2>{{ editingProduct ? 'Edit Product' : 'Add Product' }}</h2>
-      <form (ngSubmit)="saveProduct()">
+      <form #productForm="ngForm" (ngSubmit)="productForm.valid && saveProduct()">
         <div class="form-group">
           <label>Name</label>
-          <input type="text" [(ngModel)]="newProduct.name" name="name" required />
+          <input type="text" [(ngModel)]="newProduct.name" name="name" required minlength="1" maxlength="200" #name="ngModel" />
+          @if (name.invalid && name.touched) {
+            <span class="error-text">Name is required (1-200 characters).</span>
+          }
         </div>
         <div class="form-group">
           <label>Description</label>
-          <input type="text" [(ngModel)]="newProduct.description" name="description" required />
+          <input type="text" [(ngModel)]="newProduct.description" name="description" maxlength="1000" />
         </div>
         <div class="form-group">
           <label>Price</label>
-          <input type="number" [(ngModel)]="newProduct.price" name="price" required />
+          <input type="number" [(ngModel)]="newProduct.price" name="price" required min="0.01" #price="ngModel" />
+          @if (price.invalid && price.touched) {
+            <span class="error-text">Price must be at least 0.01.</span>
+          }
         </div>
         <div class="form-group">
           <label>Stock</label>
-          <input type="number" [(ngModel)]="newProduct.stock" name="stock" required />
+          <input type="number" [(ngModel)]="newProduct.stock" name="stock" required min="0" #stock="ngModel" />
+          @if (stock.invalid && stock.touched) {
+            <span class="error-text">Stock cannot be negative.</span>
+          }
         </div>
         <div class="form-group">
           <label>Category</label>
-          <input type="text" [(ngModel)]="newProduct.category" name="category" required />
+          <select [(ngModel)]="newProduct.category" name="category" required #category="ngModel">
+            <option value="" disabled>Select category</option>
+            @for (cat of categories; track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+          @if (category.invalid && category.touched) {
+            <span class="error-text">Category is required.</span>
+          }
+        </div>
+        <div class="form-group">
+          <label>Product Image</label>
+          @if (imagePreview) {
+            <img [src]="imagePreview" class="image-preview" />
+          }
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input" />
+          @if (selectedFile) {
+            <span class="file-selected">Image will be uploaded when you save.</span>
+          }
         </div>
         <div class="modal-actions">
-          <button type="submit" class="btn-primary">Save</button>
+          <button type="submit" class="btn-primary" [disabled]="productForm.invalid">Save</button>
           <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
         </div>
       </form>
