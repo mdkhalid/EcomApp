@@ -1,0 +1,63 @@
+<div class="toast-container">
+  @for (n of notifications(); track n.id) {
+    <div class="toast" [class]="'toast-' + n.type">
+      <span>{{ n.message }}</span>
+      <button class="toast-close" (click)="notification.dismiss(n.id)">&times;</button>
+    </div>
+  }
+</div>
+
+<div class="orders-container">
+  <h1>My Orders</h1>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading orders...</p>
+    </div>
+  } @else if (orders().length === 0) {
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <h2>No orders yet</h2>
+      <p>Start shopping to place your first order</p>
+      <a routerLink="/products" class="btn-shop">Browse Products</a>
+    </div>
+  } @else {
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Items</th>
+          <th>Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of orders(); track order.id) {
+          <tr>
+            <td>#{{ order.id }}</td>
+            <td>{{ order.createdAt | date:'medium' }}</td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(order.status)">
+                {{ order.status }}
+              </span>
+            </td>
+            <td>{{ getItemCount(order) }} items</td>
+            <td>{{ order.totalAmount | currency }}</td>
+            <td>
+              <a [routerLink]="['/orders', order.id]" class="btn-view">View Details</a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

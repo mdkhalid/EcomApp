@@ -1,6 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { NotificationService } from '../../services/notification.service';
 import { Cart, CartItem } from '../../models/cart.model';
@@ -8,32 +9,34 @@ import { Cart, CartItem } from '../../models/cart.model';
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './cart.component.html',
   styleUrl: './cart.component.scss'
 })
 export class CartComponent implements OnInit {
   private readonly cartService = inject(CartService);
+  private readonly router = inject(Router);
   readonly notification = inject(NotificationService);
   protected readonly notifications = this.notification.notifications;
 
-  cart: Cart | null = null;
-  loading = true;
+  cart = signal<Cart | null>(null);
+  loading = signal(true);
 
   ngOnInit(): void {
     this.loadCart();
   }
 
   loadCart(): void {
-    this.loading = true;
+    this.loading.set(true);
     this.cartService.getCart().subscribe({
       next: (cart) => {
-        this.cart = cart;
-        this.loading = false;
+        this.cart.set(cart);
+        this.loading.set(false);
       },
-      error: () => {
-        this.notification.showError('Failed to load cart.');
-        this.loading = false;
+      error: (err) => {
+        console.error('Failed to load cart:', err);
+        this.notification.showError('Failed to load cart. Please try again.');
+        this.loading.set(false);
       }
     });
   }
@@ -41,7 +44,7 @@ export class CartComponent implements OnInit {
   addItem(productId: number): void {
     this.cartService.addItem({ productId, quantity: 1 }).subscribe({
       next: (cart) => {
-        this.cart = cart;
+        this.cart.set(cart);
         this.notification.showSuccess('Item added to cart.');
       },
       error: (err) => {
@@ -58,7 +61,7 @@ export class CartComponent implements OnInit {
       return;
     }
     this.cartService.updateItem(item.id, { quantity: newQty }).subscribe({
-      next: (cart) => this.cart = cart,
+      next: (cart) => this.cart.set(cart),
       error: (err) => {
         const msg = err.error?.error || 'Failed to update quantity.';
         this.notification.showError(msg);
@@ -69,7 +72,7 @@ export class CartComponent implements OnInit {
   removeItem(cartItemId: number): void {
     this.cartService.removeItem(cartItemId).subscribe({
       next: (cart) => {
-        this.cart = cart;
+        this.cart.set(cart);
         this.notification.showSuccess('Item removed from cart.');
       },
       error: () => this.notification.showError('Failed to remove item.')
@@ -79,11 +82,21 @@ export class CartComponent implements OnInit {
   clearCart(): void {
     this.cartService.clearCart().subscribe({
       next: (cart) => {
-        this.cart = cart;
+        this.cart.set(cart);
         this.notification.showSuccess('Cart cleared.');
       },
       error: () => this.notification.showError('Failed to clear cart.')
     });
+  }
+
+  goToCheckout(): void {
+    this.router.navigate(['/checkout']);
+  }
+
+  getItemCount(): number {
+    const c = this.cart();
+    if (!c) return 0;
+    return c.items.reduce((sum, item) => sum + item.quantity, 0);
   }
 
   getFullImageUrl(path: string): string {

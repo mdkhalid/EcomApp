@@ -27,5 +27,12 @@ public static class MappingConfig
             .Map(dest => dest.ProductName, src => src.Product.Name)
             .Map(dest => dest.ProductImage, src => src.Product.ImageUrl)
             .Compile();
+
+        TypeAdapterConfig<Order, OrderDto>.NewConfig()
+            .Map(dest => dest.Status, src => src.Status.ToString())
+            .Map(dest => dest.Items, src => src.Items)
+            .Compile();
+
+        TypeAdapterConfig<OrderItem, OrderItemDto>.NewConfig().Compile();
     }
 }

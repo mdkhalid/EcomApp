@@ -1,0 +1,89 @@
+<div class="toast-container">
+  @for (n of notifications(); track n.id) {
+    <div class="toast" [class]="'toast-' + n.type">
+      <span>{{ n.message }}</span>
+      <button class="toast-close" (click)="notification.dismiss(n.id)">&times;</button>
+    </div>
+  }
+</div>
+
+<div class="order-detail-container">
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading order details...</p>
+    </div>
+  } @else if (!order()) {
+    <div class="empty-state">
+      <h2>Order not found</h2>
+      <a routerLink="/orders" class="btn-back">Back to Orders</a>
+    </div>
+  } @else {
+    <div class="order-header">
+      <h1>Order #{{ order()!.id }}</h1>
+      <a routerLink="/orders" class="btn-back">Back to Orders</a>
+    </div>
+
+    <div class="status-timeline">
+      @for (step of statusSteps; track step) {
+        <div class="step" [class]="getStepClass(step)">
+          <div class="step-dot"></div>
+          <span class="step-label">{{ step }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="order-info-grid">
+      <div class="info-card">
+        <h3>Order Status</h3>
+        <span class="status-badge" [class]="getStatusClass(order()!.status)">
+          {{ order()!.status }}
+        </span>
+      </div>
+
+      <div class="info-card">
+        <h3>Order Date</h3>
+        <p>{{ order()!.createdAt | date:'medium' }}</p>
+      </div>
+
+      <div class="info-card">
+        <h3>Shipping Address</h3>
+        <p>{{ order()!.shippingName }}</p>
+        <p>{{ order()!.shippingAddress }}</p>
+        <p>{{ order()!.shippingCity }}, {{ order()!.shippingZip }}</p>
+      </div>
+    </div>
+
+    <h2>Order Items</h2>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of order()!.items; track item.id) {
+          <tr>
+            <td class="product-cell">
+              @if (item.productImage) {
+                <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" class="item-thumbnail" />
+              }
+              <span>{{ item.productName }}</span>
+            </td>
+            <td>{{ item.unitPrice | currency }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.totalPrice | currency }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="order-total">
+      <span>Order Total:</span>
+      <strong>{{ order()!.totalAmount | currency }}</strong>
+    </div>
+  }
+</div>

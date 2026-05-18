@@ -1,0 +1,88 @@
+<div class="toast-container">
+  @for (n of notifications(); track n.id) {
+    <div class="toast" [class]="'toast-' + n.type">
+      <span>{{ n.message }}</span>
+      <button class="toast-close" (click)="notification.dismiss(n.id)">&times;</button>
+    </div>
+  }
+</div>
+
+<div class="checkout-container">
+  <h1>Checkout</h1>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading...</p>
+    </div>
+  } @else if (cart()) {
+    <div class="checkout-grid">
+      <div class="shipping-form">
+        <h2>Shipping Information</h2>
+        <form #checkoutForm="ngForm" (ngSubmit)="checkoutForm.valid && placeOrder()">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" [(ngModel)]="orderForm.shippingName" name="shippingName" required minlength="1" maxlength="200" #name="ngModel" />
+            @if (name.invalid && name.touched) {
+              <span class="error-text">Name is required.</span>
+            }
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" [(ngModel)]="orderForm.shippingAddress" name="shippingAddress" required minlength="1" maxlength="500" #address="ngModel" />
+            @if (address.invalid && address.touched) {
+              <span class="error-text">Address is required.</span>
+            }
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" [(ngModel)]="orderForm.shippingCity" name="shippingCity" required minlength="1" maxlength="100" #city="ngModel" />
+              @if (city.invalid && city.touched) {
+                <span class="error-text">City is required.</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>ZIP Code</label>
+              <input type="text" [(ngModel)]="orderForm.shippingZip" name="shippingZip" required minlength="1" maxlength="20" #zip="ngModel" />
+              @if (zip.invalid && zip.touched) {
+                <span class="error-text">ZIP code is required.</span>
+              }
+            </div>
+          </div>
+          <button type="submit" class="btn-primary" [disabled]="checkoutForm.invalid || placing()">
+            @if (placing()) {
+              Placing Order...
+            } @else {
+              Place Order
+            }
+          </button>
+        </form>
+      </div>
+
+      <div class="order-summary">
+        <h2>Order Summary</h2>
+        <div class="summary-items">
+          @for (item of cart()!.items; track item.id) {
+            <div class="summary-item">
+              <div class="item-info">
+                @if (item.productImage) {
+                  <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" class="item-thumbnail" />
+                }
+                <div>
+                  <span class="item-name">{{ item.productName }}</span>
+                  <span class="item-qty">Qty: {{ item.quantity }}</span>
+                </div>
+              </div>
+              <span class="item-price">{{ item.totalPrice | currency }}</span>
+            </div>
+          }
+        </div>
+        <div class="summary-total">
+          <span>Total:</span>
+          <strong>{{ cart()!.totalAmount | currency }}</strong>
+        </div>
+      </div>
+    </div>
+  }
+</div>
