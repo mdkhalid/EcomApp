@@ -1,0 +1,66 @@
+<div class="toast-container">
+  @for (n of notifications(); track n.id) {
+    <div class="toast" [class]="'toast-' + n.type">
+      <span>{{ n.message }}</span>
+      <button class="toast-close" (click)="notification.dismiss(n.id)">&times;</button>
+    </div>
+  }
+</div>
+
+<div class="cart-container">
+  <div class="cart-header">
+    <h1>Shopping Cart</h1>
+    @if (cart && cart.items.length > 0) {
+      <button class="btn-danger" (click)="clearCart()">Clear Cart</button>
+    }
+  </div>
+
+  @if (loading) {
+    <p class="empty-state">Loading cart...</p>
+  } @else if (!cart || cart.items.length === 0) {
+    <p class="empty-state">Your cart is empty.</p>
+  } @else {
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of cart.items; track item.id) {
+          <tr>
+            <td class="product-cell">
+              @if (item.productImage) {
+                <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" class="cart-thumbnail" />
+              }
+              <span>{{ item.productName }}</span>
+            </td>
+            <td>{{ item.unitPrice | currency }}</td>
+            <td>
+              <div class="quantity-controls">
+                <button class="qty-btn" (click)="updateQuantity(item, -1)">-</button>
+                <span class="qty-value">{{ item.quantity }}</span>
+                <button class="qty-btn" (click)="updateQuantity(item, 1)">+</button>
+              </div>
+            </td>
+            <td>{{ item.totalPrice | currency }}</td>
+            <td>
+              <button class="btn-remove" (click)="removeItem(item.id)">&times;</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total:</span>
+        <strong>{{ cart.totalAmount | currency }}</strong>
+      </div>
+    </div>
+  }
+</div>

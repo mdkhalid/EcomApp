@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService, PaginatedResponse } from '../../services/product.service';
 import { NotificationService } from '../../services/notification.service';
+import { CartService } from '../../services/cart.service';
 import { Product, CreateProduct } from '../../models/product.model';
 
 @Component({
@@ -14,6 +15,7 @@ import { Product, CreateProduct } from '../../models/product.model';
 })
 export class ProductsComponent implements OnInit {
   private readonly productService = inject(ProductService);
+  private readonly cartService = inject(CartService);
   readonly notification = inject(NotificationService);
   protected readonly Math = Math;
   protected readonly notifications = this.notification.notifications;
@@ -204,6 +206,16 @@ export class ProductsComponent implements OnInit {
         this.loadProducts();
         this.closeModal();
         const msg = err.error?.error || 'Product saved but image upload failed.';
+        this.notification.showError(msg);
+      }
+    });
+  }
+
+  addToCart(productId: number): void {
+    this.cartService.addItem({ productId, quantity: 1 }).subscribe({
+      next: () => this.notification.showSuccess('Item added to cart.'),
+      error: (err) => {
+        const msg = err.error?.error || 'Failed to add item to cart.';
         this.notification.showError(msg);
       }
     });

@@ -18,5 +18,14 @@ public static class MappingConfig
         TypeAdapterConfig<UpdateProductDto, Product>.NewConfig()
             .Map(dest => dest.CreatedAt, _ => DateTime.UtcNow)
             .Compile();
+
+        TypeAdapterConfig<Cart, CartDto>.NewConfig()
+            .Map(dest => dest.Items, src => src.Items)
+            .Compile();
+
+        TypeAdapterConfig<CartItem, CartItemDto>.NewConfig()
+            .Map(dest => dest.ProductName, src => src.Product.Name)
+            .Map(dest => dest.ProductImage, src => src.Product.ImageUrl)
+            .Compile();
     }
 }
