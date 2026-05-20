@@ -16,6 +16,23 @@ public class CartRepository : ICartRepository
 
     public async Task<Cart?> GetBySessionIdAsync(string sessionId)
     {
+        return await GetByIdentifierAsync(sessionId);
+    }
+
+    public async Task<Cart?> GetByIdentifierAsync(string identifier)
+    {
+        if (identifier.StartsWith("user:"))
+        {
+            var userId = int.Parse(identifier.Substring(5));
+            return await _context.Carts
+                .Include(c => c.Items)
+                .ThenInclude(ci => ci.Product)
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.UpdatedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        var sessionId = identifier.StartsWith("session:") ? identifier.Substring(8) : identifier;
         return await _context.Carts
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
@@ -24,7 +41,17 @@ public class CartRepository : ICartRepository
 
     public async Task<Cart> CreateAsync(string sessionId)
     {
-        var cart = new Cart { SessionId = sessionId };
+        var cart = new Cart();
+
+        if (sessionId.StartsWith("user:"))
+        {
+            cart.UserId = int.Parse(sessionId.Substring(5));
+        }
+        else
+        {
+            cart.SessionId = sessionId.StartsWith("session:") ? sessionId.Substring(8) : sessionId;
+        }
+
         _context.Carts.Add(cart);
         await _context.SaveChangesAsync();
         return cart;
@@ -32,7 +59,7 @@ public class CartRepository : ICartRepository
 
     public async Task<Cart?> AddItemAsync(string sessionId, int productId, int quantity)
     {
-        var cart = await GetBySessionIdAsync(sessionId) ?? await CreateAsync(sessionId);
+        var cart = await GetByIdentifierAsync(sessionId) ?? await CreateAsync(sessionId);
         var product = await _context.Products.FindAsync(productId);
 
         if (product == null || product.Stock < quantity)
@@ -63,7 +90,7 @@ public class CartRepository : ICartRepository
 
         cart.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-        return await GetBySessionIdAsync(sessionId);
+        return await GetByIdentifierAsync(sessionId);
     }
 
     public async Task<Cart?> UpdateItemAsync(int cartItemId, int quantity)
@@ -85,7 +112,11 @@ public class CartRepository : ICartRepository
         cartItem.Cart.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        return await GetBySessionIdAsync(cartItem.Cart.SessionId);
+
+        var identifier = cartItem.Cart.UserId != null
+            ? $"user:{cartItem.Cart.UserId}"
+            : $"session:{cartItem.Cart.SessionId}";
+        return await GetByIdentifierAsync(identifier);
     }
 
     public async Task<Cart?> RemoveItemAsync(int cartItemId)
@@ -101,12 +132,15 @@ public class CartRepository : ICartRepository
         cart.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return await GetBySessionIdAsync(cart.SessionId);
+        var identifier = cart.UserId != null
+            ? $"user:{cart.UserId}"
+            : $"session:{cart.SessionId}";
+        return await GetByIdentifierAsync(identifier);
     }
 
     public async Task<Cart> ClearAsync(string sessionId)
     {
-        var cart = await GetBySessionIdAsync(sessionId);
+        var cart = await GetByIdentifierAsync(sessionId);
         if (cart != null)
         {
             _context.CartItems.RemoveRange(cart.Items);
@@ -119,5 +153,40 @@ public class CartRepository : ICartRepository
     public async Task<bool> ExistsAsync(int id)
     {
         return await _context.Carts.AnyAsync(c => c.Id == id);
+    }
+
+    public async Task MergeCartsAsync(string sourceIdentifier, string targetIdentifier)
+    {
+        var sourceCart = await GetByIdentifierAsync(sourceIdentifier);
+        if (sourceCart == null || sourceCart.Items.Count == 0)
+            return;
+
+        var targetCart = await GetByIdentifierAsync(targetIdentifier) ?? await CreateAsync(targetIdentifier);
+
+        foreach (var sourceItem in sourceCart.Items.ToList())
+        {
+            var existingItem = targetCart.Items.FirstOrDefault(ti => ti.ProductId == sourceItem.ProductId);
+            if (existingItem != null)
+            {
+                existingItem.Quantity += sourceItem.Quantity;
+                existingItem.TotalPrice = existingItem.Quantity * existingItem.UnitPrice;
+            }
+            else
+            {
+                targetCart.Items.Add(new CartItem
+                {
+                    CartId = targetCart.Id,
+                    ProductId = sourceItem.ProductId,
+                    Quantity = sourceItem.Quantity,
+                    UnitPrice = sourceItem.UnitPrice,
+                    TotalPrice = sourceItem.TotalPrice
+                });
+            }
+        }
+
+        targetCart.UpdatedAt = DateTime.UtcNow;
+        _context.CartItems.RemoveRange(sourceCart.Items);
+        _context.Carts.Remove(sourceCart);
+        await _context.SaveChangesAsync();
     }
 }

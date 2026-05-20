@@ -32,21 +32,21 @@ export class OrdersComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.notification.showError('Failed to load orders.');
+        this.notification.showError('Failed to load orders');
         this.loading.set(false);
       }
     });
   }
 
   getStatusClass(status: string): string {
-    switch (status.toLowerCase()) {
-      case 'pending': return 'status-pending';
-      case 'processing': return 'status-processing';
-      case 'shipped': return 'status-shipped';
-      case 'delivered': return 'status-delivered';
-      case 'cancelled': return 'status-cancelled';
-      default: return '';
-    }
+    const map: Record<string, string> = {
+      Pending: 'status-pending',
+      Processing: 'status-processing',
+      Shipped: 'status-shipped',
+      Delivered: 'status-delivered',
+      Cancelled: 'status-cancelled'
+    };
+    return map[status] || '';
   }
 
   getItemCount(order: Order): number {

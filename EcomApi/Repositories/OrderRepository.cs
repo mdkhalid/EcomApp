@@ -14,19 +14,36 @@ public class OrderRepository : IOrderRepository
         _context = context;
     }
 
-    public async Task<Order?> CreateFromCartAsync(string sessionId, CreateOrderDto createDto)
+    public async Task<Order?> CreateFromCartAsync(string identifier, CreateOrderDto createDto)
     {
-        var cart = await _context.Carts
-            .Include(c => c.Items)
-            .ThenInclude(ci => ci.Product)
-            .FirstOrDefaultAsync(c => c.SessionId == sessionId);
+        Cart? cart;
+
+        if (identifier.StartsWith("user:"))
+        {
+            var userId = int.Parse(identifier.Substring(5));
+            cart = await _context.Carts
+                .Include(c => c.Items)
+                .ThenInclude(ci => ci.Product)
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.UpdatedAt)
+                .FirstOrDefaultAsync();
+        }
+        else
+        {
+            var sessionId = identifier.StartsWith("session:") ? identifier.Substring(8) : identifier;
+            cart = await _context.Carts
+                .Include(c => c.Items)
+                .ThenInclude(ci => ci.Product)
+                .FirstOrDefaultAsync(c => c.SessionId == sessionId);
+        }
 
         if (cart == null || cart.Items.Count == 0)
             return null;
 
         var order = new Order
         {
-            SessionId = sessionId,
+            UserId = cart.UserId,
+            SessionId = cart.SessionId,
             Status = OrderStatus.Pending,
             ShippingName = createDto.ShippingName,
             ShippingAddress = createDto.ShippingAddress,
@@ -69,6 +86,23 @@ public class OrderRepository : IOrderRepository
             .ToListAsync();
     }
 
+    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetByUserIdAsync(int userId, int pageNumber, int pageSize)
+    {
+        var query = _context.Orders
+            .AsNoTracking()
+            .Include(o => o.Items)
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
     public async Task<Order?> GetByIdAsync(int orderId)
     {
         return await _context.Orders
@@ -86,5 +120,27 @@ public class OrderRepository : IOrderRepository
         order.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return await GetByIdAsync(orderId);
+    }
+
+    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? status = null)
+    {
+        var query = _context.Orders
+            .AsNoTracking()
+            .Include(o => o.Items)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var orderStatus))
+        {
+            query = query.Where(o => o.Status == orderStatus);
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 }

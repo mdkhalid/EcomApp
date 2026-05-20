@@ -3,7 +3,9 @@ namespace EcomApi.Models;
 public class Cart
 {
     public int Id { get; set; }
-    public string SessionId { get; set; } = string.Empty;
+    public int? UserId { get; set; }
+    public User? User { get; set; }
+    public string? SessionId { get; set; } = string.Empty;
     public List<CartItem> Items { get; set; } = new();
     public decimal TotalAmount => Items.Sum(item => item.TotalPrice);
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

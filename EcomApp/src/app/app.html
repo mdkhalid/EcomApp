@@ -1,6 +1,58 @@
-<nav>
-  <a routerLink="/products">Products</a>
-  <a routerLink="/cart">Cart</a>
-  <a routerLink="/orders">Orders</a>
-</nav>
+<header class="header">
+  <div class="header-container">
+    <div class="header-left">
+      <a routerLink="/products" class="logo">
+        <span class="logo-text">Shop<span class="logo-highlight">Kart</span></span>
+        <span class="logo-tagline">Explore Plus</span>
+      </a>
+    </div>
+
+    <div class="header-search">
+      <div class="search-box">
+        <span class="material-icons search-icon">search</span>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+          placeholder="Search for products, brands and more"
+          class="search-input"
+        />
+      </div>
+    </div>
+
+    <div class="header-right">
+      @if (authService.isAuthenticated()) {
+        <span class="header-user">{{ authService.currentUser()?.username }}</span>
+        @if (authService.isAdmin()) {
+          <a routerLink="/admin" class="header-link admin-link">
+            <span class="material-icons">dashboard</span>
+            Admin
+          </a>
+        } @else {
+          <a routerLink="/orders" class="header-link">
+            <span class="material-icons">receipt_long</span>
+            Orders
+          </a>
+        }
+        <a routerLink="/cart" class="header-link cart-link">
+          <span class="material-icons">shopping_cart</span>
+          Cart
+        </a>
+        <button class="btn-logout" (click)="logout()">
+          <span class="material-icons">logout</span>
+          Logout
+        </button>
+      } @else {
+        <a routerLink="/login" class="btn-login">Login</a>
+      }
+    </div>
+  </div>
+</header>
+
 <router-outlet />
+
+<footer class="footer">
+  <div class="footer-container">
+    <p>&copy; 2026 ShopKart. All rights reserved.</p>
+  </div>
+</footer>

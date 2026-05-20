@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using EcomApi.DTOs;
 using EcomApi.Models;
 using EcomApi.Repositories;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcomApi.Controllers;
@@ -19,10 +21,18 @@ public class OrdersController : ControllerBase
         _cartRepository = cartRepository;
     }
 
-    private string GetSessionId()
+    private string GetUserIdOrSession()
     {
+        var role = User.FindFirstValue(ClaimTypes.Role);
+        if (role == "Admin")
+            throw new UnauthorizedAccessException("Admin accounts cannot place orders.");
+
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrEmpty(userIdClaim))
+            return $"user:{userIdClaim}";
+
         if (Request.Cookies.TryGetValue("CartId", out var sessionId) && !string.IsNullOrEmpty(sessionId))
-            return sessionId;
+            return $"session:{sessionId}";
 
         sessionId = Guid.NewGuid().ToString();
         Response.Cookies.Append("CartId", sessionId, new CookieOptions
@@ -32,14 +42,14 @@ public class OrdersController : ControllerBase
             Expires = DateTime.UtcNow.AddDays(30),
             SameSite = SameSiteMode.Lax
         });
-        return sessionId;
+        return $"session:{sessionId}";
     }
 
     [HttpPost]
     public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderDto createDto)
     {
-        var sessionId = GetSessionId();
-        var order = await _orderRepository.CreateFromCartAsync(sessionId, createDto);
+        var identifier = GetUserIdOrSession();
+        var order = await _orderRepository.CreateFromCartAsync(identifier, createDto);
 
         if (order == null)
             return BadRequest(new { error = "Cart is empty. Add items before placing an order." });
@@ -48,26 +58,37 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20)
     {
-        var sessionId = GetSessionId();
-        var orders = await _orderRepository.GetBySessionIdAsync(sessionId);
-        return Ok(orders.Select(MapOrder));
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var (items, totalCount) = await _orderRepository.GetByUserIdAsync(int.Parse(userId), pageNumber, pageSize);
+        return Ok(new
+        {
+            items = items.Select(MapOrder),
+            totalCount,
+            pageNumber,
+            pageSize
+        });
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<ActionResult<OrderDto>> GetOrder(int id)
     {
-        var sessionId = GetSessionId();
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var order = await _orderRepository.GetByIdAsync(id);
 
-        if (order == null || order.SessionId != sessionId)
+        if (order == null || (order.UserId != null && order.UserId != userId))
             return NotFound();
 
         return Ok(MapOrder(order));
     }
 
     [HttpPut("{id}/status")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<OrderDto>> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
     {
         if (!Enum.TryParse<OrderStatus>(dto.Status, true, out var status))
@@ -78,6 +99,28 @@ public class OrdersController : ControllerBase
             return NotFound();
 
         return Ok(MapOrder(order));
+    }
+
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> GetAllOrders(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? status = null)
+    {
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
+        var (items, totalCount) = await _orderRepository.GetAllAsync(pageNumber, pageSize, status);
+
+        return Ok(new
+        {
+            items = items.Select(MapOrder),
+            totalCount,
+            pageNumber,
+            pageSize
+        });
     }
 
     private static OrderDto MapOrder(Order order)

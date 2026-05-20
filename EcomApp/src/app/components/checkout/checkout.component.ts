@@ -44,13 +44,12 @@ export class CheckoutComponent implements OnInit {
         this.cart.set(cart);
         this.loading.set(false);
         if (!cart.items || cart.items.length === 0) {
-          this.notification.showError('Your cart is empty. Add items before checkout.');
+          this.notification.showError('Your cart is empty');
           this.router.navigate(['/products']);
         }
       },
-      error: (err) => {
-        console.error('Failed to load cart:', err);
-        this.notification.showError('Failed to load cart.');
+      error: () => {
+        this.notification.showError('Failed to load cart');
         this.loading.set(false);
       }
     });
@@ -59,7 +58,6 @@ export class CheckoutComponent implements OnInit {
   placeOrder(): void {
     const c = this.cart();
     if (!c || c.items.length === 0) return;
-
     this.placing.set(true);
     this.orderService.createOrder(this.orderForm).subscribe({
       next: (order) => {
@@ -67,8 +65,7 @@ export class CheckoutComponent implements OnInit {
         this.router.navigate(['/orders', order.id]);
       },
       error: (err) => {
-        const msg = err.error?.error || 'Failed to place order.';
-        this.notification.showError(msg);
+        this.notification.showError(err.error?.error || 'Failed to place order');
         this.placing.set(false);
       }
     });

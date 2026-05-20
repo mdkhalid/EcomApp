@@ -33,23 +33,9 @@ export class CartComponent implements OnInit {
         this.cart.set(cart);
         this.loading.set(false);
       },
-      error: (err) => {
-        console.error('Failed to load cart:', err);
-        this.notification.showError('Failed to load cart. Please try again.');
+      error: () => {
+        this.notification.showError('Failed to load cart');
         this.loading.set(false);
-      }
-    });
-  }
-
-  addItem(productId: number): void {
-    this.cartService.addItem({ productId, quantity: 1 }).subscribe({
-      next: (cart) => {
-        this.cart.set(cart);
-        this.notification.showSuccess('Item added to cart.');
-      },
-      error: (err) => {
-        const msg = err.error?.error || 'Failed to add item.';
-        this.notification.showError(msg);
       }
     });
   }
@@ -62,10 +48,7 @@ export class CartComponent implements OnInit {
     }
     this.cartService.updateItem(item.id, { quantity: newQty }).subscribe({
       next: (cart) => this.cart.set(cart),
-      error: (err) => {
-        const msg = err.error?.error || 'Failed to update quantity.';
-        this.notification.showError(msg);
-      }
+      error: (err) => this.notification.showError(err.error?.error || 'Failed to update quantity')
     });
   }
 
@@ -73,9 +56,9 @@ export class CartComponent implements OnInit {
     this.cartService.removeItem(cartItemId).subscribe({
       next: (cart) => {
         this.cart.set(cart);
-        this.notification.showSuccess('Item removed from cart.');
+        this.notification.showSuccess('Item removed');
       },
-      error: () => this.notification.showError('Failed to remove item.')
+      error: () => this.notification.showError('Failed to remove item')
     });
   }
 
@@ -83,9 +66,9 @@ export class CartComponent implements OnInit {
     this.cartService.clearCart().subscribe({
       next: (cart) => {
         this.cart.set(cart);
-        this.notification.showSuccess('Cart cleared.');
+        this.notification.showSuccess('Cart cleared');
       },
-      error: () => this.notification.showError('Failed to clear cart.')
+      error: () => this.notification.showError('Failed to clear cart')
     });
   }
 
@@ -95,8 +78,7 @@ export class CartComponent implements OnInit {
 
   getItemCount(): number {
     const c = this.cart();
-    if (!c) return 0;
-    return c.items.reduce((sum, item) => sum + item.quantity, 0);
+    return c ? c.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
   }
 
   getFullImageUrl(path: string): string {

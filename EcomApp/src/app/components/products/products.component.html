@@ -7,142 +7,115 @@
   }
 </div>
 
-<div class="products-container">
-  <h1>Products</h1>
+<div class="page-wrapper">
+  <div class="main-layout">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3>Filters</h3>
 
-  <div class="toolbar">
-    <input
-      type="text"
-      placeholder="Search by name or description..."
-      [value]="searchTerm()"
-      (input)="onSearch($any($event.target).value)"
-      class="search-input" />
-    <select [value]="categoryFilter()" (change)="onCategoryChange($any($event.target).value)" class="category-select">
-      <option value="">All Categories</option>
-      @for (cat of categories; track cat) {
-        <option [value]="cat">{{ cat }}</option>
-      }
-    </select>
-    <button class="btn-primary" (click)="openAddModal()">Add Product</button>
-  </div>
+        <div class="filter-group">
+          <h4>Categories</h4>
+        <div class="filter-options">
+          <label class="filter-option">
+            <input type="radio" name="category" value="" [checked]="categoryFilter() === ''" (change)="onCategoryChange('')" />
+            <span>All</span>
+          </label>
+          @for (cat of categories; track cat) {
+            <label class="filter-option">
+              <input type="radio" name="category" [value]="cat" [checked]="categoryFilter() === cat" (change)="onCategoryChange(cat)" />
+              <span>{{ cat }}</span>
+            </label>
+          }
+        </div>
+        </div>
+      </div>
+    </aside>
 
-  <table class="products-table">
-    <thead>
-      <tr>
-        <th>Image</th>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Description</th>
-        <th>Price</th>
-        <th>Stock</th>
-        <th>Category</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
+    <main class="content">
+      <div class="content-header">
+        <h1 class="page-title">
+          @if (categoryFilter()) {
+            {{ categoryFilter() }}
+          } @else {
+            All Products
+          }
+        </h1>
+        <span class="result-count">{{ totalCount() }} results</span>
+      </div>
+
+      <div class="search-bar">
+        <div class="search-box">
+          <span class="material-icons">search</span>
+          <input
+            type="text"
+            [value]="searchTerm()"
+            (input)="onSearchInput($any($event.target).value)"
+            (keyup.enter)="onSearch()"
+            placeholder="Search products..."
+          />
+          <button class="search-btn" (click)="onSearch()">Search</button>
+        </div>
+      </div>
+
       @if (products().length === 0) {
-        <tr>
-          <td colspan="8">Loading...</td>
-        </tr>
-      }
-      @for (product of products(); track product.id) {
-        <tr>
-          <td>
-            @if (product.imageUrl) {
-              <img [src]="getFullImageUrl(product.imageUrl)" [alt]="product.name" class="product-thumbnail" />
-            } @else {
-              <span class="no-image">No image</span>
-            }
-          </td>
-          <td>{{ product.id }}</td>
-          <td>{{ product.name }}</td>
-          <td>{{ product.description }}</td>
-          <td>{{ product.price | currency }}</td>
-          <td>{{ product.stock }}</td>
-          <td>{{ product.category }}</td>
-          <td>
-            <button class="btn-cart" (click)="addToCart(product.id)">Add to Cart</button>
-            <button class="btn-secondary" (click)="openEditModal(product)">Edit</button>
-            <button class="btn-danger" (click)="deleteProduct(product.id)">Delete</button>
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
+        <div class="empty-state">
+          <span class="material-icons empty-icon">search_off</span>
+          <h3>No products found</h3>
+          <p>Try adjusting your search or filter criteria</p>
+        </div>
+      } @else {
+        <div class="product-grid">
+          @for (product of products(); track product.id) {
+            <div class="product-card">
+              <div class="product-image-wrapper">
+                @if (product.imageUrl) {
+                  <img [src]="getFullImageUrl(product.imageUrl)" [alt]="product.name" class="product-image" />
+                } @else {
+                  <div class="product-image-placeholder">
+                    <span class="material-icons">image</span>
+                  </div>
+                }
+                @if (isLowStock(product.stock)) {
+                  <span class="stock-badge low">Only {{ product.stock }} left</span>
+                }
+              </div>
 
-  <div class="pagination">
-    <span>Showing {{ (pageNumber() - 1) * pageSize() + 1 }} to {{ Math.min(pageNumber() * pageSize(), totalCount()) }} of {{ totalCount() }} entries</span>
-    <div class="pagination-controls">
-      <button [disabled]="!hasPreviousPage()" (click)="previousPage()">Previous</button>
-      @for (page of getPages(); track page) {
-        <button
-          [class.active]="page === pageNumber()"
-          (click)="goToPage(page)">
-          {{ page }}
-        </button>
+              <div class="product-info">
+                <h3 class="product-name" title="{{ product.name }}">{{ product.name }}</h3>
+                <p class="product-desc">{{ product.description }}</p>
+                <span class="product-category">{{ product.category }}</span>
+
+                <div class="product-price-row">
+                  <span class="product-price">&#8377;{{ product.price.toLocaleString('en-IN') }}</span>
+                </div>
+
+                <button
+                  class="add-cart-btn"
+                  (click)="addToCart(product.id)"
+                  [disabled]="product.stock === 0"
+                >
+                  <span class="material-icons">shopping_cart</span>
+                  {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
       }
-      <button [disabled]="!hasNextPage()" (click)="nextPage()">Next</button>
-    </div>
+
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button [disabled]="pageNumber() <= 1" (click)="previousPage()">
+            <span class="material-icons">chevron_left</span>
+          </button>
+          @for (page of getPages(); track page) {
+            <button [class.active]="page === pageNumber()" (click)="goToPage(page)">{{ page }}</button>
+          }
+          <button [disabled]="pageNumber() >= totalPages()" (click)="nextPage()">
+            <span class="material-icons">chevron_right</span>
+          </button>
+        </div>
+      }
+    </main>
   </div>
 </div>
-
-@if (showModal) {
-  <div class="modal-overlay">
-    <div class="modal">
-      <h2>{{ editingProduct ? 'Edit Product' : 'Add Product' }}</h2>
-      <form #productForm="ngForm" (ngSubmit)="productForm.valid && saveProduct()">
-        <div class="form-group">
-          <label>Name</label>
-          <input type="text" [(ngModel)]="newProduct.name" name="name" required minlength="1" maxlength="200" #name="ngModel" />
-          @if (name.invalid && name.touched) {
-            <span class="error-text">Name is required (1-200 characters).</span>
-          }
-        </div>
-        <div class="form-group">
-          <label>Description</label>
-          <input type="text" [(ngModel)]="newProduct.description" name="description" maxlength="1000" />
-        </div>
-        <div class="form-group">
-          <label>Price</label>
-          <input type="number" [(ngModel)]="newProduct.price" name="price" required min="0.01" #price="ngModel" />
-          @if (price.invalid && price.touched) {
-            <span class="error-text">Price must be at least 0.01.</span>
-          }
-        </div>
-        <div class="form-group">
-          <label>Stock</label>
-          <input type="number" [(ngModel)]="newProduct.stock" name="stock" required min="0" #stock="ngModel" />
-          @if (stock.invalid && stock.touched) {
-            <span class="error-text">Stock cannot be negative.</span>
-          }
-        </div>
-        <div class="form-group">
-          <label>Category</label>
-          <select [(ngModel)]="newProduct.category" name="category" required #category="ngModel">
-            <option value="" disabled>Select category</option>
-            @for (cat of categories; track cat) {
-              <option [value]="cat">{{ cat }}</option>
-            }
-          </select>
-          @if (category.invalid && category.touched) {
-            <span class="error-text">Category is required.</span>
-          }
-        </div>
-        <div class="form-group">
-          <label>Product Image</label>
-          @if (imagePreview) {
-            <img [src]="imagePreview" class="image-preview" />
-          }
-          <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input" />
-          @if (selectedFile) {
-            <span class="file-selected">Image will be uploaded when you save.</span>
-          }
-        </div>
-        <div class="modal-actions">
-          <button type="submit" class="btn-primary" [disabled]="productForm.invalid">Save</button>
-          <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-}

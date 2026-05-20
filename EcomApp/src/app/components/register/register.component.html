@@ -1,0 +1,60 @@
+<div class="auth-page">
+  <div class="auth-layout">
+    <div class="auth-sidebar">
+      <div class="auth-sidebar-content">
+        <h2>Sign Up</h2>
+        <p>Join ShopKart for exclusive deals, fast delivery and more</p>
+      </div>
+    </div>
+
+    <div class="auth-form-card">
+      @for (n of notificationService.notifications(); track n.id) {
+        <div class="notification notification-{{ n.type }}">{{ n.message }}</div>
+      }
+
+      <form (ngSubmit)="onSubmit()">
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" [(ngModel)]="registerData.firstName" name="firstName" placeholder="First Name" />
+          </div>
+          <div class="form-group">
+            <input type="text" [(ngModel)]="registerData.lastName" name="lastName" placeholder="Last Name" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <span class="material-icons form-icon">email</span>
+          <input type="email" [(ngModel)]="registerData.email" name="email" placeholder="Email" required />
+        </div>
+
+        <div class="form-group">
+          <span class="material-icons form-icon">person</span>
+          <input type="text" [(ngModel)]="registerData.username" name="username" placeholder="Username" required />
+        </div>
+
+        <div class="form-group">
+          <span class="material-icons form-icon">phone</span>
+          <input type="tel" [(ngModel)]="registerData.phone" name="phone" placeholder="Phone (optional)" />
+        </div>
+
+        <div class="form-group">
+          <span class="material-icons form-icon">lock</span>
+          <input type="password" [(ngModel)]="registerData.password" name="password" placeholder="Password" required />
+        </div>
+
+        <div class="form-group">
+          <span class="material-icons form-icon">lock</span>
+          <input type="password" [(ngModel)]="registerData.confirmPassword" name="confirmPassword" placeholder="Confirm Password" required />
+        </div>
+
+        <button type="submit" class="btn-login-submit" [disabled]="isLoading">
+          {{ isLoading ? 'Creating Account...' : 'Continue' }}
+        </button>
+      </form>
+
+      <p class="auth-footer">
+        Existing User? <a routerLink="/login">Log in</a>
+      </p>
+    </div>
+  </div>
+</div>

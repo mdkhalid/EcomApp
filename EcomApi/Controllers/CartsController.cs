@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using EcomApi.DTOs;
 using EcomApi.Models;
 using EcomApi.Repositories;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcomApi.Controllers;
@@ -19,10 +21,18 @@ public class CartsController : ControllerBase
         _productRepository = productRepository;
     }
 
-    private string GetSessionId()
+    private string GetUserIdOrSession()
     {
+        var role = User.FindFirstValue(ClaimTypes.Role);
+        if (role == "Admin")
+            throw new UnauthorizedAccessException("Admin accounts cannot use shopping carts.");
+
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrEmpty(userIdClaim))
+            return $"user:{userIdClaim}";
+
         if (Request.Cookies.TryGetValue("CartId", out var sessionId) && !string.IsNullOrEmpty(sessionId))
-            return sessionId;
+            return $"session:{sessionId}";
 
         sessionId = Guid.NewGuid().ToString();
         Response.Cookies.Append("CartId", sessionId, new CookieOptions
@@ -32,18 +42,18 @@ public class CartsController : ControllerBase
             Expires = DateTime.UtcNow.AddDays(30),
             SameSite = SameSiteMode.Lax
         });
-        return sessionId;
+        return $"session:{sessionId}";
     }
 
     [HttpGet]
     public async Task<ActionResult<CartDto>> GetCart()
     {
-        var sessionId = GetSessionId();
-        var cart = await _repository.GetBySessionIdAsync(sessionId);
+        var identifier = GetUserIdOrSession();
+        var cart = await _repository.GetByIdentifierAsync(identifier);
 
         if (cart == null)
         {
-            cart = await _repository.CreateAsync(sessionId);
+            cart = await _repository.CreateAsync(identifier);
         }
 
         return Ok(cart.Adapt<CartDto>());
@@ -52,8 +62,8 @@ public class CartsController : ControllerBase
     [HttpPost("items")]
     public async Task<ActionResult<CartDto>> AddItem([FromBody] AddCartItemDto dto)
     {
-        var sessionId = GetSessionId();
-        var cart = await _repository.AddItemAsync(sessionId, dto.ProductId, dto.Quantity);
+        var identifier = GetUserIdOrSession();
+        var cart = await _repository.AddItemAsync(identifier, dto.ProductId, dto.Quantity);
 
         if (cart == null)
         {
@@ -66,7 +76,7 @@ public class CartsController : ControllerBase
     [HttpPut("items/{cartItemId}")]
     public async Task<ActionResult<CartDto>> UpdateItem(int cartItemId, [FromBody] UpdateCartItemDto dto)
     {
-        var sessionId = GetSessionId();
+        var identifier = GetUserIdOrSession();
         var cart = await _repository.UpdateItemAsync(cartItemId, dto.Quantity);
 
         if (cart == null)
@@ -80,7 +90,7 @@ public class CartsController : ControllerBase
     [HttpDelete("items/{cartItemId}")]
     public async Task<ActionResult<CartDto>> RemoveItem(int cartItemId)
     {
-        var sessionId = GetSessionId();
+        var identifier = GetUserIdOrSession();
         var cart = await _repository.RemoveItemAsync(cartItemId);
 
         if (cart == null)
@@ -94,8 +104,25 @@ public class CartsController : ControllerBase
     [HttpDelete]
     public async Task<ActionResult<CartDto>> ClearCart()
     {
-        var sessionId = GetSessionId();
-        var cart = await _repository.ClearAsync(sessionId);
+        var identifier = GetUserIdOrSession();
+        var cart = await _repository.ClearAsync(identifier);
         return Ok(cart.Adapt<CartDto>());
+    }
+
+    [Authorize]
+    [HttpPost("merge")]
+    public async Task<IActionResult> MergeSessionCart()
+    {
+        if (!Request.Cookies.TryGetValue("CartId", out var sessionId) || string.IsNullOrEmpty(sessionId))
+            return Ok(new { message = "No session cart to merge." });
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userIdentifier = $"user:{userId}";
+        var sessionIdentifier = $"session:{sessionId}";
+
+        await _repository.MergeCartsAsync(sessionIdentifier, userIdentifier);
+        Response.Cookies.Delete("CartId");
+
+        return Ok(new { message = "Cart merged successfully." });
     }
 }

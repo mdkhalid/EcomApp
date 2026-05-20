@@ -1,0 +1,20 @@
+import { inject } from '@angular/core';
+import { Router, CanActivateFn } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+
+export const rootRedirectGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isAuthenticated()) {
+    if (authService.isAdmin()) {
+      router.navigate(['/admin']);
+    } else {
+      router.navigate(['/products']);
+    }
+    return false;
+  }
+
+  router.navigate(['/products']);
+  return false;
+};

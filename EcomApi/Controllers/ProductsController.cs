@@ -2,6 +2,7 @@ using EcomApi.DTOs;
 using EcomApi.Models;
 using EcomApi.Repositories;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcomApi.Controllers;
@@ -44,6 +45,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto createDto)
     {
         var product = createDto.Adapt<Product>();
@@ -53,6 +55,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductDto>> Update(int id, [FromBody] UpdateProductDto updateDto)
     {
         var product = await _repository.GetByIdAsync(id);
@@ -64,6 +67,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> Delete(int id)
     {
         var deleted = await _repository.DeleteAsync(id);
@@ -73,6 +77,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost("{id}/image")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductDto>> UploadImage(int id, IFormFile file)
     {
         var product = await _repository.GetByIdAsync(id);

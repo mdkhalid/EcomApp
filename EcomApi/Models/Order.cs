@@ -12,7 +12,9 @@ public enum OrderStatus
 public class Order
 {
     public int Id { get; set; }
-    public string SessionId { get; set; } = string.Empty;
+    public int? UserId { get; set; }
+    public User? User { get; set; }
+    public string? SessionId { get; set; } = string.Empty;
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
     public string ShippingName { get; set; } = string.Empty;
     public string ShippingAddress { get; set; } = string.Empty;

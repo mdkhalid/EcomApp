@@ -7,80 +7,76 @@
   }
 </div>
 
-<div class="checkout-container">
-  <h1>Checkout</h1>
+<div class="checkout-page">
+  <div class="checkout-steps">
+    <div class="step completed">
+      <span class="step-number">1</span>
+      <span>Cart</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step active">
+      <span class="step-number">2</span>
+      <span>Checkout</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <span class="step-number">3</span>
+      <span>Confirmation</span>
+    </div>
+  </div>
 
   @if (loading()) {
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading...</p>
-    </div>
+    <div class="loading-state"><div class="spinner"></div></div>
   } @else if (cart()) {
-    <div class="checkout-grid">
-      <div class="shipping-form">
-        <h2>Shipping Information</h2>
+    <div class="checkout-layout">
+      <div class="checkout-form-card">
+        <h3>Delivery Address</h3>
         <form #checkoutForm="ngForm" (ngSubmit)="checkoutForm.valid && placeOrder()">
           <div class="form-group">
             <label>Full Name</label>
-            <input type="text" [(ngModel)]="orderForm.shippingName" name="shippingName" required minlength="1" maxlength="200" #name="ngModel" />
-            @if (name.invalid && name.touched) {
-              <span class="error-text">Name is required.</span>
-            }
+            <input type="text" [(ngModel)]="orderForm.shippingName" name="shippingName" required placeholder="Enter full name" />
           </div>
           <div class="form-group">
             <label>Address</label>
-            <input type="text" [(ngModel)]="orderForm.shippingAddress" name="shippingAddress" required minlength="1" maxlength="500" #address="ngModel" />
-            @if (address.invalid && address.touched) {
-              <span class="error-text">Address is required.</span>
-            }
+            <input type="text" [(ngModel)]="orderForm.shippingAddress" name="shippingAddress" required placeholder="Enter full address" />
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>City</label>
-              <input type="text" [(ngModel)]="orderForm.shippingCity" name="shippingCity" required minlength="1" maxlength="100" #city="ngModel" />
-              @if (city.invalid && city.touched) {
-                <span class="error-text">City is required.</span>
-              }
+              <input type="text" [(ngModel)]="orderForm.shippingCity" name="shippingCity" required placeholder="City" />
             </div>
             <div class="form-group">
               <label>ZIP Code</label>
-              <input type="text" [(ngModel)]="orderForm.shippingZip" name="shippingZip" required minlength="1" maxlength="20" #zip="ngModel" />
-              @if (zip.invalid && zip.touched) {
-                <span class="error-text">ZIP code is required.</span>
-              }
+              <input type="text" [(ngModel)]="orderForm.shippingZip" name="shippingZip" required placeholder="ZIP" />
             </div>
           </div>
-          <button type="submit" class="btn-primary" [disabled]="checkoutForm.invalid || placing()">
-            @if (placing()) {
-              Placing Order...
-            } @else {
-              Place Order
-            }
+          <button type="submit" class="btn-place-order" [disabled]="checkoutForm.invalid || placing()">
+            {{ placing() ? 'Placing Order...' : 'Place Order' }}
           </button>
         </form>
       </div>
 
-      <div class="order-summary">
-        <h2>Order Summary</h2>
-        <div class="summary-items">
-          @for (item of cart()!.items; track item.id) {
-            <div class="summary-item">
-              <div class="item-info">
-                @if (item.productImage) {
-                  <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" class="item-thumbnail" />
-                }
-                <div>
-                  <span class="item-name">{{ item.productName }}</span>
-                  <span class="item-qty">Qty: {{ item.quantity }}</span>
-                </div>
-              </div>
-              <span class="item-price">{{ item.totalPrice | currency }}</span>
+      <div class="checkout-summary-card">
+        <h3>Order Summary</h3>
+        @for (item of cart()!.items; track item.id) {
+          <div class="summary-item">
+            <div class="summary-item-image">
+              @if (item.productImage) {
+                <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" />
+              } @else {
+                <div class="img-placeholder"><span class="material-icons">image</span></div>
+              }
             </div>
-          }
-        </div>
+            <div class="summary-item-info">
+              <span class="name">{{ item.productName }}</span>
+              <span class="qty">Qty: {{ item.quantity }}</span>
+            </div>
+            <span class="price">&#8377;{{ item.totalPrice.toLocaleString('en-IN') }}</span>
+          </div>
+        }
         <div class="summary-total">
-          <span>Total:</span>
-          <strong>{{ cart()!.totalAmount | currency }}</strong>
+          <span>Total</span>
+          <span>&#8377;{{ cart()!.totalAmount.toLocaleString('en-IN') }}</span>
         </div>
       </div>
     </div>

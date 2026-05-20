@@ -1,0 +1,286 @@
+<div class="toast-container">
+  @for (n of notificationService.notifications(); track n.id) {
+    <div class="toast" [class]="'toast-' + n.type">
+      <span>{{ n.message }}</span>
+      <button class="toast-close" (click)="notificationService.dismiss(n.id)">&times;</button>
+    </div>
+  }
+</div>
+
+<div class="admin-page">
+  <div class="admin-header">
+    <h2><span class="material-icons">dashboard</span> Admin Panel</h2>
+  </div>
+
+  <div class="admin-tabs">
+    <button [class.active]="activeTab() === 'dashboard'" (click)="setTab('dashboard')">
+      <span class="material-icons">bar_chart</span> Dashboard
+    </button>
+    <button [class.active]="activeTab() === 'products'" (click)="setTab('products')">
+      <span class="material-icons">inventory_2</span> Products
+    </button>
+    <button [class.active]="activeTab() === 'orders'" (click)="setTab('orders')">
+      <span class="material-icons">receipt_long</span> Orders
+    </button>
+    <button [class.active]="activeTab() === 'users'" (click)="setTab('users')">
+      <span class="material-icons">people</span> Users
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state"><div class="spinner"></div></div>
+  } @else {
+    @if (activeTab() === 'dashboard') {
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <span class="material-icons stat-icon">inventory_2</span>
+          <div class="stat-info">
+            <span class="stat-label">Products</span>
+            <span class="stat-value">{{ stats().totalProducts }}</span>
+          </div>
+        </div>
+        <div class="stat-card green">
+          <span class="material-icons stat-icon">shopping_bag</span>
+          <div class="stat-info">
+            <span class="stat-label">Orders</span>
+            <span class="stat-value">{{ stats().totalOrders }}</span>
+          </div>
+        </div>
+        <div class="stat-card orange">
+          <span class="material-icons stat-icon">payments</span>
+          <div class="stat-info">
+            <span class="stat-label">Revenue</span>
+            <span class="stat-value">&#8377;{{ stats().totalRevenue.toLocaleString('en-IN') }}</span>
+          </div>
+        </div>
+        <div class="stat-card purple">
+          <span class="material-icons stat-icon">people</span>
+          <div class="stat-info">
+            <span class="stat-label">Users</span>
+            <span class="stat-value">{{ stats().totalUsers }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <h3>Recent Orders</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+          </thead>
+          <tbody>
+            @for (order of orders().slice(0, 10); track order.id) {
+              <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.shippingName }}</td>
+                <td>&#8377;{{ order.totalAmount.toLocaleString('en-IN') }}</td>
+                <td><span class="status-badge" [class]="getStatusClass(order.status)">{{ order.status }}</span></td>
+                <td>{{ order.createdAt | date:'dd MMM yyyy' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (activeTab() === 'products') {
+      <div class="admin-card">
+        <div class="card-header-row">
+          <h3>Inventory ({{ getFilteredProducts().length }} products)</h3>
+          <button class="btn-add" (click)="openAddProduct()">
+            <span class="material-icons">add_circle</span> Add Product
+          </button>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" [value]="productSearch()" (input)="productSearch.set($any($event.target).value)" placeholder="Search products..." class="filter-input" />
+          <select [value]="productCategoryFilter()" (change)="productCategoryFilter.set($any($event.target).value)" class="filter-select">
+            <option value="">All Categories</option>
+            @for (cat of categories; track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Inventory</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of getFilteredProducts(); track product.id) {
+              <tr>
+                <td>
+                  @if (product.imageUrl) {
+                    <img [src]="getFullImageUrl(product.imageUrl)" class="table-thumb" />
+                  } @else {
+                    <div class="table-thumb-placeholder"><span class="material-icons">image</span></div>
+                  }
+                </td>
+                <td>#{{ product.id }}</td>
+                <td class="product-name-cell">{{ product.name }}</td>
+                <td><span class="category-tag">{{ product.category }}</span></td>
+                <td class="price-cell">&#8377;{{ product.price.toLocaleString('en-IN') }}</td>
+                <td>
+                  <span class="stock-value" [class.low-stock]="product.stock < 10" [class.out-of-stock]="product.stock === 0">
+                    {{ product.stock }}
+                  </span>
+                </td>
+                <td>
+                  <div class="stock-control">
+                    <button class="stock-btn" (click)="updateStock(product, -1)" [disabled]="product.stock <= 0">
+                      <span class="material-icons">remove</span>
+                    </button>
+                    <button class="stock-btn add-stock" (click)="updateStock(product, 10)">
+                      <span class="material-icons">add</span>
+                    </button>
+                  </div>
+                </td>
+                <td>
+                  <div class="action-btns">
+                    <button class="btn-edit" (click)="openEditProduct(product)" title="Edit">
+                      <span class="material-icons">edit</span>
+                    </button>
+                    <button class="btn-delete" (click)="deleteProduct(product.id)" title="Delete">
+                      <span class="material-icons">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (activeTab() === 'orders') {
+      <div class="admin-card">
+        <h3>All Orders</h3>
+        <div class="filter-bar">
+          <select [(ngModel)]="orderStatusFilter" (ngModelChange)="orderPage.set(1); loadOrders()" name="statusFilter">
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th><th>Update</th></tr>
+          </thead>
+          <tbody>
+            @for (order of orders(); track order.id) {
+              <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.shippingName }}</td>
+                <td>&#8377;{{ order.totalAmount.toLocaleString('en-IN') }}</td>
+                <td><span class="status-badge" [class]="getStatusClass(order.status)">{{ order.status }}</span></td>
+                <td>{{ order.createdAt | date:'dd MMM yyyy' }}</td>
+                <td>
+                  <select (change)="updateOrderStatus(order.id, $any($event.target).value)">
+                    <option value="">Change...</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (activeTab() === 'users') {
+      <div class="admin-card">
+        <h3>All Users</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td>#{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td><span class="role-badge" [class.admin-role]="user.role === 'Admin'">{{ user.role }}</span></td>
+                <td><span [class]="user.isActive ? 'text-green' : 'text-red'">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td>
+                <td>
+                  @if (user.role !== 'Admin') {
+                    <button class="btn-toggle" (click)="toggleUserStatus(user)">
+                      {{ user.isActive ? 'Deactivate' : 'Activate' }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>
+
+@if (showProductModal()) {
+  <div class="modal-overlay" (click)="closeProductModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingProduct ? 'Edit Product' : 'Add New Product' }}</h3>
+        <button class="modal-close" (click)="closeProductModal()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" [(ngModel)]="productForm.name" name="pName" placeholder="Enter product name" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="productForm.description" name="pDesc" placeholder="Product description" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Price (&#8377;)</label>
+            <input type="number" [(ngModel)]="productForm.price" name="pPrice" placeholder="0.00" min="0.01" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Stock</label>
+            <input type="number" [(ngModel)]="productForm.stock" name="pStock" placeholder="0" min="0" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select [(ngModel)]="productForm.category" name="pCategory">
+            <option value="" disabled>Select category</option>
+            @for (cat of categories; track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Product Image</label>
+          @if (imagePreview) {
+            <img [src]="imagePreview" class="image-preview" />
+          }
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="saveProduct()">{{ editingProduct ? 'Update' : 'Add Product' }}</button>
+        <button class="btn-cancel" (click)="closeProductModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}

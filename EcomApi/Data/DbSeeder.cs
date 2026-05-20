@@ -1,10 +1,56 @@
 using EcomApi.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace EcomApi.Data;
 
 public static class DbSeeder
 {
     public static void Seed(ApplicationDbContext context)
+    {
+        SeedUsers(context);
+        SeedProducts(context);
+    }
+
+    private static void SeedUsers(ApplicationDbContext context)
+    {
+        var passwordHasher = new PasswordHasher<User>();
+
+        if (!context.Users.Any(u => u.Email == "admin@ecom.com"))
+        {
+            var admin = new User
+            {
+                Email = "admin@ecom.com",
+                Username = "admin",
+                Role = "Admin",
+                FirstName = "System",
+                LastName = "Administrator",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            admin.PasswordHash = passwordHasher.HashPassword(admin, "Admin@123");
+            context.Users.Add(admin);
+        }
+
+        if (!context.Users.Any(u => u.Email == "demo@ecom.com"))
+        {
+            var demoUser = new User
+            {
+                Email = "demo@ecom.com",
+                Username = "demo",
+                Role = "Customer",
+                FirstName = "Demo",
+                LastName = "User",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            demoUser.PasswordHash = passwordHasher.HashPassword(demoUser, "Demo@123");
+            context.Users.Add(demoUser);
+        }
+
+        context.SaveChanges();
+    }
+
+    private static void SeedProducts(ApplicationDbContext context)
     {
         if (context.Products.Any()) return;
 
