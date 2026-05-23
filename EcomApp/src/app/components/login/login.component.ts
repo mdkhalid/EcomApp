@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { CartService } from '../../services/cart.service';
 import { NotificationService } from '../../services/notification.service';
 import { LoginRequest } from '../../models/auth.model';
 
@@ -13,6 +14,7 @@ import { LoginRequest } from '../../models/auth.model';
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
+  private readonly cartService = inject(CartService);
   readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -29,7 +31,14 @@ export class LoginComponent {
     this.isLoading = true;
     this.authService.login(this.loginData).subscribe({
       next: () => {
+        this.isLoading = false;
         this.notificationService.showSuccess('Login successful!');
+        // Skip cart operations for admin users (admin carts throw 401 on backend)
+        if (!this.authService.isAdmin()) {
+          this.cartService.mergeCart().subscribe({
+            next: () => this.cartService.getCart().subscribe()
+          });
+        }
         const returnUrl = this.route.snapshot.queryParams['returnUrl'];
         if (returnUrl && returnUrl !== '/admin') {
           this.router.navigate([returnUrl]);

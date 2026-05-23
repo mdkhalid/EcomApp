@@ -68,6 +68,15 @@ export class AuthService {
     );
   }
 
+  updateProfile(data: { firstName?: string; lastName?: string; phone?: string }): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/profile`, data).pipe(
+      tap(user => {
+        this.currentUserSignal.set(user);
+        localStorage.setItem('user', JSON.stringify(user));
+      })
+    );
+  }
+
   isAdmin(): boolean {
     return this.currentUserSignal()?.role === 'Admin';
   }

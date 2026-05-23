@@ -1,0 +1,150 @@
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ProductService } from '../../services/product.service';
+import { ReviewService } from '../../services/review.service';
+import { CartService } from '../../services/cart.service';
+import { WishlistService } from '../../services/wishlist.service';
+import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
+import { Product } from '../../models/product.model';
+import { Review, CreateReview } from '../../models/review.model';
+
+@Component({
+  selector: 'app-product-detail',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  templateUrl: './product-detail.component.html',
+  styleUrl: './product-detail.component.scss'
+})
+export class ProductDetailComponent implements OnInit {
+  private readonly productService = inject(ProductService);
+  private readonly reviewService = inject(ReviewService);
+  private readonly cartService = inject(CartService);
+  readonly wishlistService = inject(WishlistService);
+  readonly authService = inject(AuthService);
+  readonly notification = inject(NotificationService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  protected readonly notifications = this.notification.notifications;
+  protected readonly Math = Math;
+
+  product = signal<Product | null>(null);
+  reviews = signal<Review[]>([]);
+  reviewCount = signal(0);
+  avgRating = signal(0);
+  loading = signal(true);
+  quantity = signal(1);
+
+  newReview = signal<CreateReview>({ rating: 5, comment: '' });
+  submittingReview = signal(false);
+  hasReviewed = signal(false);
+  hasPurchased = signal(true);
+
+  ngOnInit(): void {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (id) {
+      this.loadProduct(id);
+      this.loadReviews(id);
+    }
+  }
+
+  loadProduct(id: number): void {
+    this.productService.getById(id).subscribe({
+      next: (product) => {
+        this.product.set(product);
+        this.avgRating.set(product.averageRating);
+        this.reviewCount.set(product.totalReviews);
+        this.loading.set(false);
+        if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
+          this.wishlistService.check(id).subscribe();
+        }
+      },
+      error: () => {
+        this.notification.showError('Failed to load product');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  loadReviews(productId: number): void {
+    this.reviewService.getByProduct(productId).subscribe({
+      next: (res) => {
+        this.reviews.set(res.items);
+        this.avgRating.set(res.averageRating);
+        this.reviewCount.set(res.totalReviews);
+      }
+    });
+  }
+
+  addToCart(): void {
+    const p = this.product();
+    if (!p) return;
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: `/products/${p.id}` } });
+      return;
+    }
+    this.cartService.addItem({ productId: p.id, quantity: this.quantity() }).subscribe({
+      next: () => this.notification.showSuccess('Added to cart'),
+      error: (err) => this.notification.showError(err.error?.error || 'Failed to add to cart')
+    });
+  }
+
+  toggleWishlist(): void {
+    const p = this.product();
+    if (!p) return;
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: `/products/${p.id}` } });
+      return;
+    }
+    this.wishlistService.toggle(p.id).subscribe({
+      next: (res) => this.notification.showSuccess(res.message),
+      error: (err) => this.notification.showError(err.error?.error || 'Failed to update wishlist')
+    });
+  }
+
+  submitReview(): void {
+    const p = this.product();
+    if (!p) return;
+    this.submittingReview.set(true);
+    this.reviewService.create(p.id, this.newReview()).subscribe({
+      next: (review) => {
+        this.notification.showSuccess('Review submitted!');
+        this.reviews.update(r => [review, ...r]);
+        this.hasReviewed.set(true);
+        this.newReview.set({ rating: 5, comment: '' });
+        this.loadReviews(p.id);
+        this.submittingReview.set(false);
+      },
+      error: (err) => {
+        this.submittingReview.set(false);
+        this.notification.showError(err.error?.error || 'Failed to submit review');
+      }
+    });
+  }
+
+  setRating(n: number): void {
+    this.newReview.update(r => ({ ...r, rating: n }));
+  }
+
+  getFullImageUrl(path: string): string {
+    return `http://localhost:5068${path}`;
+  }
+
+  getFormattedDate(dateStr: string): string {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  getRatingPercent(star: number): number {
+    const total = this.reviewCount();
+    if (total === 0) return 0;
+    const count = this.reviews().filter(r => Math.round(r.rating) === star).length;
+    return (count / total) * 100;
+  }
+
+  getRatingCount(star: number): number {
+    return this.reviews().filter(r => Math.round(r.rating) === star).length;
+  }
+}

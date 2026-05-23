@@ -34,5 +34,9 @@ public static class MappingConfig
             .Compile();
 
         TypeAdapterConfig<OrderItem, OrderItemDto>.NewConfig().Compile();
+
+        TypeAdapterConfig<Review, ReviewDto>.NewConfig()
+            .Map(dest => dest.UserName, src => src.User.Username)
+            .Compile();
     }
 }

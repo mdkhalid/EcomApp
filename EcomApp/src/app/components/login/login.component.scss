@@ -1,141 +1,184 @@
-.auth-page {
+/* ============================================
+   Login Page - Flipkart Inspired
+   ============================================ */
+:host {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 120px);
-  padding: 24px;
-  background: #f1f3f6;
+  min-height: calc(100vh - var(--header-height) - var(--category-bar-height) - 80px);
+  padding: var(--space-2xl);
+}
+
+.auth-page {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .auth-layout {
   display: flex;
   width: 750px;
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .auth-sidebar {
   width: 280px;
-  background: linear-gradient(135deg, #2874f0 0%, #1a5dc8 100%);
-  padding: 40px 30px;
+  background: linear-gradient(135deg, var(--flipkart-blue) 0%, var(--flipkart-blue-dark) 100%);
+  padding: var(--space-4xl) var(--space-3xl);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
-.auth-sidebar-content h2 {
-  font-size: 26px;
-  color: #fff;
-  margin: 0 0 12px;
-}
+.auth-sidebar-content {
+  h2 {
+    font-size: 26px;
+    color: white;
+    margin-bottom: var(--space-lg);
+    font-weight: 600;
+  }
 
-.auth-sidebar-content p {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 15px;
-  line-height: 1.5;
+  p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 15px;
+    line-height: 1.5;
+  }
 }
 
 .auth-form-card {
   flex: 1;
-  background: #fff;
-  padding: 40px 36px;
+  background: var(--card-bg);
+  padding: var(--space-4xl) var(--space-3xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .notification {
-  padding: 10px 14px;
-  border-radius: 4px;
-  margin-bottom: 16px;
-  font-size: 13px;
-}
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-lg);
+  font-size: var(--font-size-sm);
 
-.notification-success {
-  background: #d4edda;
-  color: #155724;
-}
+  &.success {
+    background: #D4EDDA;
+    color: #155724;
+  }
 
-.notification-error {
-  background: #f8d7da;
-  color: #721c24;
+  &.error {
+    background: #F8D7DA;
+    color: #721C24;
+  }
 }
 
 .form-group {
   position: relative;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-2xl);
 }
 
 .form-icon {
   position: absolute;
-  left: 12px;
+  left: var(--space-sm);
   top: 50%;
   transform: translateY(-50%);
-  color: #ccc;
+  color: var(--text-tertiary);
   font-size: 20px;
 }
 
 .form-group input {
   width: 100%;
-  padding: 14px 14px 14px 44px;
+  padding: var(--space-md) var(--space-md) var(--space-md) 44px;
   border: none;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--border-color);
   font-size: 15px;
   font-family: inherit;
   transition: border-color 0.2s;
   outline: none;
-}
+  color: var(--text-primary);
+  background: transparent;
 
-.form-group input:focus {
-  border-bottom-color: #2874f0;
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  &:focus {
+    border-bottom-color: var(--flipkart-blue);
+  }
 }
 
 .btn-login-submit {
   width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #fb641b, #ff9f00);
-  color: #fff;
+  padding: var(--space-md);
+  background: var(--flipkart-orange);
+  color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  margin-top: 8px;
+  margin-top: var(--space-sm);
+  font-family: inherit;
+
+  &:hover:not(:disabled) {
+    background: #e55a14;
+    box-shadow: 0 2px 8px rgba(251, 100, 27, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
-.btn-login-submit:hover:not(:disabled) {
-  box-shadow: 0 2px 8px rgba(251, 100, 27, 0.4);
-}
+.auth-terms {
+  text-align: center;
+  margin-top: var(--space-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
 
-.btn-login-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  a {
+    color: var(--flipkart-blue);
+  }
 }
 
 .auth-footer {
   text-align: center;
-  margin-top: 24px;
-  font-size: 14px;
-  color: #878787;
-}
+  margin-top: var(--space-xl);
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
 
-.auth-footer a {
-  color: #2874f0;
-  font-weight: 600;
-  text-decoration: none;
-}
+  a {
+    color: var(--flipkart-blue);
+    font-weight: 600;
+    text-decoration: none;
 
-.auth-footer a:hover {
-  text-decoration: underline;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 @media (max-width: 700px) {
+  :host {
+    padding: var(--space-md);
+    min-height: calc(100vh - var(--header-height));
+  }
+
   .auth-layout {
     flex-direction: column;
   }
+
   .auth-sidebar {
     width: 100%;
-    padding: 24px;
+    padding: var(--space-2xl);
   }
+
   .auth-form-card {
-    padding: 24px;
+    padding: var(--space-2xl);
   }
 }

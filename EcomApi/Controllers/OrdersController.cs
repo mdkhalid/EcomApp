@@ -87,6 +87,15 @@ public class OrdersController : ControllerBase
         return Ok(MapOrder(order));
     }
 
+    [HttpGet("previous-addresses")]
+    [Authorize]
+    public async Task<ActionResult<List<ShippingAddressDto>>> GetPreviousAddresses()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var addresses = await _orderRepository.GetPreviousAddressesAsync(userId);
+        return Ok(addresses);
+    }
+
     [HttpPut("{id}/status")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<OrderDto>> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)

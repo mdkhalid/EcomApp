@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Order, CreateOrder } from '../models/order.model';
+import { Order, CreateOrder, SavedAddress } from '../models/order.model';
 
 @Injectable({
   providedIn: 'root'
@@ -20,5 +20,9 @@ export class OrderService {
 
   getById(id: number): Observable<Order> {
     return this.http.get<Order>(`${this.apiUrl}/${id}`);
+  }
+
+  getPreviousAddresses(): Observable<SavedAddress[]> {
+    return this.http.get<SavedAddress[]>(`${this.apiUrl}/previous-addresses`);
   }
 }

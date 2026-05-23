@@ -1,38 +1,526 @@
-* {
+/* ============================================
+   Flipkart-Inspired Design System
+   ============================================ */
+
+/* --- CSS Custom Properties --- */
+:root {
+  /* Brand Colors */
+  --flipkart-blue: #2874F0;
+  --flipkart-blue-dark: #1a5dc8;
+  --flipkart-blue-light: #e8f0fe;
+  --flipkart-orange: #FB641B;
+  --flipkart-yellow: #FFE500;
+  --flipkart-green: #388E3C;
+
+  /* Neutral Colors */
+  --page-bg: #F1F2F4;
+  --card-bg: #FFFFFF;
+  --border-color: #E0E0E0;
+  --border-light: #F0F0F0;
+
+  /* Text Colors */
+  --text-primary: #212121;
+  --text-secondary: #878787;
+  --text-tertiary: #BDBDBD;
+  --text-white: #FFFFFF;
+  --text-link: #2874F0;
+
+  /* Semantic Colors */
+  --success: #388E3C;
+  --error: #D32F2F;
+  --warning: #FFA000;
+  --info: #2874F0;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 16px 0 rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 8px 24px 0 rgba(0, 0, 0, 0.15);
+
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', Ubuntu, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 40px;
+
+  /* Layout */
+  --max-width: 1600px;
+  --header-height: 56px;
+  --category-bar-height: 40px;
+}
+
+/* --- Reset & Base --- */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f1f3f6;
-  color: #212121;
+html {
+  font-size: var(--font-size-base);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--page-bg);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
 }
 
 a {
+  color: var(--text-link);
   text-decoration: none;
-  color: inherit;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 button {
+  cursor: pointer;
   font-family: inherit;
+  border: none;
+  outline: none;
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
 }
 
-::-webkit-scrollbar {
-  width: 6px;
+input, select, textarea {
+  font-family: inherit;
+  outline: none;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
+ul, ol {
+  list-style: none;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
+/* --- Utility Classes --- */
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+.page-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--space-lg);
+  padding-top: calc(var(--header-height) + var(--category-bar-height) + var(--space-lg));
+}
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.btn-primary {
+  background-color: var(--flipkart-orange);
+  color: var(--text-white);
+  &:hover {
+    background-color: #e55a14;
+  }
+}
+
+.btn-blue {
+  background-color: var(--flipkart-blue);
+  color: var(--text-white);
+  &:hover {
+    background-color: var(--flipkart-blue-dark);
+  }
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  &:hover {
+    border-color: var(--flipkart-blue);
+    color: var(--flipkart-blue);
+  }
+}
+
+.btn-wishlist {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+  &:hover {
+    border-color: var(--error);
+    color: var(--error);
+  }
+  &.active {
+    border-color: var(--error);
+    color: var(--error);
+  }
+}
+
+.btn-sm {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+  padding: var(--space-md) var(--space-2xl);
+  font-size: var(--font-size-md);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* --- Badges --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.badge-green {
+  background-color: #E8F5E9;
+  color: var(--success);
+}
+
+.badge-orange {
+  background-color: #FFF3E0;
+  color: #E65100;
+}
+
+.badge-blue {
+  background-color: var(--flipkart-blue-light);
+  color: var(--flipkart-blue);
+}
+
+.badge-red {
+  background-color: #FFEBEE;
+  color: var(--error);
+}
+
+/* --- Rating Stars --- */
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+
+  .rating-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background-color: var(--success);
+    color: white;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    line-height: 1.4;
+
+    .star-icon {
+      font-size: 10px;
+      line-height: 1;
+    }
+  }
+
+  .rating-count {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* --- Price Display --- */
+.price-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+
+  .current-price {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .original-price {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+    text-decoration: line-through;
+  }
+
+  .discount {
+    font-size: var(--font-size-sm);
+    color: var(--success);
+    font-weight: 500;
+  }
+}
+
+/* --- Cards --- */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* --- Form Elements --- */
+.form-group {
+  margin-bottom: var(--space-lg);
+
+  label {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xs);
+    font-weight: 500;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    background: var(--card-bg);
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      border-color: var(--flipkart-blue);
+      box-shadow: 0 0 0 1px var(--flipkart-blue);
+    }
+
+    &::placeholder {
+      color: var(--text-tertiary);
+    }
+  }
+
+  textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  .error-text {
+    font-size: var(--font-size-xs);
+    color: var(--error);
+    margin-top: var(--space-xs);
+  }
+}
+
+/* --- Loading Spinner --- */
+.spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4xl);
+
+  &::after {
+    content: '';
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--flipkart-blue);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Empty State --- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4xl) var(--space-lg);
+  text-align: center;
+
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: var(--space-lg);
+    opacity: 0.3;
+  }
+
+  h3 {
+    font-size: var(--font-size-lg);
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xl);
+    max-width: 400px;
+  }
+}
+
+/* --- Section Headers --- */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-light);
+  h2 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+  }
+  a {
+    font-size: var(--font-size-base);
+    color: var(--flipkart-blue);
+    font-weight: 500;
+  }
+}
+
+/* --- Cart Quantity Control --- */
+.qty-control {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+
+  button {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F5F5F5;
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 500;
+    border: none;
+    transition: background 0.15s;
+
+    &:hover:not(:disabled) {
+      background: #E0E0E0;
+    }
+
+    &:disabled {
+      color: var(--text-tertiary);
+    }
+  }
+
+  span {
+    width: 40px;
+    text-align: center;
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    padding: 2px 0;
+  }
+}
+
+/* --- Notification Toast --- */
+.notification-container {
+  position: fixed;
+  top: calc(var(--header-height) + var(--space-sm));
+  right: var(--space-lg);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.notification {
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: var(--font-size-base);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  animation: slideIn 0.3s ease;
+
+  &.success { background: var(--success); }
+  &.error { background: var(--error); }
+  &.info { background: var(--info); }
+  &.warning { background: var(--warning); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  :root {
+    --header-height: 48px;
+    --category-bar-height: 0px;
+  }
+  .container {
+    padding: 0 var(--space-md);
+  }
+  .page-container {
+    padding: var(--space-md);
+    padding-top: calc(var(--header-height) + var(--space-md));
+  }
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .hide-desktop {
+    display: none !important;
+  }
 }

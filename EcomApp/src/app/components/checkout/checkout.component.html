@@ -31,6 +31,29 @@
     <div class="checkout-layout">
       <div class="checkout-form-card">
         <h3>Delivery Address</h3>
+
+        @if (savedAddresses().length > 0) {
+          <div class="saved-addresses">
+            <p class="section-label">Saved Addresses</p>
+            @for (addr of savedAddresses(); track $index) {
+              <div class="saved-address-card" [class.selected]="selectedSavedAddress() === $index" (click)="selectAddress($index)">
+                <div class="saved-addr-radio">
+                  <span class="radio-dot" [class.checked]="selectedSavedAddress() === $index"></span>
+                </div>
+                <div class="saved-addr-details">
+                  <span class="saved-addr-name">{{ addr.name }}</span>
+                  <span class="saved-addr-line">{{ addr.address }}</span>
+                  <span class="saved-addr-line">{{ addr.city }} - {{ addr.zip }}</span>
+                </div>
+              </div>
+            }
+            @if (selectedSavedAddress() !== null) {
+              <button type="button" class="btn-new-address" (click)="clearForm()">+ Use a new address</button>
+            }
+            <div class="saved-addr-divider"><span>Or enter a new address</span></div>
+          </div>
+        }
+
         <form #checkoutForm="ngForm" (ngSubmit)="checkoutForm.valid && placeOrder()">
           <div class="form-group">
             <label>Full Name</label>

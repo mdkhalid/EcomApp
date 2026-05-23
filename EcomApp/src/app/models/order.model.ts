@@ -27,3 +27,10 @@ export interface CreateOrder {
   shippingCity: string;
   shippingZip: string;
 }
+
+export interface SavedAddress {
+  name: string;
+  address: string;
+  city: string;
+  zip: string;
+}

@@ -1,5 +1,7 @@
+<!-- ===== TOP HEADER ===== -->
 <header class="header">
-  <div class="header-container">
+  <div class="header-inner">
+    <!-- Left: Logo -->
     <div class="header-left">
       <a routerLink="/products" class="logo">
         <span class="logo-text">Shop<span class="logo-highlight">Kart</span></span>
@@ -7,7 +9,8 @@
       </a>
     </div>
 
-    <div class="header-search">
+    <!-- Center: Search Bar -->
+    <div class="header-center">
       <div class="search-box">
         <span class="material-icons search-icon">search</span>
         <input
@@ -17,42 +20,168 @@
           placeholder="Search for products, brands and more"
           class="search-input"
         />
+        <button class="search-btn" (click)="onSearch()" aria-label="Search">
+          <span class="material-icons">search</span>
+        </button>
       </div>
     </div>
 
+    <!-- Right: Actions -->
     <div class="header-right">
       @if (authService.isAuthenticated()) {
-        <span class="header-user">{{ authService.currentUser()?.username }}</span>
-        @if (authService.isAdmin()) {
-          <a routerLink="/admin" class="header-link admin-link">
-            <span class="material-icons">dashboard</span>
-            Admin
+        <div class="header-user-dropdown">
+          <a routerLink="/profile" class="header-btn header-user-btn">
+            <span class="material-icons">person_outline</span>
+            <span class="user-name">{{ authService.currentUser()?.username || 'My Account' }}</span>
+            <span class="material-icons arrow-down">arrow_drop_down</span>
           </a>
-        } @else {
-          <a routerLink="/orders" class="header-link">
-            <span class="material-icons">receipt_long</span>
-            Orders
+        </div>
+
+        <a routerLink="/orders" class="header-btn hide-mobile">
+          <span class="material-icons">receipt_long</span>
+          Orders
+        </a>
+
+        <a routerLink="/wishlist" class="header-btn hide-mobile">
+          <span class="material-icons">favorite_border</span>
+          Wishlist
+        </a>
+
+        <a routerLink="/cart" class="header-btn cart-btn">
+          <span class="material-icons">shopping_cart</span>
+          <span class="cart-label">Cart</span>
+          @if (cartService.cartItemCount() > 0) {
+            <span class="cart-badge">{{ cartService.cartItemCount() }}</span>
+          }
+        </a>
+
+        @if (authService.isAdmin()) {
+          <a routerLink="/admin" class="header-btn admin-btn hide-mobile">
+            <span class="material-icons">dashboard</span>
           </a>
         }
-        <a routerLink="/cart" class="header-link cart-link">
-          <span class="material-icons">shopping_cart</span>
-          Cart
-        </a>
-        <button class="btn-logout" (click)="logout()">
+
+        <button class="header-btn logout-btn hide-mobile" (click)="logout()" title="Logout">
           <span class="material-icons">logout</span>
-          Logout
         </button>
       } @else {
-        <a routerLink="/login" class="btn-login">Login</a>
+        <a routerLink="/login" class="login-btn">Login</a>
+        <a routerLink="/register" class="header-btn hide-mobile">
+          <span class="material-icons">person_add</span>
+          Sign Up
+        </a>
+        <span class="header-btn hide-mobile">
+          <span class="material-icons">more_vert</span>
+          More
+        </span>
+        <a routerLink="/cart" class="header-btn cart-btn">
+          <span class="material-icons">shopping_cart</span>
+          <span class="cart-label">Cart</span>
+          @if (cartService.cartItemCount() > 0) {
+            <span class="cart-badge">{{ cartService.cartItemCount() }}</span>
+          }
+        </a>
       }
     </div>
   </div>
 </header>
 
-<router-outlet />
+<!-- ===== CATEGORIES NAV BAR ===== -->
+<nav class="category-bar">
+  <div class="category-bar-inner">
+    <a routerLink="/products" [queryParams]="{category: 'Electronics'}" class="category-item">
+      <span class="category-icon material-icons">devices</span>
+      <span class="category-label">Electronics</span>
+    </a>
+    <a routerLink="/products" [queryParams]="{category: 'Fashion'}" class="category-item">
+      <span class="category-icon material-icons">checkroom</span>
+      <span class="category-label">Fashion</span>
+    </a>
+    <a routerLink="/products" [queryParams]="{category: 'Home'}" class="category-item">
+      <span class="category-icon material-icons">home</span>
+      <span class="category-label">Home</span>
+    </a>
+    <a routerLink="/products" [queryParams]="{category: 'Beauty'}" class="category-item">
+      <span class="category-icon material-icons">spa</span>
+      <span class="category-label">Beauty</span>
+    </a>
+    <a routerLink="/products" [queryParams]="{category: 'Sports'}" class="category-item">
+      <span class="category-icon material-icons">sports_esports</span>
+      <span class="category-label">Sports</span>
+    </a>
+    <a routerLink="/products" [queryParams]="{category: 'Books'}" class="category-item">
+      <span class="category-icon material-icons">menu_book</span>
+      <span class="category-label">Books</span>
+    </a>
+    <a routerLink="/products" [queryParams]="{category: 'Grocery'}" class="category-item">
+      <span class="category-icon material-icons">shopping_bag</span>
+      <span class="category-label">Grocery</span>
+    </a>
+    <a routerLink="/products" [queryParams]="{category: 'Toys'}" class="category-item">
+      <span class="category-icon material-icons">toys</span>
+      <span class="category-label">Toys</span>
+    </a>
+  </div>
+</nav>
 
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content">
+  <router-outlet />
+</main>
+
+<!-- ===== FOOTER ===== -->
 <footer class="footer">
-  <div class="footer-container">
-    <p>&copy; 2026 ShopKart. All rights reserved.</p>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>About</h4>
+        <a href="#">Contact Us</a>
+        <a href="#">About Us</a>
+        <a href="#">Careers</a>
+        <a href="#">Press</a>
+      </div>
+      <div class="footer-col">
+        <h4>Help</h4>
+        <a href="#">Payments</a>
+        <a href="#">Shipping</a>
+        <a href="#">Returns</a>
+        <a href="#">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <h4>Policy</h4>
+        <a href="#">Return Policy</a>
+        <a href="#">Terms of Use</a>
+        <a href="#">Security</a>
+        <a href="#">Privacy</a>
+      </div>
+      <div class="footer-col">
+        <h4>Social</h4>
+        <a href="#">Facebook</a>
+        <a href="#">Twitter</a>
+        <a href="#">Instagram</a>
+        <a href="#">YouTube</a>
+      </div>
+      <div class="footer-col footer-col-address">
+        <h4>Mail Us</h4>
+        <p>ShopKart Internet Private Limited,<br/>Buildings Alyssa, Begonia &<br/>Clove Embassy Tech Village,<br/>Outer Ring Road, Devarabeesanahalli,<br/>Bengaluru, 560103,<br/>Karnataka, India</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-bottom-links">
+        <span class="footer-bottom-item">
+          <span class="material-icons">store</span> Become a Seller
+        </span>
+        <span class="footer-bottom-item">
+          <span class="material-icons">star</span> Advertise
+        </span>
+        <span class="footer-bottom-item">
+          <span class="material-icons">card_giftcard</span> Gift Cards
+        </span>
+        <span class="footer-bottom-item">
+          <span class="material-icons">help</span> Help Center
+        </span>
+      </div>
+      <p class="footer-copyright">&copy; 2026 ShopKart. All Rights Reserved.</p>
+    </div>
   </div>
 </footer>

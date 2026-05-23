@@ -12,10 +12,12 @@ namespace EcomApi.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly IProductRepository _repository;
+    private readonly IReviewRepository _reviewRepository;
 
-    public ProductsController(IProductRepository repository)
+    public ProductsController(IProductRepository repository, IReviewRepository reviewRepository)
     {
         _repository = repository;
+        _reviewRepository = reviewRepository;
     }
 
     [HttpGet]
@@ -26,9 +28,20 @@ public class ProductsController : ControllerBase
 
         var (items, totalCount) = await _repository.GetAllAsync(pageNumber, pageSize, search, category, minPrice, maxPrice);
 
+        var productDtos = items.Adapt<List<ProductDto>>();
+
+        var productIds = items.Select(p => p.Id).ToList();
+        var ratings = await _reviewRepository.GetRatingsForProductsAsync(productIds);
+
+        for (int i = 0; i < productDtos.Count; i++)
+        {
+            productDtos[i].AverageRating = ratings[productIds[i]].AverageRating;
+            productDtos[i].TotalReviews = ratings[productIds[i]].TotalReviews;
+        }
+
         return Ok(new
         {
-            items = items.Adapt<List<ProductDto>>(),
+            items = productDtos,
             totalCount,
             pageNumber,
             pageSize
@@ -41,7 +54,13 @@ public class ProductsController : ControllerBase
         var product = await _repository.GetByIdAsync(id);
         if (product == null)
             return NotFound();
-        return Ok(product.Adapt<ProductDto>());
+
+        var dto = product.Adapt<ProductDto>();
+        var (avgRating, totalReviews) = await _reviewRepository.GetProductRatingAsync(id);
+        dto.AverageRating = avgRating;
+        dto.TotalReviews = totalReviews;
+
+        return Ok(dto);
     }
 
     [HttpPost]

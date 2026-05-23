@@ -1,0 +1,69 @@
+<div class="toast-container">
+  @for (n of notifications(); track n.id) {
+    <div class="toast" [class]="'toast-' + n.type">
+      <span>{{ n.message }}</span>
+      <button class="toast-close" (click)="notification.dismiss(n.id)">&times;</button>
+    </div>
+  }
+</div>
+
+<div class="wishlist-page">
+  <div class="wishlist-banner">
+    <span class="material-icons banner-icon">favorite</span>
+    <div class="banner-text">
+      <h2>My Wishlist</h2>
+      <p>{{ items().length }} {{ items().length === 1 ? 'item' : 'items' }} saved</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="spinner"></div>
+  } @else if (items().length === 0) {
+    <div class="empty-state">
+      <span class="material-icons empty-icon">favorite_border</span>
+      <h3>Your wishlist is empty!</h3>
+      <p>Save your favourite items to buy later. Start exploring our collection.</p>
+      <a routerLink="/products" class="btn btn-primary btn-lg">Explore Products</a>
+    </div>
+  } @else {
+    <div class="wishlist-grid">
+      @for (item of items(); track item.id) {
+        <div class="wishlist-card">
+          <button class="remove-btn" (click)="removeItem(item.productId)" title="Remove">
+            <span class="material-icons">close</span>
+          </button>
+
+          <a [routerLink]="['/products', item.productId]" class="card-image-link">
+            @if (item.productImage) {
+              <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" class="card-image" />
+            } @else {
+              <div class="card-img-placeholder">
+                <span class="material-icons">image</span>
+              </div>
+            }
+            @if (item.productPrice >= 1000) {
+              <span class="discount-badge">Special Offer</span>
+            }
+          </a>
+
+          <div class="card-body">
+            <a [routerLink]="['/products', item.productId]" class="card-title">{{ item.productName }}</a>
+            @if (item.category) {
+              <span class="card-category">{{ item.category }}</span>
+            }
+            <div class="card-price-row">
+              <span class="card-price">&#8377;{{ item.productPrice.toLocaleString('en-IN') }}</span>
+              @if (item.productPrice >= 500) {
+                <span class="card-discount">Free Delivery</span>
+              }
+            </div>
+            <button class="btn btn-primary btn-block" (click)="addToCart(item.productId)">
+              <span class="material-icons">shopping_cart</span>
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

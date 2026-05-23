@@ -9,7 +9,7 @@
 
     <div class="auth-form-card">
       @for (n of notificationService.notifications(); track n.id) {
-        <div class="notification notification-{{ n.type }}">{{ n.message }}</div>
+        <div class="notification" [class.success]="n.type === 'success'" [class.error]="n.type === 'error'">{{ n.message }}</div>
       }
 
       <form (ngSubmit)="onSubmit()">
@@ -38,6 +38,10 @@
         <button type="submit" class="btn-login-submit" [disabled]="isLoading">
           {{ isLoading ? 'Logging in...' : 'Login' }}
         </button>
+
+        <p class="auth-terms">
+          By continuing, you agree to ShopKart's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.
+        </p>
       </form>
 
       <p class="auth-footer">

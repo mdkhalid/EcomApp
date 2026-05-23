@@ -194,6 +194,16 @@ public class AuthController : ControllerBase
         return Ok(new { message = "User activated." });
     }
 
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateProfileDto dto)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await _userRepository.UpdateProfileAsync(userId, dto.FirstName, dto.LastName, dto.Phone);
+        _logger.LogInformation("User updated profile: {Email}", user.Email);
+        return Ok(user.Adapt<UserDto>());
+    }
+
     private async Task<ActionResult<TokenResponseDto>> GenerateTokenResponse(User user)
     {
         var accessToken = _tokenService.GenerateAccessToken(user);

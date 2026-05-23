@@ -9,59 +9,61 @@
 
 <div class="cart-page">
   <div class="cart-layout">
+    <!-- Main Items Section -->
     <div class="cart-main">
-      <div class="cart-title-bar">
+      <div class="cart-header">
         <span class="material-icons">shopping_cart</span>
         <h2>My Cart ({{ getItemCount() }})</h2>
       </div>
 
       @if (loading()) {
-        <div class="loading-state">
-          <div class="spinner"></div>
-        </div>
+        <div class="spinner"></div>
       } @else if (!cart() || cart()!.items.length === 0) {
-        <div class="empty-cart">
+        <div class="empty-state">
           <span class="material-icons empty-icon">shopping_cart</span>
           <h3>Your cart is empty!</h3>
           <p>Add items to it now.</p>
-          <a routerLink="/products" class="btn-shop-now">Shop Now</a>
+          <a routerLink="/products" class="btn btn-blue">Shop Now</a>
         </div>
       } @else {
         @for (item of cart()!.items; track item.id) {
-          <div class="cart-item-card">
-            <div class="cart-item-image">
+          <div class="cart-item">
+            <div class="cart-item-img">
               @if (item.productImage) {
                 <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" />
               } @else {
-                <div class="image-placeholder"><span class="material-icons">image</span></div>
+                <div class="cart-item-img-placeholder">
+                  <span class="material-icons">image</span>
+                </div>
               }
             </div>
-            <div class="cart-item-info">
-              <h3 class="item-name">{{ item.productName }}</h3>
-              <div class="item-actions">
-                <div class="quantity-control">
-                  <button class="qty-btn" (click)="updateQuantity(item, -1)" [disabled]="item.quantity <= 1">
+            <div class="cart-item-details">
+              <h3 class="cart-item-name">{{ item.productName }}</h3>
+              <p class="cart-item-seller">Seller: ShopKart Retail</p>
+              <div class="cart-item-actions">
+                <div class="qty-control">
+                  <button (click)="updateQuantity(item, -1)" [disabled]="item.quantity <= 1">
                     <span class="material-icons">remove</span>
                   </button>
-                  <input type="text" [value]="item.quantity" readonly />
-                  <button class="qty-btn" (click)="updateQuantity(item, 1)">
+                  <span>{{ item.quantity }}</span>
+                  <button (click)="updateQuantity(item, 1)">
                     <span class="material-icons">add</span>
                   </button>
                 </div>
-                <button class="btn-remove" (click)="removeItem(item.id)">
-                  <span class="material-icons">delete</span>
+                <button class="cart-remove-btn" (click)="removeItem(item.id)">
+                  <span class="material-icons">delete_outline</span>
                   Remove
                 </button>
               </div>
             </div>
             <div class="cart-item-price">
-              <span class="price">&#8377;{{ item.totalPrice.toLocaleString('en-IN') }}</span>
+              <span class="cart-price">₹{{ item.totalPrice.toLocaleString('en-IN') }}</span>
             </div>
           </div>
         }
 
-        <div class="cart-actions-bar">
-          <button class="btn-clear-cart" (click)="clearCart()">
+        <div class="cart-footer-actions">
+          <button class="btn-outline" (click)="clearCart()">
             <span class="material-icons">delete_sweep</span>
             Clear Cart
           </button>
@@ -69,29 +71,37 @@
       }
     </div>
 
+    <!-- Price Summary Sidebar -->
     @if (cart() && cart()!.items.length > 0) {
-      <div class="cart-sidebar">
-        <div class="price-details">
+      <div class="cart-summary">
+        <div class="cart-summary-box">
           <h3>Price Details</h3>
-          <div class="price-row">
+          <div class="cs-row">
             <span>Price ({{ getItemCount() }} items)</span>
-            <span>&#8377;{{ cart()!.totalAmount.toLocaleString('en-IN') }}</span>
+            <span>₹{{ cart()!.totalAmount.toLocaleString('en-IN') }}</span>
           </div>
-          <div class="price-row">
+          <div class="cs-row">
             <span>Delivery Charges</span>
-            <span class="free">FREE</span>
+            <span class="cs-free">Free</span>
           </div>
-          <div class="price-divider"></div>
-          <div class="price-row total-row">
+          <div class="cs-row">
+            <span>Discount</span>
+            <span class="cs-free">—</span>
+          </div>
+          <div class="cs-divider"></div>
+          <div class="cs-row cs-total">
             <span>Total Amount</span>
-            <span>&#8377;{{ cart()!.totalAmount.toLocaleString('en-IN') }}</span>
+            <span>₹{{ cart()!.totalAmount.toLocaleString('en-IN') }}</span>
           </div>
-          <div class="savings">
-            You will save &#8377;0 on this order
-          </div>
+          <p class="cs-savings">You will save ₹0 on this order</p>
           <button class="btn-checkout" (click)="goToCheckout()">
             Place Order
           </button>
+        </div>
+
+        <div class="cs-help">
+          <span class="material-icons">help_outline</span>
+          <a href="#">Have a coupon? Click here to enter your code</a>
         </div>
       </div>
     }

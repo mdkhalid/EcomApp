@@ -10,53 +10,71 @@
 <div class="orders-page">
   <div class="orders-header">
     <h2>My Orders</h2>
+    <p class="subtitle">Track and manage your orders</p>
   </div>
 
   @if (loading()) {
-    <div class="loading-state"><div class="spinner"></div></div>
+    <div class="spinner"></div>
   } @else if (orders().length === 0) {
     <div class="empty-state">
       <span class="material-icons empty-icon">receipt_long</span>
       <h3>No orders yet</h3>
-      <p>Start shopping to see your orders here</p>
-      <a routerLink="/products" class="btn-shop">Shop Now</a>
+      <p>You haven't placed any orders. Start shopping to see your orders here.</p>
+      <a routerLink="/products" class="btn btn-primary">Shop Now</a>
     </div>
   } @else {
     <div class="orders-list">
       @for (order of orders(); track order.id) {
         <div class="order-card">
-          <div class="order-header">
-            <div class="order-id">Order #{{ order.id }}</div>
-            <span class="status-badge" [class]="getStatusClass(order.status)">{{ order.status }}</span>
+          <div class="order-card-header">
+            <div class="order-meta">
+              <span class="order-label">ORDER #{{ order.id }}</span>
+              <span class="order-date">{{ order.createdAt | date:'dd MMM yyyy, h:mm a' }}</span>
+            </div>
+            <span class="order-status-badge" [class]="getStatusClass(order.status)">{{ order.status }}</span>
           </div>
-          <div class="order-body">
+
+          <div class="order-card-body">
             <div class="order-items-preview">
               @for (item of order.items.slice(0, 3); track item.id) {
                 <div class="order-item-thumb">
                   @if (item.productImage) {
                     <img [src]="'http://localhost:5068' + item.productImage" [alt]="item.productName" />
                   } @else {
-                    <div class="thumb-placeholder"><span class="material-icons">image</span></div>
+                    <div class="thumb-placeholder">
+                      <span class="material-icons">image</span>
+                    </div>
                   }
                 </div>
               }
               @if (order.items.length > 3) {
-                <span class="more-items">+{{ order.items.length - 3 }}</span>
+                <div class="more-items-badge">+{{ order.items.length - 3 }}</div>
               }
             </div>
-            <div class="order-info">
-              <div class="order-date">{{ order.createdAt | date:'dd MMM yyyy' }}</div>
-              <div class="order-count">{{ getItemCount(order) }} item(s)</div>
-            </div>
-            <div class="order-total">
-              <span>&#8377;{{ order.totalAmount.toLocaleString('en-IN') }}</span>
+
+            <div class="order-details-info">
+              <div class="order-detail-item">
+                <span class="detail-label">Items</span>
+                <span class="detail-value">{{ getItemCount(order) }}</span>
+              </div>
+              <div class="order-detail-item">
+                <span class="detail-label">Total</span>
+                <span class="detail-value price-value">&#8377;{{ order.totalAmount.toLocaleString('en-IN') }}</span>
+              </div>
             </div>
           </div>
-          <div class="order-footer">
-            <a [routerLink]="['/orders', order.id]" class="btn-view-details">View Details</a>
+
+          <div class="order-card-footer">
+            <a [routerLink]="['/orders', order.id]" class="btn btn-outline btn-sm">View Details</a>
           </div>
         </div>
       }
     </div>
+
+    @if (orders().length > 0) {
+      <div class="load-more">
+        <button class="btn btn-outline">Load More Orders</button>
+      </div>
+    }
   }
 </div>

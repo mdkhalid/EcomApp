@@ -1,60 +1,80 @@
 <div class="auth-page">
-  <div class="auth-layout">
+  @for (n of notificationService.notifications(); track n.id) {
+    <div class="notification-banner" [class.success]="n.type === 'success'" [class.error]="n.type === 'error'">{{ n.message }}</div>
+  }
+
+  <div class="auth-container">
     <div class="auth-sidebar">
       <div class="auth-sidebar-content">
-        <h2>Sign Up</h2>
-        <p>Join ShopKart for exclusive deals, fast delivery and more</p>
+        <h2>Looks like you're new here!</h2>
+        <p>Sign up with your details to start shopping with ShopKart</p>
+        <div class="auth-benefits">
+          <div class="benefit-item">
+            <span class="material-icons">local_offer</span>
+            <span>Get exclusive deals & offers</span>
+          </div>
+          <div class="benefit-item">
+            <span class="material-icons">local_shipping</span>
+            <span>Free delivery on first order</span>
+          </div>
+          <div class="benefit-item">
+            <span class="material-icons">verified</span>
+            <span>100% secure checkout</span>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="auth-form-card">
-      @for (n of notificationService.notifications(); track n.id) {
-        <div class="notification notification-{{ n.type }}">{{ n.message }}</div>
-      }
-
-      <form (ngSubmit)="onSubmit()">
-        <div class="form-row">
-          <div class="form-group">
-            <input type="text" [(ngModel)]="registerData.firstName" name="firstName" placeholder="First Name" />
+      <div class="auth-form-container">
+        <form (ngSubmit)="onSubmit()">
+          <div class="form-row">
+            <div class="form-group">
+              <input type="text" [(ngModel)]="registerData.firstName" name="firstName" placeholder="First Name" />
+            </div>
+            <div class="form-group">
+              <input type="text" [(ngModel)]="registerData.lastName" name="lastName" placeholder="Last Name" />
+            </div>
           </div>
+
           <div class="form-group">
-            <input type="text" [(ngModel)]="registerData.lastName" name="lastName" placeholder="Last Name" />
+            <input type="email" [(ngModel)]="registerData.email" name="email" placeholder="Enter Email" required />
           </div>
-        </div>
 
-        <div class="form-group">
-          <span class="material-icons form-icon">email</span>
-          <input type="email" [(ngModel)]="registerData.email" name="email" placeholder="Email" required />
-        </div>
+          <div class="form-group">
+            <input type="text" [(ngModel)]="registerData.username" name="username" placeholder="Choose Username" required />
+          </div>
 
-        <div class="form-group">
-          <span class="material-icons form-icon">person</span>
-          <input type="text" [(ngModel)]="registerData.username" name="username" placeholder="Username" required />
-        </div>
+          <div class="form-group">
+            <input type="tel" [(ngModel)]="registerData.phone" name="phone" placeholder="Phone Number (optional)" />
+          </div>
 
-        <div class="form-group">
-          <span class="material-icons form-icon">phone</span>
-          <input type="tel" [(ngModel)]="registerData.phone" name="phone" placeholder="Phone (optional)" />
-        </div>
+          <div class="form-group">
+            <input type="password" [(ngModel)]="registerData.password" name="password" placeholder="Enter Password" required />
+          </div>
 
-        <div class="form-group">
-          <span class="material-icons form-icon">lock</span>
-          <input type="password" [(ngModel)]="registerData.password" name="password" placeholder="Password" required />
-        </div>
+          <div class="form-group">
+            <input type="password" [(ngModel)]="registerData.confirmPassword" name="confirmPassword" placeholder="Confirm Password" required />
+          </div>
 
-        <div class="form-group">
-          <span class="material-icons form-icon">lock</span>
-          <input type="password" [(ngModel)]="registerData.confirmPassword" name="confirmPassword" placeholder="Confirm Password" required />
-        </div>
+          <p class="terms-note">By continuing, you agree to ShopKart's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a></p>
 
-        <button type="submit" class="btn-login-submit" [disabled]="isLoading">
-          {{ isLoading ? 'Creating Account...' : 'Continue' }}
-        </button>
-      </form>
+          <button type="submit" class="btn-submit" [disabled]="isLoading">
+            {{ isLoading ? 'Creating Account...' : 'Continue' }}
+          </button>
 
-      <p class="auth-footer">
-        Existing User? <a routerLink="/login">Log in</a>
-      </p>
+          <div class="auth-divider"><span>OR</span></div>
+
+          <button type="button" class="btn-google">
+            <span class="google-icon">G</span>
+            Sign up with Google
+          </button>
+        </form>
+
+        <p class="auth-footer">
+          Existing User? <a routerLink="/login">Log in</a>
+        </p>
+      </div>
     </div>
   </div>
 </div>

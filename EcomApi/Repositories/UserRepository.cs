@@ -121,4 +121,18 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<User> UpdateProfileAsync(int id, string? firstName, string? lastName, string? phone)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+            throw new KeyNotFoundException("User not found");
+
+        if (firstName != null) user.FirstName = firstName;
+        if (lastName != null) user.LastName = lastName;
+        if (phone != null) user.Phone = phone;
+
+        await _context.SaveChangesAsync();
+        return user;
+    }
 }

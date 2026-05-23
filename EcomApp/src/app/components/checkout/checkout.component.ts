@@ -6,7 +6,8 @@ import { CartService } from '../../services/cart.service';
 import { OrderService } from '../../services/order.service';
 import { NotificationService } from '../../services/notification.service';
 import { Cart } from '../../models/cart.model';
-import { CreateOrder } from '../../models/order.model';
+import { CreateOrder, SavedAddress } from '../../models/order.model';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-checkout',
@@ -22,9 +23,13 @@ export class CheckoutComponent implements OnInit {
   private readonly router = inject(Router);
   protected readonly notifications = this.notification.notifications;
 
+  private readonly authService = inject(AuthService);
+
   cart = signal<Cart | null>(null);
   loading = signal(true);
   placing = signal(false);
+  savedAddresses = signal<SavedAddress[]>([]);
+  selectedSavedAddress = signal<number | null>(null);
 
   orderForm: CreateOrder = {
     shippingName: '',
@@ -35,6 +40,37 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCart();
+    if (this.authService.isAuthenticated()) {
+      this.loadSavedAddresses();
+    }
+  }
+
+  loadSavedAddresses(): void {
+    this.orderService.getPreviousAddresses().subscribe({
+      next: (addresses) => this.savedAddresses.set(addresses),
+      error: () => {}
+    });
+  }
+
+  selectAddress(index: number): void {
+    if (this.selectedSavedAddress() === index) {
+      this.selectedSavedAddress.set(null);
+      this.orderForm = { shippingName: '', shippingAddress: '', shippingCity: '', shippingZip: '' };
+      return;
+    }
+    this.selectedSavedAddress.set(index);
+    const addr = this.savedAddresses()[index];
+    this.orderForm = {
+      shippingName: addr.name,
+      shippingAddress: addr.address,
+      shippingCity: addr.city,
+      shippingZip: addr.zip
+    };
+  }
+
+  clearForm(): void {
+    this.selectedSavedAddress.set(null);
+    this.orderForm = { shippingName: '', shippingAddress: '', shippingCity: '', shippingZip: '' };
   }
 
   loadCart(): void {

@@ -61,9 +61,12 @@ Data/
  DbSeeder.cs
 DTOs/ProductDto.cs
 Mapping/MappingConfig.cs
+Middleware/ExceptionHandlingMiddleware.cs
 Migrations/
  20260515135216_InitialCreate.cs
  20260515135216_InitialCreate.Designer.cs
+ 20260516073259_AddProductImageUrl.cs
+ 20260516073259_AddProductImageUrl.Designer.cs
  ApplicationDbContextModelSnapshot.cs
 Models/Product.cs
 obj/Debug/net10.0/

@@ -7,83 +7,112 @@
   }
 </div>
 
-<div class="order-detail-container">
+<div class="order-detail-page">
   @if (loading()) {
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading order details...</p>
-    </div>
+    <div class="spinner"></div>
   } @else if (!order()) {
     <div class="empty-state">
-      <h2>Order not found</h2>
-      <a routerLink="/orders" class="btn-back">Back to Orders</a>
+      <span class="material-icons empty-icon">search_off</span>
+      <h3>Order not found</h3>
+      <a routerLink="/orders" class="btn btn-primary">Back to Orders</a>
     </div>
   } @else {
-    <div class="order-header">
+    <div class="order-detail-header">
+      <a routerLink="/orders" class="back-link">
+        <span class="material-icons">arrow_back</span>
+        Back to Orders
+      </a>
       <h1>Order #{{ order()!.id }}</h1>
-      <a routerLink="/orders" class="btn-back">Back to Orders</a>
+      <span class="order-status-badge" [class]="getStatusClass(order()!.status)">{{ order()!.status }}</span>
     </div>
 
-    <div class="status-timeline">
-      @for (step of statusSteps; track step) {
-        <div class="step" [class]="getStepClass(step)">
-          <div class="step-dot"></div>
-          <span class="step-label">{{ step }}</span>
-        </div>
-      }
-    </div>
-
-    <div class="order-info-grid">
-      <div class="info-card">
-        <h3>Order Status</h3>
-        <span class="status-badge" [class]="getStatusClass(order()!.status)">
-          {{ order()!.status }}
-        </span>
-      </div>
-
-      <div class="info-card">
-        <h3>Order Date</h3>
-        <p>{{ order()!.createdAt | date:'medium' }}</p>
-      </div>
-
-      <div class="info-card">
-        <h3>Shipping Address</h3>
-        <p>{{ order()!.shippingName }}</p>
-        <p>{{ order()!.shippingAddress }}</p>
-        <p>{{ order()!.shippingCity }}, {{ order()!.shippingZip }}</p>
-      </div>
-    </div>
-
-    <h2>Order Items</h2>
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Price</th>
-          <th>Quantity</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of order()!.items; track item.id) {
-          <tr>
-            <td class="product-cell">
-              @if (item.productImage) {
-                <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" class="item-thumbnail" />
+    <!-- Status Timeline -->
+    <div class="timeline-card">
+      <div class="timeline">
+        @for (step of statusSteps; track step; let last = $last) {
+          <div class="timeline-step" [class]="getStepClass(step)">
+            <div class="timeline-dot">
+              @if (getStepClass(step) === 'step-completed') {
+                <span class="material-icons">check</span>
               }
-              <span>{{ item.productName }}</span>
-            </td>
-            <td>{{ item.unitPrice | currency }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ item.totalPrice | currency }}</td>
-          </tr>
+            </div>
+            <span class="timeline-label">{{ step }}</span>
+            @if (!last) {
+              <div class="timeline-line"></div>
+            }
+          </div>
         }
-      </tbody>
-    </table>
+      </div>
+    </div>
 
-    <div class="order-total">
-      <span>Order Total:</span>
-      <strong>{{ order()!.totalAmount | currency }}</strong>
+    <!-- Delivery Info -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-header">
+          <span class="material-icons">local_shipping</span>
+          <h3>Delivery Address</h3>
+        </div>
+        <div class="info-card-body">
+          <p class="info-name">{{ order()!.shippingName }}</p>
+          <p class="info-text">{{ order()!.shippingAddress }}</p>
+          <p class="info-text">{{ order()!.shippingCity }}{{ order()!.shippingZip ? ', ' + order()!.shippingZip : '' }}</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">
+          <span class="material-icons">calendar_today</span>
+          <h3>Order Date</h3>
+        </div>
+        <div class="info-card-body">
+          <p class="info-date">{{ order()!.createdAt | date:'fullDate' }}</p>
+          <p class="info-time">{{ order()!.createdAt | date:'shortTime' }}</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">
+          <span class="material-icons">payments</span>
+          <h3>Payment</h3>
+        </div>
+        <div class="info-card-body">
+          <p class="info-pay-method">Cash on Delivery</p>
+          <p class="info-total">Total: <strong>&#8377;{{ order()!.totalAmount.toLocaleString('en-IN') }}</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="items-card">
+      <div class="items-card-header">
+        <h3>Order Items ({{ order()!.items.length }})</h3>
+      </div>
+      <div class="items-list">
+        @for (item of order()!.items; track item.id) {
+          <div class="item-row">
+            <div class="item-image">
+              @if (item.productImage) {
+                <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" />
+              } @else {
+                <div class="item-img-placeholder">
+                  <span class="material-icons">image</span>
+                </div>
+              }
+            </div>
+            <div class="item-info">
+              <span class="item-name">{{ item.productName }}</span>
+              <span class="item-meta">Qty: {{ item.quantity }} &times; &#8377;{{ item.unitPrice.toLocaleString('en-IN') }}</span>
+            </div>
+            <div class="item-total">
+              <span>&#8377;{{ item.totalPrice.toLocaleString('en-IN') }}</span>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="items-total-row">
+        <span class="total-label">Order Total</span>
+        <span class="total-value">&#8377;{{ order()!.totalAmount.toLocaleString('en-IN') }}</span>
+      </div>
     </div>
   }
 </div>

@@ -11,4 +11,6 @@ public interface IOrderRepository
     Task<Order?> GetByIdAsync(int orderId);
     Task<Order?> UpdateStatusAsync(int orderId, OrderStatus status);
     Task<(IEnumerable<Order> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? status = null);
+    Task<bool> HasUserPurchasedProductAsync(int userId, int productId);
+    Task<List<ShippingAddressDto>> GetPreviousAddressesAsync(int userId);
 }

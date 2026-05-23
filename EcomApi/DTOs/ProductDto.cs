@@ -11,6 +11,8 @@ public class ProductDto
     public int Stock { get; set; }
     public string Category { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
+    public double AverageRating { get; set; }
+    public int TotalReviews { get; set; }
 }
 
 public class CreateProductDto

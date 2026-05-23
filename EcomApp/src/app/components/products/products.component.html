@@ -1,3 +1,4 @@
+<!-- Toast Notifications -->
 <div class="toast-container">
   @for (n of notifications(); track n.id) {
     <div class="toast" [class]="'toast-' + n.type">
@@ -7,115 +8,228 @@
   }
 </div>
 
-<div class="page-wrapper">
-  <div class="main-layout">
-    <aside class="sidebar">
-      <div class="sidebar-section">
-        <h3>Filters</h3>
+<div class="products-page">
+  <!-- Page Header -->
+  <div class="page-header-bar">
+    <div class="page-header-left">
+      <h1 class="page-title">
+        @if (categoryFilter()) {
+          {{ categoryFilter() }}
+        } @else {
+          All Products
+        }
+      </h1>
+      <span class="result-count">{{ totalCount() }} results</span>
+    </div>
+    <div class="page-header-right">
+      <div class="sort-select">
+        <label>Sort by:</label>
+        <select>
+          <option>Popularity</option>
+          <option>Price -- Low to High</option>
+          <option>Price -- High to Low</option>
+          <option>Newest First</option>
+        </select>
+      </div>
+    </div>
+  </div>
 
-        <div class="filter-group">
-          <h4>Categories</h4>
+  <div class="products-layout">
+    <!-- Sidebar Filters -->
+    <aside class="filter-sidebar">
+      <div class="filter-header">
+        <h3>Filters</h3>
+        <button class="clear-all" (click)="clearFilters()">Clear All</button>
+      </div>
+
+      <div class="filter-section">
+        <h4 class="filter-section-title">Category</h4>
         <div class="filter-options">
-          <label class="filter-option">
+          <label class="filter-option" [class.active]="categoryFilter() === ''">
             <input type="radio" name="category" value="" [checked]="categoryFilter() === ''" (change)="onCategoryChange('')" />
             <span>All</span>
           </label>
           @for (cat of categories; track cat) {
-            <label class="filter-option">
+            <label class="filter-option" [class.active]="categoryFilter() === cat">
               <input type="radio" name="category" [value]="cat" [checked]="categoryFilter() === cat" (change)="onCategoryChange(cat)" />
               <span>{{ cat }}</span>
             </label>
           }
         </div>
-        </div>
       </div>
+
+      <div class="filter-section">
+        <h4 class="filter-section-title">Price</h4>
+        <div class="price-inputs">
+          <input type="number" placeholder="Min" class="price-input" [(ngModel)]="minPrice" />
+          <span class="price-separator">to</span>
+          <input type="number" placeholder="Max" class="price-input" [(ngModel)]="maxPrice" />
+        </div>
+        <button class="price-apply" (click)="applyPriceFilter()">Apply</button>
+      </div>
+
+      <div class="filter-section">
+        <h4 class="filter-section-title">Availability</h4>
+        <label class="filter-option">
+          <input type="checkbox" />
+          <span>Include Out of Stock</span>
+        </label>
+      </div>
+
+      <button class="mobile-filter-close hide-desktop" (click)="showMobileFilters.set(false)">
+        <span class="material-icons">close</span>
+      </button>
     </aside>
 
-    <main class="content">
-      <div class="content-header">
-        <h1 class="page-title">
-          @if (categoryFilter()) {
-            {{ categoryFilter() }}
-          } @else {
-            All Products
-          }
-        </h1>
-        <span class="result-count">{{ totalCount() }} results</span>
-      </div>
-
-      <div class="search-bar">
-        <div class="search-box">
-          <span class="material-icons">search</span>
+    <!-- Main Content -->
+    <div class="products-content">
+      <!-- Search Bar (within page) -->
+      <div class="products-search-bar">
+        <div class="psb-inner">
+          <span class="material-icons psb-icon">search</span>
           <input
             type="text"
             [value]="searchTerm()"
-            (input)="onSearchInput($any($event.target).value)"
+            (input)="onSearchInput(($any($event.target).value))"
             (keyup.enter)="onSearch()"
             placeholder="Search products..."
           />
-          <button class="search-btn" (click)="onSearch()">Search</button>
+          <button class="psb-btn" (click)="onSearch()">Search</button>
         </div>
       </div>
 
-      @if (products().length === 0) {
+      <!-- Loading State -->
+      @if (isLoading()) {
+        <div class="spinner"></div>
+      }
+
+      <!-- Empty State -->
+      @if (!isLoading() && products().length === 0) {
         <div class="empty-state">
           <span class="material-icons empty-icon">search_off</span>
           <h3>No products found</h3>
           <p>Try adjusting your search or filter criteria</p>
         </div>
-      } @else {
+      }
+
+      <!-- Product Grid -->
+      @if (!isLoading() && products().length > 0) {
         <div class="product-grid">
           @for (product of products(); track product.id) {
             <div class="product-card">
-              <div class="product-image-wrapper">
-                @if (product.imageUrl) {
-                  <img [src]="getFullImageUrl(product.imageUrl)" [alt]="product.name" class="product-image" />
-                } @else {
-                  <div class="product-image-placeholder">
-                    <span class="material-icons">image</span>
-                  </div>
+              <!-- Image Section -->
+              <div class="product-card-image">
+                <a [routerLink]="['/products', product.id]" class="product-img-link">
+                  @if (product.imageUrl) {
+                    <img [src]="getFullImageUrl(product.imageUrl)" [alt]="product.name" class="product-img" loading="lazy" />
+                  } @else {
+                    <div class="product-img-placeholder">
+                      <span class="material-icons">image</span>
+                    </div>
+                  }
+                </a>
+
+                <!-- Discount Badge (mock) -->
+                @if (product.averageRating > 0) {
+                  <span class="offer-badge">Top Rated</span>
                 }
-                @if (isLowStock(product.stock)) {
-                  <span class="stock-badge low">Only {{ product.stock }} left</span>
+
+                <!-- Wishlist Heart -->
+                @if (!authService.isAdmin()) {
+                  <button class="wishlist-btn" [class.active]="wishlistService.isWishlisted(product.id)" (click)="toggleWishlist(product.id, $event)" aria-label="Toggle wishlist">
+                    <span class="material-icons">{{ wishlistService.isWishlisted(product.id) ? 'favorite' : 'favorite_border' }}</span>
+                  </button>
                 }
               </div>
 
-              <div class="product-info">
-                <h3 class="product-name" title="{{ product.name }}">{{ product.name }}</h3>
-                <p class="product-desc">{{ product.description }}</p>
-                <span class="product-category">{{ product.category }}</span>
+              <!-- Info Section -->
+              <div class="product-card-info">
+                <a [routerLink]="['/products', product.id]" class="product-name-link">
+                  <h3 class="product-name" title="{{ product.name }}">{{ product.name }}</h3>
+                </a>
 
+                <!-- Rating -->
+                @if (product.averageRating > 0) {
+                  <div class="product-rating-row">
+                    <span class="rating-badge">
+                      {{ product.averageRating.toFixed(1) }}
+                      <span class="star-icon">★</span>
+                    </span>
+                    <span class="rating-count">({{ product.totalReviews }})</span>
+                  </div>
+                } @else {
+                  <div class="product-rating-row no-rating">
+                    <span class="no-rating-text">No ratings</span>
+                  </div>
+                }
+
+                <!-- Description (truncated) -->
+                <p class="product-desc">{{ product.description }}</p>
+
+                <!-- Price -->
                 <div class="product-price-row">
-                  <span class="product-price">&#8377;{{ product.price.toLocaleString('en-IN') }}</span>
+                  <span class="current-price">₹{{ product.price.toLocaleString('en-IN') }}</span>
+                  @if (product.averageRating > 0) {
+                    <span class="original-price">₹{{ (product.price * 1.3).toLocaleString('en-IN', {maximumFractionDigits: 0}) }}</span>
+                    <span class="discount-percent">{{ 30 }}% off</span>
+                  }
                 </div>
 
-                <button
-                  class="add-cart-btn"
-                  (click)="addToCart(product.id)"
-                  [disabled]="product.stock === 0"
-                >
-                  <span class="material-icons">shopping_cart</span>
-                  {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
-                </button>
+                <!-- Free Delivery Tag -->
+                <span class="free-delivery-tag">Free Delivery</span>
+
+                <!-- Stock Status -->
+                @if (product.stock < 5 && product.stock > 0) {
+                  <span class="stock-status low-stock">Only {{ product.stock }} left in stock</span>
+                } @else if (product.stock === 0) {
+                  <span class="stock-status out-of-stock">Out of Stock</span>
+                }
+
+                <!-- Add to Cart Button -->
+                @if (!authService.isAdmin()) {
+                  <button
+                    class="add-cart-btn"
+                    [class.btn-disabled]="product.stock === 0"
+                    (click)="addToCart(product.id)"
+                    [disabled]="product.stock === 0"
+                  >
+                    <span class="material-icons">shopping_cart</span>
+                    {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+                  </button>
+                }
               </div>
             </div>
           }
         </div>
       }
 
+      <!-- Pagination -->
       @if (totalPages() > 1) {
         <div class="pagination">
-          <button [disabled]="pageNumber() <= 1" (click)="previousPage()">
+          <button class="page-nav" [disabled]="pageNumber() <= 1" (click)="previousPage()">
             <span class="material-icons">chevron_left</span>
+            Previous
           </button>
-          @for (page of getPages(); track page) {
-            <button [class.active]="page === pageNumber()" (click)="goToPage(page)">{{ page }}</button>
-          }
-          <button [disabled]="pageNumber() >= totalPages()" (click)="nextPage()">
+          <div class="page-numbers">
+            @for (page of getPages(); track page) {
+              <button class="page-btn" [class.active]="page === pageNumber()" (click)="goToPage(page)">{{ page }}</button>
+            }
+          </div>
+          <button class="page-nav" [disabled]="pageNumber() >= totalPages()" (click)="nextPage()">
+            Next
             <span class="material-icons">chevron_right</span>
           </button>
         </div>
       }
-    </main>
+    </div>
   </div>
+
+  <!-- Mobile Filter Toggle -->
+  @if (showMobileFilters()) {
+    <div class="mobile-filter-overlay" (click)="showMobileFilters.set(false)"></div>
+  }
+  <button class="mobile-filter-btn hide-desktop" (click)="showMobileFilters.set(true)">
+    <span class="material-icons">filter_list</span>
+    Filters
+  </button>
 </div>

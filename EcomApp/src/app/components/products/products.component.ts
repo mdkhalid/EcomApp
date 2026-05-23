@@ -1,24 +1,26 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService, PaginatedResponse } from '../../services/product.service';
 import { NotificationService } from '../../services/notification.service';
 import { CartService } from '../../services/cart.service';
 import { AuthService } from '../../services/auth.service';
+import { WishlistService } from '../../services/wishlist.service';
 import { Product } from '../../models/product.model';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
 })
 export class ProductsComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly cartService = inject(CartService);
-  private readonly authService = inject(AuthService);
+  readonly authService = inject(AuthService);
+  readonly wishlistService = inject(WishlistService);
   readonly notification = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -32,6 +34,10 @@ export class ProductsComponent implements OnInit {
   searchTerm = signal('');
   categoryFilter = signal('');
   sortBy = signal('');
+  isLoading = signal(false);
+  showMobileFilters = signal(false);
+  minPrice: number | null = null;
+  maxPrice: number | null = null;
 
   categories = ['Electronics', 'Clothing', 'Footwear', 'Home', 'Accessories'];
 
@@ -51,17 +57,24 @@ export class ProductsComponent implements OnInit {
   }
 
   loadProducts(): void {
+    this.isLoading.set(true);
     this.productService.getAll({
       pageNumber: this.pageNumber(),
       pageSize: this.pageSize(),
       search: this.searchTerm() || undefined,
-      category: this.categoryFilter() || undefined
+      category: this.categoryFilter() || undefined,
+      minPrice: this.minPrice ?? undefined,
+      maxPrice: this.maxPrice ?? undefined
     }).subscribe({
       next: (data: PaginatedResponse<Product>) => {
         this.products.set(data.items);
         this.totalCount.set(data.totalCount);
+        this.isLoading.set(false);
       },
-      error: () => this.notification.showError('Failed to load products.')
+      error: () => {
+        this.notification.showError('Failed to load products.');
+        this.isLoading.set(false);
+      }
     });
   }
 
@@ -126,7 +139,29 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  isLowStock(stock: number): boolean {
-    return stock < 10;
+  toggleWishlist(productId: number, event: Event): void {
+    event.stopPropagation();
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: '/products' } });
+      return;
+    }
+    this.wishlistService.toggle(productId).subscribe({
+      next: (res) => this.notification.showSuccess(res.message),
+      error: (err) => this.notification.showError(err.error?.error || 'Failed to update wishlist')
+    });
+  }
+
+  clearFilters(): void {
+    this.categoryFilter.set('');
+    this.searchTerm.set('');
+    this.minPrice = null;
+    this.maxPrice = null;
+    this.pageNumber.set(1);
+    this.loadProducts();
+  }
+
+  applyPriceFilter(): void {
+    this.pageNumber.set(1);
+    this.loadProducts();
   }
 }

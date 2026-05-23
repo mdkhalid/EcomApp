@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { CartService } from '../../services/cart.service';
 import { NotificationService } from '../../services/notification.service';
 import { RegisterRequest } from '../../models/auth.model';
 
@@ -13,6 +14,7 @@ import { RegisterRequest } from '../../models/auth.model';
 })
 export class RegisterComponent {
   private readonly authService = inject(AuthService);
+  private readonly cartService = inject(CartService);
   readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
 
@@ -47,6 +49,9 @@ export class RegisterComponent {
     this.authService.register(this.registerData).subscribe({
       next: () => {
         this.notificationService.showSuccess('Registration successful!');
+        this.cartService.mergeCart().subscribe({
+          next: () => this.cartService.getCart().subscribe()
+        });
         this.router.navigate(['/products']);
       },
       error: (err) => {

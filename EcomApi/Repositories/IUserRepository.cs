@@ -16,4 +16,5 @@ public interface IUserRepository
     Task<bool> UsernameExistsAsync(string username);
     Task<bool> DeactivateAsync(int id);
     Task<bool> ActivateAsync(int id);
+    Task<User> UpdateProfileAsync(int id, string? firstName, string? lastName, string? phone);
 }

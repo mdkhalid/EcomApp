@@ -6,6 +6,8 @@ export interface Product {
   stock: number;
   category: string;
   imageUrl?: string;
+  averageRating: number;
+  totalReviews: number;
 }
 
 export interface CreateProduct {

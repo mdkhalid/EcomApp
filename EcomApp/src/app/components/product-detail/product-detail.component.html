@@ -1,0 +1,263 @@
+<div class="toast-container">
+  @for (n of notifications(); track n.id) {
+    <div class="toast" [class]="'toast-' + n.type">
+      <span>{{ n.message }}</span>
+      <button class="toast-close" (click)="notification.dismiss(n.id)">&times;</button>
+    </div>
+  }
+</div>
+
+<div class="pd-page">
+  @if (loading()) {
+    <div class="spinner"></div>
+  } @else if (product()) {
+    @let p = product()!;
+
+    <!-- Breadcrumb -->
+    <div class="pd-breadcrumb">
+      <a routerLink="/products">Home</a>
+      <span class="breadcrumb-sep">›</span>
+      <a routerLink="/products" [queryParams]="{category: p.category}">{{ p.category }}</a>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">{{ p.name }}</span>
+    </div>
+
+    <!-- Product Detail Layout -->
+    <div class="pd-layout">
+      <!-- Left: Image Section -->
+      <div class="pd-image-section">
+        <div class="pd-image-main">
+          @if (p.imageUrl) {
+            <img [src]="getFullImageUrl(p.imageUrl)" [alt]="p.name" class="pd-main-img" />
+          } @else {
+            <div class="pd-img-placeholder">
+              <span class="material-icons">image</span>
+            </div>
+          }
+          @if (p.averageRating > 3) {
+            <span class="pd-badge">Best Seller</span>
+          }
+        </div>
+        <div class="pd-thumbnails">
+          @if (p.imageUrl) {
+            <div class="pd-thumb active">
+              <img [src]="getFullImageUrl(p.imageUrl)" alt="" />
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Center: Product Info -->
+      <div class="pd-info-section">
+        <h1 class="pd-name">{{ p.name }}</h1>
+
+        <!-- Rating -->
+        <div class="pd-rating-row">
+          @if (p.averageRating > 0) {
+            <span class="rating-badge">
+              {{ p.averageRating.toFixed(1) }} <span class="star-icon">★</span>
+            </span>
+            <span class="rating-count">{{ p.totalReviews }} Ratings & Reviews</span>
+          } @else {
+            <span class="no-rating">No ratings yet</span>
+          }
+        </div>
+
+        <!-- Price -->
+        <div class="pd-price-section">
+          <div class="pd-price-row">
+            <span class="pd-current-price">₹{{ p.price.toLocaleString('en-IN') }}</span>
+            @if (p.averageRating > 0) {
+              <span class="pd-original-price">₹{{ (p.price * 1.3).toLocaleString('en-IN', {maximumFractionDigits: 0}) }}</span>
+              <span class="pd-discount">{{ 30 }}% off</span>
+            }
+          </div>
+          <p class="pd-tax-info">inclusive of all taxes</p>
+        </div>
+
+        <!-- Offers -->
+        <div class="pd-offers">
+          <h4><span class="material-icons">local_offer</span> Available offers</h4>
+          <ul>
+            <li><span class="offer-tag">Bank Offer</span> 10% off on Axis Bank Credit Cards</li>
+            <li><span class="offer-tag">Bank Offer</span> 5% Cashback on Flipkart Axis Bank Card</li>
+            <li><span class="offer-tag">Special Price</span> Get extra ₹500 off on first purchase</li>
+            <li><span class="offer-tag">Partner Offer</span> Sign up for ShopKart Pay Later and get ₹100* off</li>
+          </ul>
+        </div>
+
+        <!-- Description -->
+        <div class="pd-description">
+          <h4>Description</h4>
+          <p>{{ p.description }}</p>
+        </div>
+
+        <!-- Delivery Info -->
+        <div class="pd-delivery">
+          <div class="pd-delivery-item">
+            <span class="material-icons">local_shipping</span>
+            <div>
+              <span class="delivery-label">Free Delivery</span>
+              <span class="delivery-sub">Free delivery on orders above ₹500</span>
+            </div>
+          </div>
+          <div class="pd-delivery-item">
+            <span class="material-icons">assignment_return</span>
+            <div>
+              <span class="delivery-label">7 Days Return</span>
+              <span class="delivery-sub">Return policy applicable</span>
+            </div>
+          </div>
+          <div class="pd-delivery-item">
+            <span class="material-icons">verified</span>
+            <div>
+              <span class="delivery-label">Warranty</span>
+              <span class="delivery-sub">1 year manufacturer warranty</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Buy Box -->
+      <div class="pd-buy-section">
+        <div class="pd-buy-box">
+          <div class="pd-buy-price">
+            <span class="pd-buy-current">₹{{ p.price.toLocaleString('en-IN') }}</span>
+            @if (p.averageRating > 0) {
+              <span class="pd-buy-original">₹{{ (p.price * 1.3).toLocaleString('en-IN', {maximumFractionDigits: 0}) }}</span>
+              <span class="pd-buy-discount">{{ 30 }}% off</span>
+            }
+          </div>
+
+          <!-- Stock Status -->
+          <div class="pd-stock">
+            @if (p.stock > 0) {
+              <span class="in-stock">
+                <span class="material-icons">check_circle</span>
+                {{ p.stock > 5 ? 'In Stock' : 'Only ' + p.stock + ' left in stock' }}
+              </span>
+            } @else {
+              <span class="out-of-stock">
+                <span class="material-icons">cancel</span>
+                Out of Stock
+              </span>
+            }
+          </div>
+
+          <!-- Quantity -->
+          @if (p.stock > 0) {
+            <div class="pd-quantity">
+              <label>Quantity:</label>
+              <div class="qty-control">
+                <button (click)="quantity.update(q => Math.max(1, q - 1))" [disabled]="quantity() <= 1">
+                  <span class="material-icons">remove</span>
+                </button>
+                <span>{{ quantity() }}</span>
+                <button (click)="quantity.update(q => Math.min(p.stock, q + 1))" [disabled]="quantity() >= p.stock">
+                  <span class="material-icons">add</span>
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Action Buttons -->
+          <button class="pd-add-cart-btn" (click)="addToCart()" [disabled]="p.stock === 0">
+            <span class="material-icons">shopping_cart</span>
+            Add to Cart
+          </button>
+
+          <button class="pd-wishlist-btn" [class.wishlisted]="wishlistService.isWishlisted(p.id)" (click)="toggleWishlist()">
+            <span class="material-icons">{{ wishlistService.isWishlisted(p.id) ? 'favorite' : 'favorite_border' }}</span>
+            {{ wishlistService.isWishlisted(p.id) ? 'Remove from Wishlist' : 'Add to Wishlist' }}
+          </button>
+
+          <!-- Secure Badge -->
+          <div class="pd-secure">
+            <span class="material-icons">verified_user</span>
+            Secure transaction
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="pd-reviews-section">
+      <div class="pd-reviews-header">
+        <h2>Ratings & Reviews</h2>
+        @if (reviewCount() > 0) {
+          <div class="pd-rating-summary">
+            <div class="pd-rating-big">
+              <span class="big-rating">{{ avgRating().toFixed(1) }}</span>
+              <span class="star-icon big">★</span>
+            </div>
+            <div class="pd-rating-bars">
+              @for (star of [5,4,3,2,1]; track star) {
+                <div class="rating-bar-row">
+                  <span class="bar-label">{{ star }} ★</span>
+                  <div class="rating-bar-track">
+                    <div class="rating-bar-fill" [style.width.%]="getRatingPercent(star)"></div>
+                  </div>
+                  <span class="bar-count">{{ getRatingCount(star) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Write Review -->
+      @if (authService.isAuthenticated() && !authService.isAdmin()) {
+        <div class="pd-write-review">
+          <h4>Write a Review</h4>
+          <div class="pd-star-input">
+            @for (s of [1,2,3,4,5]; track s) {
+              <button class="star-btn" [class.active]="s <= newReview().rating" (click)="setRating(s)" type="button">
+                ★
+              </button>
+            }
+            <span class="star-label">{{ ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][newReview().rating] }}</span>
+          </div>
+          <textarea
+            [(ngModel)]="newReview().comment"
+            name="reviewComment"
+            placeholder="Share your experience with this product..."
+            rows="3"
+          ></textarea>
+          <button class="btn-submit-review" (click)="submitReview()" [disabled]="submittingReview() || !newReview().comment.trim()">
+            {{ submittingReview() ? 'Submitting...' : 'Submit Review' }}
+          </button>
+        </div>
+      } @else if (!authService.isAuthenticated()) {
+        <div class="pd-login-review">
+          <a routerLink="/login" [queryParams]="{ returnUrl: '/products/' + p.id }">Log in</a> to write a review.
+        </div>
+      }
+
+      <!-- Reviews List -->
+      <div class="pd-reviews-list">
+        @for (review of reviews(); track review.id) {
+          <div class="pd-review-card">
+            <div class="pd-review-header">
+              <div class="pd-review-avatar">{{ review.userName[0].toUpperCase() }}</div>
+              <div>
+                <span class="pd-review-user">{{ review.userName }}</span>
+                <div class="pd-review-stars">
+                  <span class="mini-rating-badge">
+                    {{ review.rating }} ★
+                  </span>
+                  <span class="pd-review-date">{{ getFormattedDate(review.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+            <p class="pd-review-comment">{{ review.comment }}</p>
+          </div>
+        } @empty {
+          <div class="pd-no-reviews">
+            <span class="material-icons">rate_review</span>
+            <p>No reviews yet. Be the first to review this product!</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

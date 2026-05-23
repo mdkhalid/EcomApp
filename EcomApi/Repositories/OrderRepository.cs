@@ -143,4 +143,28 @@ public class OrderRepository : IOrderRepository
 
         return (items, totalCount);
     }
+
+    public async Task<List<ShippingAddressDto>> GetPreviousAddressesAsync(int userId)
+    {
+        return await _context.Orders
+            .AsNoTracking()
+            .Where(o => o.UserId == userId)
+            .Select(o => new ShippingAddressDto
+            {
+                Name = o.ShippingName,
+                Address = o.ShippingAddress,
+                City = o.ShippingCity,
+                Zip = o.ShippingZip
+            })
+            .Distinct()
+            .Take(10)
+            .ToListAsync();
+    }
+
+    public async Task<bool> HasUserPurchasedProductAsync(int userId, int productId)
+    {
+        return await _context.Orders
+            .Where(o => o.UserId == userId && o.Status == OrderStatus.Delivered)
+            .AnyAsync(o => o.Items.Any(i => i.ProductId == productId));
+    }
 }
