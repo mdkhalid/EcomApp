@@ -8,6 +8,8 @@ public static class DbSeeder
     public static void Seed(ApplicationDbContext context)
     {
         SeedUsers(context);
+        SeedCategories(context);
+        SeedBanners(context);
         SeedProducts(context);
     }
 
@@ -47,6 +49,95 @@ public static class DbSeeder
             context.Users.Add(demoUser);
         }
 
+        context.SaveChanges();
+    }
+
+    private static void SeedCategories(ApplicationDbContext context)
+    {
+        if (context.Categories.Any()) return;
+
+        var categories = new List<Category>
+        {
+            new() { Name = "Electronics", Icon = "devices" },
+            new() { Name = "Clothing", Icon = "checkroom" },
+            new() { Name = "Footwear", Icon = "sports_and_outdoors" },
+            new() { Name = "Home", Icon = "home" },
+            new() { Name = "Accessories", Icon = "work" },
+            new() { Name = "Beauty", Icon = "spa" },
+            new() { Name = "Sports", Icon = "sports_esports" },
+            new() { Name = "Books", Icon = "menu_book" },
+            new() { Name = "Grocery", Icon = "shopping_bag" },
+            new() { Name = "Toys", Icon = "toys" }
+        };
+
+        context.Categories.AddRange(categories);
+        context.SaveChanges();
+    }
+
+    private static void SeedBanners(ApplicationDbContext context)
+    {
+        if (context.Banners.Any()) return;
+
+        var banners = new List<Banner>
+        {
+            new()
+            {
+                Title = "Big Billion Days",
+                Subtitle = "Up to 70% off on Electronics",
+                BgGradient = "linear-gradient(135deg, #2874F0, #1a5dc8)",
+                Icon = "devices",
+                StartDate = DateTime.UtcNow.AddDays(-30),
+                DurationDays = 365,
+                SortOrder = 1,
+                IsActive = true
+            },
+            new()
+            {
+                Title = "Fashion Festival",
+                Subtitle = "Min 50% off on Top Brands",
+                BgGradient = "linear-gradient(135deg, #E91E63, #c2185b)",
+                Icon = "checkroom",
+                StartDate = DateTime.UtcNow.AddDays(-30),
+                DurationDays = 365,
+                SortOrder = 2,
+                IsActive = true
+            },
+            new()
+            {
+                Title = "Home Makeover Sale",
+                Subtitle = "Flat 40% off on Furniture & Home",
+                BgGradient = "linear-gradient(135deg, #FF6F00, #e65100)",
+                Icon = "home",
+                StartDate = DateTime.UtcNow.AddDays(-30),
+                DurationDays = 365,
+                SortOrder = 3,
+                IsActive = true
+            },
+            new()
+            {
+                Title = "Beauty & Grooming",
+                Subtitle = "Up to 30% off on Beauty Products",
+                BgGradient = "linear-gradient(135deg, #9C27B0, #7b1fa2)",
+                Icon = "spa",
+                StartDate = DateTime.UtcNow.AddDays(-30),
+                DurationDays = 365,
+                SortOrder = 4,
+                IsActive = true
+            },
+            new()
+            {
+                Title = "Sports & Fitness",
+                Subtitle = "Extra 25% off on Sports Gear",
+                BgGradient = "linear-gradient(135deg, #009688, #00695c)",
+                Icon = "sports_esports",
+                StartDate = DateTime.UtcNow.AddDays(-30),
+                DurationDays = 365,
+                SortOrder = 5,
+                IsActive = true
+            }
+        };
+
+        context.Banners.AddRange(banners);
         context.SaveChanges();
     }
 

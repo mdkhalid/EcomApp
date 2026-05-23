@@ -25,6 +25,12 @@
     <button [class.active]="activeTab() === 'users'" (click)="setTab('users')">
       <span class="material-icons">people</span> Users
     </button>
+    <button [class.active]="activeTab() === 'categories'" (click)="setTab('categories')">
+      <span class="material-icons">category</span> Categories
+    </button>
+    <button [class.active]="activeTab() === 'banners'" (click)="setTab('banners')">
+      <span class="material-icons">slideshow</span> Banners
+    </button>
   </div>
 
   @if (isLoading()) {
@@ -96,8 +102,8 @@
           <input type="text" [value]="productSearch()" (input)="productSearch.set($any($event.target).value)" placeholder="Search products..." class="filter-input" />
           <select [value]="productCategoryFilter()" (change)="productCategoryFilter.set($any($event.target).value)" class="filter-select">
             <option value="">All Categories</option>
-            @for (cat of categories; track cat) {
-              <option [value]="cat">{{ cat }}</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.name">{{ cat.name }}</option>
             }
           </select>
         </div>
@@ -231,8 +237,186 @@
         </table>
       </div>
     }
+
+    @if (activeTab() === 'categories') {
+      <div class="admin-card">
+        <div class="card-header-row">
+          <h3>Manage Categories</h3>
+          <button class="btn-add" (click)="openAddCategory()">
+            <span class="material-icons">add_circle</span> Add Category
+          </button>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Icon</th><th>Name</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            @for (cat of categories(); track cat.id) {
+              <tr>
+                <td>#{{ cat.id }}</td>
+                <td>@if (cat.icon) { <span class="material-icons">{{ cat.icon }}</span> }</td>
+                <td>{{ cat.name }}</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="btn-edit" (click)="openEditCategory(cat)" title="Edit">
+                      <span class="material-icons">edit</span>
+                    </button>
+                    <button class="btn-delete" (click)="deleteCategory(cat.id)" title="Delete">
+                      <span class="material-icons">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (activeTab() === 'banners') {
+      <div class="admin-card">
+        <div class="card-header-row">
+          <h3>Manage Banners ({{ banners().length }})</h3>
+          <button class="btn-add" (click)="openAddBanner()">
+            <span class="material-icons">add_circle</span> Add Banner
+          </button>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Preview</th><th>Title</th><th>Duration</th><th>Status</th><th>Sort</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            @for (b of banners(); track b.id) {
+              <tr>
+                <td>#{{ b.id }}</td>
+                <td>
+                  <div class="banner-mini" [style.background]="b.bgGradient">
+                    <span class="material-icons" style="color:#fff;font-size:18px;">{{ b.icon }}</span>
+                  </div>
+                </td>
+                <td>{{ b.title }}</td>
+                <td>
+                  {{ b.startDate | date:'dd MMM' }} - {{ bannerEndDate(b) }}
+                  <span class="days-badge">({{ b.durationDays }} days)</span>
+                </td>
+                <td>
+                  @switch (bannerStatus(b)) {
+                    @case ('active') { <span class="status-badge status-delivered">Active</span> }
+                    @case ('expired') { <span class="status-badge status-cancelled">Expired</span> }
+                    @case ('inactive') { <span class="status-badge status-pending">Inactive</span> }
+                  }
+                </td>
+                <td>{{ b.sortOrder }}</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="btn-edit" (click)="openEditBanner(b)" title="Edit">
+                      <span class="material-icons">edit</span>
+                    </button>
+                    <button class="btn-toggle-status" (click)="toggleBannerStatus(b)" title="{{ b.isActive ? 'Deactivate' : 'Activate' }}">
+                      <span class="material-icons">{{ b.isActive ? 'visibility_off' : 'visibility' }}</span>
+                    </button>
+                    <button class="btn-delete" (click)="deleteBanner(b.id)" title="Delete">
+                      <span class="material-icons">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   }
 </div>
+
+@if (showBannerModal()) {
+  <div class="modal-overlay" (click)="closeBannerModal()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingBanner ? 'Edit Banner' : 'Add New Banner' }}</h3>
+        <button class="modal-close" (click)="closeBannerModal()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group" style="flex:2">
+            <label>Title</label>
+            <input type="text" [(ngModel)]="bannerForm.title" name="bTitle" placeholder="e.g. Big Billion Days" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Material Icon</label>
+            <input type="text" [(ngModel)]="bannerForm.icon" name="bIcon" placeholder="e.g. devices, home" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Subtitle</label>
+          <input type="text" [(ngModel)]="bannerForm.subtitle" name="bSub" placeholder="e.g. Up to 70% off on Electronics" />
+        </div>
+        <div class="form-group">
+          <label>Background Gradient</label>
+          <div class="gradient-picker-row">
+            <input type="text" [(ngModel)]="bannerForm.bgGradient" name="bBg" class="gradient-input" />
+            <div class="gradient-preview" [style.background]="bannerForm.bgGradient"></div>
+            <div class="gradient-presets">
+              @for (g of ['linear-gradient(135deg, #2874F0, #1a5dc8)','linear-gradient(135deg, #E91E63, #c2185b)','linear-gradient(135deg, #FF6F00, #e65100)','linear-gradient(135deg, #9C27B0, #7b1fa2)','linear-gradient(135deg, #009688, #00695c)','linear-gradient(135deg, #212121, #424242)']; track g) {
+                <button class="gradient-swatch" [style.background]="g" (click)="bannerForm.bgGradient = g"></button>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" [value]="bannerForm.startDate" (change)="bannerForm.startDate = $any($event.target).value" name="bStart" />
+          </div>
+          <div class="form-group">
+            <label>Duration (days)</label>
+            <input type="number" [(ngModel)]="bannerForm.durationDays" name="bDays" min="1" max="365" />
+          </div>
+          <div class="form-group">
+            <label>Sort Order</label>
+            <input type="number" [(ngModel)]="bannerForm.sortOrder" name="bSort" min="1" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Banner Image (optional)</label>
+          @if (bannerImagePreview) {
+            <img [src]="bannerImagePreview" class="image-preview" />
+          }
+          <input type="file" accept="image/*" (change)="onBannerFileSelected($event)" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="saveBanner()">{{ editingBanner ? 'Update' : 'Add Banner' }}</button>
+        <button class="btn-cancel" (click)="closeBannerModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCategoryModal()) {
+  <div class="modal-overlay" (click)="closeCategoryModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingCategory ? 'Edit Category' : 'Add New Category' }}</h3>
+        <button class="modal-close" (click)="closeCategoryModal()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Category Name</label>
+          <input type="text" [(ngModel)]="categoryForm.name" name="catName" placeholder="Enter category name" />
+        </div>
+        <div class="form-group">
+          <label>Material Icon (optional)</label>
+          <input type="text" [(ngModel)]="categoryForm.icon" name="catIcon" placeholder="e.g. devices, home, spa" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="saveCategory()">{{ editingCategory ? 'Update' : 'Add Category' }}</button>
+        <button class="btn-cancel" (click)="closeCategoryModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
 
 @if (showProductModal()) {
   <div class="modal-overlay" (click)="closeProductModal()">
@@ -264,8 +448,8 @@
           <label>Category</label>
           <select [(ngModel)]="productForm.category" name="pCategory">
             <option value="" disabled>Select category</option>
-            @for (cat of categories; track cat) {
-              <option [value]="cat">{{ cat }}</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.name">{{ cat.name }}</option>
             }
           </select>
         </div>

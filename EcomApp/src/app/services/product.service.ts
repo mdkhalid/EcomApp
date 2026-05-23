@@ -17,6 +17,7 @@ export interface PaginationParams {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
+  sortBy?: string;
 }
 
 @Injectable({
@@ -34,6 +35,7 @@ export class ProductService {
     if (params.category) httpParams = httpParams.set('category', params.category);
     if (params.minPrice != null) httpParams = httpParams.set('minPrice', params.minPrice.toString());
     if (params.maxPrice != null) httpParams = httpParams.set('maxPrice', params.maxPrice.toString());
+    if (params.sortBy) httpParams = httpParams.set('sortBy', params.sortBy);
     return this.http.get<PaginatedResponse<Product>>(this.apiUrl, { params: httpParams });
   }
 

@@ -1,6 +1,137 @@
 /* ============================================
    Products Page - Flipkart Inspired
    ============================================ */
+/* --- Banner Carousel --- */
+.banner-carousel {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.banner-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+.banner-slide {
+  min-width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 60px;
+}
+
+.banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.banner-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.banner-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.banner-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+.banner-cta {
+  display: inline-block;
+  margin-top: 10px;
+  background: #fff;
+  color: var(--text-primary);
+  padding: 8px 28px;
+  border-radius: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: scale(1.02);
+  }
+}
+
+.banner-icon-wrapper {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.banner-icon {
+  font-size: 64px !important;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.banner-dots {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.banner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.25s;
+  padding: 0;
+
+  &.active {
+    background: #fff;
+    border-color: #fff;
+    width: 26px;
+    border-radius: 5px;
+  }
+
+  &:hover {
+    border-color: #fff;
+  }
+}
+
 .products-page {
   max-width: var(--max-width);
   margin: 0 auto;
@@ -701,6 +832,52 @@
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
+  .banner-carousel {
+    height: 150px;
+    margin-bottom: var(--space-md);
+  }
+
+  .banner-content {
+    padding: 0 24px;
+  }
+
+  .banner-title {
+    font-size: 18px;
+  }
+
+  .banner-subtitle {
+    font-size: 12px;
+  }
+
+  .banner-badge {
+    font-size: 9px;
+    padding: 2px 8px;
+  }
+
+  .banner-cta {
+    font-size: 12px;
+    padding: 6px 18px;
+    margin-top: 6px;
+  }
+
+  .banner-icon-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+
+  .banner-icon {
+    font-size: 36px !important;
+  }
+
+  .banner-dot {
+    width: 8px;
+    height: 8px;
+
+    &.active {
+      width: 20px;
+    }
+  }
+
   .products-page {
     padding: var(--space-md);
   }

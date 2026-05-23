@@ -9,6 +9,39 @@
 </div>
 
 <div class="products-page">
+  <!-- Banner Carousel -->
+  @if (banners().length > 0) {
+  <div class="banner-carousel" (mouseenter)="bannerPaused.set(true)" (mouseleave)="bannerPaused.set(false)">
+    <div class="banner-track" [style.transform]="'translateX(-' + currentBanner() * 100 + '%)'">
+      @for (banner of banners(); track banner.id) {
+        <div class="banner-slide" [style.background]="banner.imageUrl ? 'none' : banner.bgGradient">
+          @if (banner.imageUrl) {
+            <img [src]="getFullImageUrl(banner.imageUrl)" [alt]="banner.title" class="banner-img" />
+          }
+          <div class="banner-content">
+            <div class="banner-text">
+              <span class="banner-badge">Limited Offer</span>
+              <h2 class="banner-title">{{ banner.title }}</h2>
+              <p class="banner-subtitle">{{ banner.subtitle }}</p>
+              <a routerLink="/products" class="banner-cta">Shop Now</a>
+            </div>
+            @if (!banner.imageUrl) {
+              <div class="banner-icon-wrapper">
+                <span class="banner-icon material-icons">{{ banner.icon }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    <div class="banner-dots">
+      @for (banner of banners(); track banner.id) {
+        <button class="banner-dot" [class.active]="$index === currentBanner()" (click)="goToBanner($index)"></button>
+      }
+    </div>
+  </div>
+  }
+
   <!-- Page Header -->
   <div class="page-header-bar">
     <div class="page-header-left">
@@ -24,11 +57,11 @@
     <div class="page-header-right">
       <div class="sort-select">
         <label>Sort by:</label>
-        <select>
-          <option>Popularity</option>
-          <option>Price -- Low to High</option>
-          <option>Price -- High to Low</option>
-          <option>Newest First</option>
+        <select #sortSelect (change)="onSortChange(sortSelect.value)">
+          <option value="popularity">Popularity</option>
+          <option value="price_asc">Price -- Low to High</option>
+          <option value="price_desc">Price -- High to Low</option>
+          <option value="newest">Newest First</option>
         </select>
       </div>
     </div>
@@ -49,10 +82,10 @@
             <input type="radio" name="category" value="" [checked]="categoryFilter() === ''" (change)="onCategoryChange('')" />
             <span>All</span>
           </label>
-          @for (cat of categories; track cat) {
-            <label class="filter-option" [class.active]="categoryFilter() === cat">
-              <input type="radio" name="category" [value]="cat" [checked]="categoryFilter() === cat" (change)="onCategoryChange(cat)" />
-              <span>{{ cat }}</span>
+          @for (cat of categories(); track cat.id) {
+            <label class="filter-option" [class.active]="categoryFilter() === cat.name">
+              <input type="radio" name="category" [value]="cat.name" [checked]="categoryFilter() === cat.name" (change)="onCategoryChange(cat.name)" />
+              <span>{{ cat.name }}</span>
             </label>
           }
         </div>

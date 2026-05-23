@@ -5,9 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { CategoryService } from '../../services/category.service';
+import { BannerService } from '../../services/banner.service';
 import { Product, CreateProduct, UpdateProduct } from '../../models/product.model';
 import { Order } from '../../models/order.model';
 import { User } from '../../models/auth.model';
+import { Category, CreateCategory } from '../../models/category.model';
+import { Banner, CreateBanner, UpdateBanner } from '../../models/banner.model';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -27,9 +31,11 @@ export class AdminComponent implements OnInit {
   private readonly authService = inject(AuthService);
   readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly categoryService = inject(CategoryService);
+  private readonly bannerService = inject(BannerService);
   private readonly apiUrl = 'http://localhost:5068/api';
 
-  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users'>('dashboard');
+  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners'>('dashboard');
 
   stats = signal({ totalProducts: 0, totalOrders: 0, totalUsers: 0, totalRevenue: 0 });
   products = signal<Product[]>([]);
@@ -50,7 +56,17 @@ export class AdminComponent implements OnInit {
   selectedFile: File | null = null;
   imagePreview: string | null = null;
 
-  categories = ['Electronics', 'Clothing', 'Footwear', 'Home', 'Accessories'];
+  categories = signal<Category[]>([]);
+  showCategoryModal = signal(false);
+  editingCategory: Category | null = null;
+  categoryForm: CreateCategory = { name: '', icon: '' };
+
+  banners = signal<Banner[]>([]);
+  showBannerModal = signal(false);
+  editingBanner: Banner | null = null;
+  bannerForm: CreateBanner = { title: '', subtitle: '', bgGradient: 'linear-gradient(135deg, #2874F0, #1a5dc8)', icon: 'devices', startDate: new Date().toISOString().split('T')[0], durationDays: 7, sortOrder: 1, isActive: true };
+  bannerSelectedFile: File | null = null;
+  bannerImagePreview: string | null = null;
 
   ngOnInit(): void {
     if (!this.authService.isAdmin()) {
@@ -61,11 +77,13 @@ export class AdminComponent implements OnInit {
     this.loadDashboard();
   }
 
-  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users'): void {
+  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners'): void {
     this.activeTab.set(tab);
     if (tab === 'orders') this.loadOrders();
     if (tab === 'users') this.loadUsers();
     if (tab === 'products') this.loadProducts();
+    if (tab === 'categories') this.loadCategories();
+    if (tab === 'banners') this.loadBanners();
   }
 
   loadDashboard(): void {
@@ -295,6 +313,221 @@ export class AdminComponent implements OnInit {
       Cancelled: 'status-cancelled'
     };
     return map[status] || '';
+  }
+
+  loadCategories(): void {
+    this.categoryService.getAll().subscribe({
+      next: (data) => this.categories.set(data),
+      error: () => this.notificationService.showError('Failed to load categories')
+    });
+  }
+
+  openAddCategory(): void {
+    this.editingCategory = null;
+    this.categoryForm = { name: '', icon: '' };
+    this.showCategoryModal.set(true);
+  }
+
+  openEditCategory(cat: Category): void {
+    this.editingCategory = cat;
+    this.categoryForm = { name: cat.name, icon: cat.icon ?? '' };
+    this.showCategoryModal.set(true);
+  }
+
+  closeCategoryModal(): void {
+    this.showCategoryModal.set(false);
+    this.editingCategory = null;
+    this.categoryForm = { name: '', icon: '' };
+  }
+
+  saveCategory(): void {
+    if (!this.categoryForm.name) {
+      this.notificationService.showError('Category name is required');
+      return;
+    }
+    const iconVal = this.categoryForm.icon || undefined;
+    if (this.editingCategory) {
+      this.categoryService.update(this.editingCategory.id, { name: this.categoryForm.name, icon: iconVal }).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Category updated');
+          this.closeCategoryModal();
+          this.loadCategories();
+        },
+        error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update category')
+      });
+    } else {
+      this.categoryService.create({ name: this.categoryForm.name, icon: iconVal }).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Category created');
+          this.closeCategoryModal();
+          this.loadCategories();
+        },
+        error: (err) => this.notificationService.showError(err.error?.error || 'Failed to create category')
+      });
+    }
+  }
+
+  deleteCategory(id: number): void {
+    if (!confirm('Delete this category? Products using it will keep the category name but it will be removed from the list.')) return;
+    this.categoryService.delete(id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Category deleted');
+        this.categories.update(c => c.filter(x => x.id !== id));
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to delete category')
+    });
+  }
+
+  loadBanners(): void {
+    this.bannerService.getAll().subscribe({
+      next: (data) => this.banners.set(data),
+      error: () => this.notificationService.showError('Failed to load banners')
+    });
+  }
+
+  openAddBanner(): void {
+    this.editingBanner = null;
+    this.bannerForm = { title: '', subtitle: '', bgGradient: 'linear-gradient(135deg, #2874F0, #1a5dc8)', icon: 'devices', startDate: new Date().toISOString().split('T')[0], durationDays: 7, sortOrder: 1, isActive: true };
+    this.bannerSelectedFile = null;
+    this.bannerImagePreview = null;
+    this.showBannerModal.set(true);
+  }
+
+  openEditBanner(banner: Banner): void {
+    this.editingBanner = banner;
+    this.bannerForm = {
+      title: banner.title,
+      subtitle: banner.subtitle,
+      bgGradient: banner.bgGradient,
+      icon: banner.icon,
+      startDate: banner.startDate.split('T')[0] || banner.startDate,
+      durationDays: banner.durationDays,
+      sortOrder: banner.sortOrder,
+      isActive: banner.isActive
+    };
+    this.bannerSelectedFile = null;
+    this.bannerImagePreview = banner.imageUrl ? this.getFullImageUrl(banner.imageUrl) : null;
+    this.showBannerModal.set(true);
+  }
+
+  closeBannerModal(): void {
+    this.showBannerModal.set(false);
+    this.editingBanner = null;
+    this.bannerForm = { title: '', subtitle: '', bgGradient: 'linear-gradient(135deg, #2874F0, #1a5dc8)', icon: 'devices', startDate: new Date().toISOString().split('T')[0], durationDays: 7, sortOrder: 1, isActive: true };
+    this.bannerSelectedFile = null;
+    this.bannerImagePreview = null;
+  }
+
+  onBannerFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.bannerSelectedFile = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => this.bannerImagePreview = reader.result as string;
+      reader.readAsDataURL(this.bannerSelectedFile);
+    }
+  }
+
+  saveBanner(): void {
+    if (!this.bannerForm.title) {
+      this.notificationService.showError('Banner title is required');
+      return;
+    }
+    const payload: CreateBanner = {
+      ...this.bannerForm,
+      startDate: new Date(this.bannerForm.startDate).toISOString()
+    };
+    if (this.editingBanner) {
+      this.bannerService.update(this.editingBanner.id, payload as UpdateBanner).subscribe({
+        next: (updated) => {
+          if (this.bannerSelectedFile) {
+            this.uploadBannerImage(updated.id);
+          } else {
+            this.notificationService.showSuccess('Banner updated');
+            this.closeBannerModal();
+            this.loadBanners();
+          }
+        },
+        error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update banner')
+      });
+    } else {
+      this.bannerService.create(payload).subscribe({
+        next: (created) => {
+          if (this.bannerSelectedFile) {
+            this.uploadBannerImage(created.id);
+          } else {
+            this.notificationService.showSuccess('Banner created');
+            this.closeBannerModal();
+            this.loadBanners();
+          }
+        },
+        error: (err) => this.notificationService.showError(err.error?.error || 'Failed to create banner')
+      });
+    }
+  }
+
+  private uploadBannerImage(bannerId: number): void {
+    const formData = new FormData();
+    formData.append('file', this.bannerSelectedFile!);
+    this.http.post<Banner>(`${this.apiUrl}/banners/${bannerId}/image`, formData).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Banner saved with image');
+        this.closeBannerModal();
+        this.loadBanners();
+      },
+      error: () => {
+        this.notificationService.showSuccess('Banner saved, image upload failed');
+        this.closeBannerModal();
+        this.loadBanners();
+      }
+    });
+  }
+
+  deleteBanner(id: number): void {
+    if (!confirm('Delete this banner?')) return;
+    this.bannerService.delete(id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Banner deleted');
+        this.banners.update(b => b.filter(x => x.id !== id));
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to delete banner')
+    });
+  }
+
+  toggleBannerStatus(banner: Banner): void {
+    const updated: UpdateBanner = {
+      title: banner.title,
+      subtitle: banner.subtitle,
+      bgGradient: banner.bgGradient,
+      icon: banner.icon,
+      startDate: banner.startDate,
+      durationDays: banner.durationDays,
+      sortOrder: banner.sortOrder,
+      isActive: !banner.isActive
+    };
+    this.bannerService.update(banner.id, updated).subscribe({
+      next: () => {
+        this.notificationService.showSuccess(`Banner ${updated.isActive ? 'activated' : 'deactivated'}`);
+        this.loadBanners();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to toggle banner')
+    });
+  }
+
+  bannerEndDate(banner: Banner): string {
+    const start = new Date(banner.startDate);
+    const end = new Date(start.getTime() + banner.durationDays * 24 * 60 * 60 * 1000);
+    return end.toLocaleDateString('en-IN');
+  }
+
+  bannerStatus(banner: Banner): 'active' | 'inactive' | 'expired' {
+    if (!banner.isActive) return 'inactive';
+    const now = new Date();
+    const start = new Date(banner.startDate);
+    const end = new Date(start.getTime() + banner.durationDays * 24 * 60 * 60 * 1000);
+    if (now < start) return 'inactive';
+    if (now > end) return 'expired';
+    return 'active';
   }
 
   getFilteredProducts(): Product[] {

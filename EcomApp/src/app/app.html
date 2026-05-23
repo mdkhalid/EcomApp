@@ -89,38 +89,14 @@
 <!-- ===== CATEGORIES NAV BAR ===== -->
 <nav class="category-bar">
   <div class="category-bar-inner">
-    <a routerLink="/products" [queryParams]="{category: 'Electronics'}" class="category-item">
-      <span class="category-icon material-icons">devices</span>
-      <span class="category-label">Electronics</span>
-    </a>
-    <a routerLink="/products" [queryParams]="{category: 'Fashion'}" class="category-item">
-      <span class="category-icon material-icons">checkroom</span>
-      <span class="category-label">Fashion</span>
-    </a>
-    <a routerLink="/products" [queryParams]="{category: 'Home'}" class="category-item">
-      <span class="category-icon material-icons">home</span>
-      <span class="category-label">Home</span>
-    </a>
-    <a routerLink="/products" [queryParams]="{category: 'Beauty'}" class="category-item">
-      <span class="category-icon material-icons">spa</span>
-      <span class="category-label">Beauty</span>
-    </a>
-    <a routerLink="/products" [queryParams]="{category: 'Sports'}" class="category-item">
-      <span class="category-icon material-icons">sports_esports</span>
-      <span class="category-label">Sports</span>
-    </a>
-    <a routerLink="/products" [queryParams]="{category: 'Books'}" class="category-item">
-      <span class="category-icon material-icons">menu_book</span>
-      <span class="category-label">Books</span>
-    </a>
-    <a routerLink="/products" [queryParams]="{category: 'Grocery'}" class="category-item">
-      <span class="category-icon material-icons">shopping_bag</span>
-      <span class="category-label">Grocery</span>
-    </a>
-    <a routerLink="/products" [queryParams]="{category: 'Toys'}" class="category-item">
-      <span class="category-icon material-icons">toys</span>
-      <span class="category-label">Toys</span>
-    </a>
+    @for (cat of categories(); track cat.id) {
+      <a routerLink="/products" [queryParams]="{category: cat.name}" class="category-item">
+        @if (cat.icon) {
+          <span class="category-icon material-icons">{{ cat.icon }}</span>
+        }
+        <span class="category-label">{{ cat.name }}</span>
+      </a>
+    }
   </div>
 </nav>
 

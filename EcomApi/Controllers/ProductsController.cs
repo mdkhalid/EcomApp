@@ -21,12 +21,12 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5, [FromQuery] string? search = null, [FromQuery] string? category = null, [FromQuery] decimal? minPrice = null, [FromQuery] decimal? maxPrice = null)
+    public async Task<ActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5, [FromQuery] string? search = null, [FromQuery] string? category = null, [FromQuery] decimal? minPrice = null, [FromQuery] decimal? maxPrice = null, [FromQuery] string? sortBy = null)
     {
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 5;
 
-        var (items, totalCount) = await _repository.GetAllAsync(pageNumber, pageSize, search, category, minPrice, maxPrice);
+        var (items, totalCount) = await _repository.GetAllAsync(pageNumber, pageSize, search, category, minPrice, maxPrice, sortBy);
 
         var productDtos = items.Adapt<List<ProductDto>>();
 

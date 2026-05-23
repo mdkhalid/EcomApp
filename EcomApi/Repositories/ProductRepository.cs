@@ -13,7 +13,7 @@ public class ProductRepository : IProductRepository
         _context = context;
     }
 
-    public async Task<(IEnumerable<Product> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null, string? category = null, decimal? minPrice = null, decimal? maxPrice = null)
+    public async Task<(IEnumerable<Product> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null, string? category = null, decimal? minPrice = null, decimal? maxPrice = null, string? sortBy = null)
     {
         var query = _context.Products.AsQueryable();
 
@@ -30,8 +30,16 @@ public class ProductRepository : IProductRepository
             query = query.Where(p => p.Price <= maxPrice.Value);
 
         var totalCount = await query.CountAsync();
+
+        query = sortBy switch
+        {
+            "price_asc" => query.OrderBy(p => p.Price),
+            "price_desc" => query.OrderByDescending(p => p.Price),
+            "newest" => query.OrderByDescending(p => p.CreatedAt),
+            _ => query.OrderByDescending(p => p.Id)
+        };
+
         var items = await query
-            .OrderBy(p => p.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

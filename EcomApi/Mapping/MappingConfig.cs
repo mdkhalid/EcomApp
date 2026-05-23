@@ -38,5 +38,17 @@ public static class MappingConfig
         TypeAdapterConfig<Review, ReviewDto>.NewConfig()
             .Map(dest => dest.UserName, src => src.User.Username)
             .Compile();
+
+        TypeAdapterConfig<Category, CategoryDto>.NewConfig().Compile();
+        TypeAdapterConfig<CreateCategoryDto, Category>.NewConfig()
+            .Map(dest => dest.Id, _ => 0)
+            .Compile();
+        TypeAdapterConfig<UpdateCategoryDto, Category>.NewConfig().Compile();
+
+        TypeAdapterConfig<Banner, BannerDto>.NewConfig().Compile();
+        TypeAdapterConfig<CreateBannerDto, Banner>.NewConfig()
+            .Map(dest => dest.Id, _ => 0)
+            .Compile();
+        TypeAdapterConfig<UpdateBannerDto, Banner>.NewConfig().Compile();
     }
 }
