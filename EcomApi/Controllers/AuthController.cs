@@ -44,13 +44,14 @@ public class AuthController : ControllerBase
         {
             Email = dto.Email,
             Username = dto.Username,
-            PasswordHash = dto.Password,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Phone = dto.Phone,
             Role = "Customer",
             IsActive = true
         };
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
         user = await _userRepository.CreateAsync(user);
         _logger.LogInformation("User registered: {Email}", user.Email);
@@ -173,7 +174,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPut("users/{id}/deactivate")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,SubAdmin")]
     public async Task<IActionResult> DeactivateUser(int id)
     {
         var result = await _userRepository.DeactivateAsync(id);
@@ -184,7 +185,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPut("users/{id}/activate")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,SubAdmin")]
     public async Task<IActionResult> ActivateUser(int id)
     {
         var result = await _userRepository.ActivateAsync(id);
@@ -202,6 +203,95 @@ public class AuthController : ControllerBase
         var user = await _userRepository.UpdateProfileAsync(userId, dto.FirstName, dto.LastName, dto.Phone);
         _logger.LogInformation("User updated profile: {Email}", user.Email);
         return Ok(user.Adapt<UserDto>());
+    }
+
+    [HttpPost("users")]
+    [Authorize(Roles = "Admin,SubAdmin")]
+    public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto dto)
+    {
+        var currentUserEmail = User.FindFirstValue(ClaimTypes.Email)!;
+        var currentUserRole = User.FindFirstValue(ClaimTypes.Role)!;
+
+        if (!UserRoles.IsValidRole(dto.Role))
+        {
+            return BadRequest(new { error = "Invalid role specified." });
+        }
+
+        if (!await _userRepository.CanCreateUsersAsync(currentUserRole, dto.Role))
+        {
+            return Forbid();
+        }
+
+        if (await _userRepository.EmailExistsAsync(dto.Email))
+        {
+            return BadRequest(new { error = "Email is already registered." });
+        }
+
+        if (await _userRepository.UsernameExistsAsync(dto.Username))
+        {
+            return BadRequest(new { error = "Username is already taken." });
+        }
+
+        var user = new User
+        {
+            Email = dto.Email,
+            Username = dto.Username,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Phone = dto.Phone,
+            Role = dto.Role,
+            IsActive = true
+        };
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
+
+        user = await _userRepository.CreateUserWithRoleAsync(user, dto.Role, currentUserEmail);
+        _logger.LogInformation("User created by {AdminEmail}: {Email}", currentUserEmail, user.Email);
+
+        return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user.Adapt<UserDto>());
+    }
+
+    [HttpPost("users/{id}/change-password")]
+    [Authorize(Roles = "Admin,SubAdmin")]
+    public async Task<IActionResult> ChangeUserPassword(int id, [FromBody] AdminChangePasswordDto dto)
+    {
+        var currentUserEmail = User.FindFirstValue(ClaimTypes.Email)!;
+
+        var user = await _userRepository.GetByIdAsync(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        if (user.Email == currentUserEmail)
+        {
+            return BadRequest(new { error = "Use /change-password endpoint to change your own password." });
+        }
+
+        var passwordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
+
+        var success = await _userRepository.ChangePasswordAsync(id, passwordHash);
+        if (!success)
+        {
+            return NotFound();
+        }
+
+        var activeTokens = user.RefreshTokens.Where(rt => rt.IsActive).ToList();
+        foreach (var token in activeTokens)
+        {
+            token.RevokedAt = DateTime.UtcNow;
+        }
+        await _userRepository.UpdateAsync(user);
+
+        _logger.LogInformation("Password changed for user {Email} by {AdminEmail}", user.Email, currentUserEmail);
+        return Ok(new { message = "Password changed successfully." });
+    }
+
+    [HttpGet("users/roles")]
+    [Authorize(Roles = "Admin")]
+    public ActionResult GetRoles()
+    {
+        return Ok(new { roles = UserRoles.AllRoles });
     }
 
     private async Task<ActionResult<TokenResponseDto>> GenerateTokenResponse(User user)

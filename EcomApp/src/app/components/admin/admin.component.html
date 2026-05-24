@@ -211,10 +211,24 @@
 
     @if (activeTab() === 'users') {
       <div class="admin-card">
-        <h3>All Users</h3>
+        <div class="card-header-row">
+          <h3>All Users ({{ totalUsersCount() }} total)</h3>
+          <button class="btn-add" (click)="openCreateUser()">
+            <span class="material-icons">person_add</span> Create User
+          </button>
+        </div>
+        <div class="filter-bar">
+          <input type="text" [value]="userSearch()" (input)="userSearch.set($any($event.target).value); userPage.set(1); loadUsers()" placeholder="Search by email or username..." class="filter-input" />
+          <select [value]="userRoleFilter()" (change)="userRoleFilter.set($any($event.target).value); userPage.set(1); loadUsers()" class="filter-select">
+            <option value="">All Roles</option>
+            @for (role of availableRoles(); track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+        </div>
         <table class="admin-table">
           <thead>
-            <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Created By</th><th>Last Login</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
             @for (user of users(); track user.id) {
@@ -222,19 +236,45 @@
                 <td>#{{ user.id }}</td>
                 <td>{{ user.username }}</td>
                 <td>{{ user.email }}</td>
-                <td><span class="role-badge" [class.admin-role]="user.role === 'Admin'">{{ user.role }}</span></td>
+                <td><span class="role-badge" [class.admin-role]="user.role === 'Admin'" [class.subadmin-role]="user.role === 'SubAdmin'">{{ user.role }}</span></td>
+                <td><span class="created-by">{{ user.createdBy || '—' }}</span></td>
+                <td><span class="last-login">{{ user.lastLoginAt ? (user.lastLoginAt | date:'dd MMM yyyy, h:mm a') : '—' }}</span></td>
                 <td><span [class]="user.isActive ? 'text-green' : 'text-red'">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td>
                 <td>
-                  @if (user.role !== 'Admin') {
-                    <button class="btn-toggle" (click)="toggleUserStatus(user)">
-                      {{ user.isActive ? 'Deactivate' : 'Activate' }}
-                    </button>
-                  }
+                  <div class="action-btns">
+                    @if (user.role !== 'Admin') {
+                      <button class="btn-toggle" (click)="toggleUserStatus(user)">
+                        {{ user.isActive ? 'Deactivate' : 'Activate' }}
+                      </button>
+                    }
+                    @if (!isCurrentUser(user)) {
+                      <button class="btn-change-pwd" (click)="openChangePassword(user)" title="Change Password">
+                        <span class="material-icons">lock_reset</span>
+                      </button>
+                    }
+                  </div>
                 </td>
               </tr>
             }
           </tbody>
         </table>
+        @if (totalUsersCount() > userPageSize) {
+          <div class="pagination">
+            <button class="page-btn" (click)="goToUserPage(1)" [disabled]="!userHasPrevPage" title="First">
+              <span class="material-icons">first_page</span>
+            </button>
+            <button class="page-btn" (click)="goToUserPage(userPage() - 1)" [disabled]="!userHasPrevPage" title="Previous">
+              <span class="material-icons">chevron_left</span>
+            </button>
+            <span class="page-info">{{ userPageStartItem }}–{{ userPageEndItem }} of {{ totalUsersCount() }}</span>
+            <button class="page-btn" (click)="goToUserPage(userPage() + 1)" [disabled]="!userHasNextPage" title="Next">
+              <span class="material-icons">chevron_right</span>
+            </button>
+            <button class="page-btn" (click)="goToUserPage(userTotalPages)" [disabled]="!userHasNextPage" title="Last">
+              <span class="material-icons">last_page</span>
+            </button>
+          </div>
+        }
       </div>
     }
 
@@ -464,6 +504,96 @@
       <div class="modal-footer">
         <button class="btn-save" (click)="saveProduct()">{{ editingProduct ? 'Update' : 'Add Product' }}</button>
         <button class="btn-cancel" (click)="closeProductModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCreateUserModal()) {
+  <div class="modal-overlay" (click)="closeCreateUser()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create New User</h3>
+        <button class="modal-close" (click)="closeCreateUser()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" [(ngModel)]="createUserForm.email" name="cuEmail" placeholder="user@example.com" />
+          </div>
+          <div class="form-group">
+            <label>Username *</label>
+            <input type="text" [(ngModel)]="createUserForm.username" name="cuUsername" placeholder="Username" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" [(ngModel)]="createUserForm.firstName" name="cuFn" placeholder="First name" />
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" [(ngModel)]="createUserForm.lastName" name="cuLn" placeholder="Last name" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Password *</label>
+            <input type="password" [(ngModel)]="createUserForm.password" name="cuPwd" placeholder="Min 8 characters" />
+          </div>
+          <div class="form-group">
+            <label>Confirm Password *</label>
+            <input type="password" [(ngModel)]="createUserForm.confirmPassword" name="cuCpwd" placeholder="Confirm password" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Role *</label>
+            <select [(ngModel)]="createUserForm.role" name="cuRole">
+              @for (role of availableRoles(); track role) {
+                <option [value]="role">{{ role }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" [(ngModel)]="createUserForm.phone" name="cuPhone" placeholder="Phone number" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="saveCreateUser()">Create User</button>
+        <button class="btn-cancel" (click)="closeCreateUser()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showChangePasswordModal()) {
+  <div class="modal-overlay" (click)="closeChangePassword()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Change Password</h3>
+        <button class="modal-close" (click)="closeChangePassword()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>User</label>
+          <input type="text" [value]="changePasswordUser()?.email" disabled class="form-disabled" />
+        </div>
+        <div class="form-group">
+          <label>New Password *</label>
+          <input type="password" [(ngModel)]="changePasswordForm.newPassword" name="cpNew" placeholder="Min 8 characters" />
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password *</label>
+          <input type="password" [(ngModel)]="changePasswordForm.confirmPassword" name="cpConfirm" placeholder="Confirm new password" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="saveChangePassword()">Change Password</button>
+        <button class="btn-cancel" (click)="closeChangePassword()">Cancel</button>
       </div>
     </div>
   </div>

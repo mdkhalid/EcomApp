@@ -60,25 +60,49 @@
         </form>
       </div>
 
-      <div class="profile-card">
-        <h2>Account Details</h2>
-        <div class="detail-row">
-          <span class="detail-label">Member Since</span>
-          <span class="detail-value">{{ user()!.createdAt | date:'longDate' }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Last Login</span>
-          <span class="detail-value">{{ user()!.lastLoginAt ? (user()!.lastLoginAt | date:'medium') : 'First visit' }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Account Status</span>
-          <span class="detail-value status-active">Active</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">User ID</span>
-          <span class="detail-value">#{{ user()!.id }}</span>
-        </div>
-      </div>
+       <div class="profile-card">
+         <h2>Account Details</h2>
+         <div class="detail-row">
+           <span class="detail-label">Member Since</span>
+           <span class="detail-value">{{ user()!.createdAt | date:'longDate' }}</span>
+         </div>
+         <div class="detail-row">
+           <span class="detail-label">Last Login</span>
+           <span class="detail-value">{{ user()!.lastLoginAt ? (user()!.lastLoginAt | date:'medium') : 'First visit' }}</span>
+         </div>
+         <div class="detail-row">
+           <span class="detail-label">Account Status</span>
+           <span class="detail-value status-active">Active</span>
+         </div>
+         <div class="detail-row">
+           <span class="detail-label">User ID</span>
+           <span class="detail-value">#{{ user()!.id }}</span>
+         </div>
+       </div>
+
+       <div class="profile-card">
+         <h2>Change Password</h2>
+         <form (ngSubmit)="changePassword()" #passwordChangeForm="ngForm">
+           <div class="form-group">
+             <label>Current Password</label>
+             <input type="password" [(ngModel)]="passwordForm().currentPassword" name="currentPassword" placeholder="Enter current password" required />
+           </div>
+           
+           <div class="form-group">
+             <label>New Password</label>
+             <input type="password" [(ngModel)]="passwordForm().newPassword" name="newPassword" placeholder="Enter new password (min 8 characters)" required minlength="8" />
+           </div>
+           
+           <div class="form-group">
+             <label>Confirm New Password</label>
+             <input type="password" [(ngModel)]="passwordForm().confirmNewPassword" name="confirmNewPassword" placeholder="Confirm new password" required />
+           </div>
+           
+           <button type="submit" class="btn-save" [disabled]="changingPassword()">
+             {{ changingPassword() ? 'Changing...' : 'Change Password' }}
+           </button>
+         </form>
+       </div>
     </div>
   }
 </div>

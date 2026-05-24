@@ -84,4 +84,5 @@ public class UserDto
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+    public string? CreatedBy { get; set; }
 }

@@ -35,6 +35,12 @@ export class RegisterComponent {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.registerData.email)) {
+      this.notificationService.showError('Please enter a valid email address');
+      return;
+    }
+
     if (this.registerData.password !== this.registerData.confirmPassword) {
       this.notificationService.showError('Passwords do not match');
       return;
@@ -45,8 +51,12 @@ export class RegisterComponent {
       return;
     }
 
+    const payload = { ...this.registerData };
+    if (!payload.phone) delete payload.phone;
+    if (!payload.firstName) delete payload.firstName;
+    if (!payload.lastName) delete payload.lastName;
     this.isLoading = true;
-    this.authService.register(this.registerData).subscribe({
+    this.authService.register(payload).subscribe({
       next: () => {
         this.notificationService.showSuccess('Registration successful!');
         this.cartService.mergeCart().subscribe({

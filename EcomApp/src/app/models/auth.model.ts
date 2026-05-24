@@ -9,6 +9,7 @@ export interface User {
   isActive?: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  createdBy?: string;
 }
 
 export interface RegisterRequest {
@@ -37,4 +38,20 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
   confirmNewPassword: string;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  username: string;
+  password: string;
+  confirmPassword: string;
+  role: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
+export interface AdminChangePasswordRequest {
+  newPassword: string;
+  confirmPassword: string;
 }

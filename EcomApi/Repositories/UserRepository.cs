@@ -135,4 +135,37 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync();
         return user;
     }
+
+    public async Task<User> CreateUserWithRoleAsync(User user, string role, string createdBy)
+    {
+        if (!UserRoles.IsValidRole(role))
+        {
+            throw new ArgumentException($"Invalid role: {role}");
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, user.PasswordHash);
+        user.Role = role;
+        user.CreatedBy = createdBy;
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        return user;
+    }
+
+    public async Task<bool> ChangePasswordAsync(int id, string newPasswordHash)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return false;
+
+        user.PasswordHash = newPasswordHash;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> CanCreateUsersAsync(string creatorRole, string targetRole)
+    {
+        if (creatorRole == UserRoles.Admin) return true;
+        if (creatorRole == UserRoles.SubAdmin && targetRole == UserRoles.Customer) return true;
+        return false;
+    }
 }

@@ -13,6 +13,7 @@ public class User
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
+    public string? CreatedBy { get; set; }
 
     public List<Cart> Carts { get; set; } = new();
     public List<Order> Orders { get; set; } = new();
@@ -33,4 +34,18 @@ public class RefreshToken
     public string? ReplacedByToken { get; set; }
     public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
     public bool IsActive => RevokedAt == null && !IsExpired;
+}
+
+public static class UserRoles
+{
+    public const string Admin = "Admin";
+    public const string SubAdmin = "SubAdmin";
+    public const string Customer = "Customer";
+
+    public static List<string> AllRoles => new List<string> { Admin, SubAdmin, Customer };
+
+    public static bool IsValidRole(string role)
+    {
+        return AllRoles.Contains(role);
+    }
 }

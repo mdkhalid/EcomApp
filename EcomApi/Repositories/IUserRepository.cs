@@ -10,6 +10,7 @@ public interface IUserRepository
     Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername);
     Task<User?> GetByRefreshTokenAsync(string token);
     Task<User> CreateAsync(User user);
+    Task<User> CreateUserWithRoleAsync(User user, string role, string createdBy);
     Task UpdateAsync(User user);
     Task<(IEnumerable<User> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null, string? role = null);
     Task<bool> EmailExistsAsync(string email);
@@ -17,4 +18,6 @@ public interface IUserRepository
     Task<bool> DeactivateAsync(int id);
     Task<bool> ActivateAsync(int id);
     Task<User> UpdateProfileAsync(int id, string? firstName, string? lastName, string? phone);
+    Task<bool> ChangePasswordAsync(int id, string newPasswordHash);
+    Task<bool> CanCreateUsersAsync(string creatorRole, string targetRole);
 }

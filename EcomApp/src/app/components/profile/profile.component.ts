@@ -28,6 +28,14 @@ export class ProfileComponent implements OnInit {
     lastName: '',
     phone: ''
   });
+  
+  passwordForm = signal({
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: ''
+  });
+  
+  changingPassword = signal(false);
 
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
@@ -80,6 +88,38 @@ export class ProfileComponent implements OnInit {
       error: (err) => {
         this.saving.set(false);
         this.notification.showError(err.error?.error || 'Failed to update profile');
+      }
+    });
+  }
+
+  changePassword(): void {
+    const form = this.passwordForm();
+    if (form.newPassword !== form.confirmNewPassword) {
+      this.notification.showError('New passwords do not match');
+      return;
+    }
+
+    this.changingPassword.set(true);
+    this.authService.changePassword({
+      currentPassword: form.currentPassword,
+      newPassword: form.newPassword,
+      confirmNewPassword: form.confirmNewPassword
+    }).subscribe({
+      next: () => {
+        this.notification.showSuccess('Password changed successfully. Please login again.');
+        // Clear the form
+        this.passwordForm.set({
+          currentPassword: '',
+          newPassword: '',
+          confirmNewPassword: ''
+        });
+        // Force re-login by clearing tokens
+        this.authService.logout();
+        this.changingPassword.set(false);
+      },
+      error: (err) => {
+        this.changingPassword.set(false);
+        this.notification.showError(err.error?.error || 'Failed to change password');
       }
     });
   }

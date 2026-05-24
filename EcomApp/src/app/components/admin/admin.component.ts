@@ -9,7 +9,7 @@ import { CategoryService } from '../../services/category.service';
 import { BannerService } from '../../services/banner.service';
 import { Product, CreateProduct, UpdateProduct } from '../../models/product.model';
 import { Order } from '../../models/order.model';
-import { User } from '../../models/auth.model';
+import { User, CreateUserRequest, AdminChangePasswordRequest } from '../../models/auth.model';
 import { Category, CreateCategory } from '../../models/category.model';
 import { Banner, CreateBanner, UpdateBanner } from '../../models/banner.model';
 
@@ -41,9 +41,13 @@ export class AdminComponent implements OnInit {
   products = signal<Product[]>([]);
   orders = signal<Order[]>([]);
   users = signal<User[]>([]);
+  totalUsersCount = signal(0);
+  userPageSize = 20;
 
   orderPage = signal(1);
   userPage = signal(1);
+  userSearch = signal('');
+  userRoleFilter = signal('');
   orderStatusFilter = signal<string>('');
   productSearch = signal('');
   productCategoryFilter = signal('');
@@ -60,6 +64,16 @@ export class AdminComponent implements OnInit {
   showCategoryModal = signal(false);
   editingCategory: Category | null = null;
   categoryForm: CreateCategory = { name: '', icon: '' };
+
+  // Create User
+  showCreateUserModal = signal(false);
+  createUserForm: CreateUserRequest = { email: '', username: '', password: '', confirmPassword: '', role: 'Customer', firstName: '', lastName: '', phone: '' };
+  availableRoles = signal<string[]>(['Customer', 'SubAdmin', 'Admin']);
+
+  // Change Password
+  showChangePasswordModal = signal(false);
+  changePasswordUser = signal<User | null>(null);
+  changePasswordForm: AdminChangePasswordRequest = { newPassword: '', confirmPassword: '' };
 
   banners = signal<Banner[]>([]);
   showBannerModal = signal(false);
@@ -80,7 +94,7 @@ export class AdminComponent implements OnInit {
   setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners'): void {
     this.activeTab.set(tab);
     if (tab === 'orders') this.loadOrders();
-    if (tab === 'users') this.loadUsers();
+    if (tab === 'users') { this.loadUsers(); this.loadRoles(); }
     if (tab === 'products') this.loadProducts();
     if (tab === 'categories') this.loadCategories();
     if (tab === 'banners') this.loadBanners();
@@ -142,13 +156,136 @@ export class AdminComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading.set(true);
-    this.http.get<PaginatedResponse<User>>(`${this.apiUrl}/auth/users?pageNumber=${this.userPage()}&pageSize=20`).subscribe({
+    const search = this.userSearch();
+    const role = this.userRoleFilter();
+    let url = `${this.apiUrl}/auth/users?pageNumber=${this.userPage()}&pageSize=20`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (role) url += `&role=${encodeURIComponent(role)}`;
+    this.http.get<PaginatedResponse<User>>(url).subscribe({
       next: (res) => {
         this.users.set(res.items);
+        this.totalUsersCount.set(res.totalCount);
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
     });
+  }
+
+  get userTotalPages(): number {
+    return Math.ceil(this.totalUsersCount() / this.userPageSize) || 1;
+  }
+
+  get userHasNextPage(): boolean {
+    return this.userPage() < this.userTotalPages;
+  }
+
+  get userHasPrevPage(): boolean {
+    return this.userPage() > 1;
+  }
+
+  get userPageStartItem(): number {
+    return (this.userPage() - 1) * this.userPageSize + 1;
+  }
+
+  get userPageEndItem(): number {
+    return Math.min(this.userPage() * this.userPageSize, this.totalUsersCount());
+  }
+
+  goToUserPage(page: number): void {
+    if (page < 1 || page > this.userTotalPages) return;
+    this.userPage.set(page);
+    this.loadUsers();
+  }
+
+  loadRoles(): void {
+    this.http.get<{ roles: string[] }>(`${this.apiUrl}/auth/users/roles`).subscribe({
+      next: (res) => this.availableRoles.set(res.roles)
+    });
+  }
+
+  // Create User
+  openCreateUser(): void {
+    this.createUserForm = { email: '', username: '', password: '', confirmPassword: '', role: 'Customer', firstName: '', lastName: '', phone: '' };
+    this.showCreateUserModal.set(true);
+  }
+
+  closeCreateUser(): void {
+    this.showCreateUserModal.set(false);
+  }
+
+  saveCreateUser(): void {
+    const f = this.createUserForm;
+    if (!f.email || !f.username || !f.password) {
+      this.notificationService.showError('Email, username and password are required');
+      return;
+    }
+    if (f.username.length < 3) {
+      this.notificationService.showError('Username must be at least 3 characters');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(f.email)) {
+      this.notificationService.showError('Please enter a valid email address');
+      return;
+    }
+    if (f.password.length < 8) {
+      this.notificationService.showError('Password must be at least 8 characters');
+      return;
+    }
+    if (f.password !== f.confirmPassword) {
+      this.notificationService.showError('Passwords do not match');
+      return;
+    }
+    const payload = { ...f };
+    if (!payload.phone) delete payload.phone;
+    if (!payload.firstName) delete payload.firstName;
+    if (!payload.lastName) delete payload.lastName;
+    this.http.post<User>(`${this.apiUrl}/auth/users`, payload).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('User created successfully');
+        this.closeCreateUser();
+        this.loadUsers();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to create user')
+    });
+  }
+
+  // Change Password
+  openChangePassword(user: User): void {
+    this.changePasswordUser.set(user);
+    this.changePasswordForm = { newPassword: '', confirmPassword: '' };
+    this.showChangePasswordModal.set(true);
+  }
+
+  closeChangePassword(): void {
+    this.showChangePasswordModal.set(false);
+    this.changePasswordUser.set(null);
+  }
+
+  saveChangePassword(): void {
+    const f = this.changePasswordForm;
+    const userId = this.changePasswordUser()?.id;
+    if (!userId) return;
+
+    if (f.newPassword.length < 8) {
+      this.notificationService.showError('Password must be at least 8 characters');
+      return;
+    }
+    if (f.newPassword !== f.confirmPassword) {
+      this.notificationService.showError('Passwords do not match');
+      return;
+    }
+    this.http.post(`${this.apiUrl}/auth/users/${userId}/change-password`, f).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Password changed successfully');
+        this.closeChangePassword();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to change password')
+    });
+  }
+
+  isCurrentUser(user: User): boolean {
+    return this.authService.currentUser()?.email === user.email;
   }
 
   updateOrderStatus(orderId: number, status: string): void {

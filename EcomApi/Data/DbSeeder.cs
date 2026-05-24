@@ -23,11 +23,12 @@ public static class DbSeeder
             {
                 Email = "admin@ecom.com",
                 Username = "admin",
-                Role = "Admin",
+                Role = UserRoles.Admin,
                 FirstName = "System",
                 LastName = "Administrator",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "System"
             };
             admin.PasswordHash = passwordHasher.HashPassword(admin, "Admin@123");
             context.Users.Add(admin);
@@ -39,11 +40,12 @@ public static class DbSeeder
             {
                 Email = "demo@ecom.com",
                 Username = "demo",
-                Role = "Customer",
+                Role = UserRoles.Customer,
                 FirstName = "Demo",
                 LastName = "User",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "System"
             };
             demoUser.PasswordHash = passwordHasher.HashPassword(demoUser, "Demo@123");
             context.Users.Add(demoUser);
@@ -54,7 +56,7 @@ public static class DbSeeder
 
     private static void SeedCategories(ApplicationDbContext context)
     {
-        if (context.Categories.Any()) return;
+        var existingNames = context.Categories.Select(c => c.Name).ToHashSet();
 
         var categories = new List<Category>
         {
@@ -67,11 +69,17 @@ public static class DbSeeder
             new() { Name = "Sports", Icon = "sports_esports" },
             new() { Name = "Books", Icon = "menu_book" },
             new() { Name = "Grocery", Icon = "shopping_bag" },
-            new() { Name = "Toys", Icon = "toys" }
+            new() { Name = "Toys", Icon = "toys" },
+            new() { Name = "Medicine", Icon = "medical_services" },
+            new() { Name = "Stationery", Icon = "edit_note" }
         };
 
-        context.Categories.AddRange(categories);
-        context.SaveChanges();
+        var newCategories = categories.Where(c => !existingNames.Contains(c.Name)).ToList();
+        if (newCategories.Count > 0)
+        {
+            context.Categories.AddRange(newCategories);
+            context.SaveChanges();
+        }
     }
 
     private static void SeedBanners(ApplicationDbContext context)
@@ -143,23 +151,93 @@ public static class DbSeeder
 
     private static void SeedProducts(ApplicationDbContext context)
     {
-        if (context.Products.Any()) return;
+        var existingNames = context.Products.Select(p => p.Name).ToHashSet();
 
         var products = new List<Product>
         {
-            new() { Name = "Laptop", Description = "High-performance laptop", Price = 999.99m, Stock = 10, Category = "Electronics", ImageUrl = "/uploads/75efe378-6825-4bbc-82ea-7ddaa482e16e.jpg" },
-            new() { Name = "Mouse", Description = "Wireless mouse", Price = 29.99m, Stock = 50, Category = "Electronics", ImageUrl = "/uploads/3c00ec1a-f234-447f-9720-5f7a12bd7d98.jpg" },
-            new() { Name = "Keyboard", Description = "Mechanical keyboard", Price = 89.99m, Stock = 25, Category = "Electronics", ImageUrl = "/uploads/c808a945-ae10-4e0c-801c-6595c9e1a38b.jpg" },
-            new() { Name = "T-Shirt", Description = "Cotton t-shirt", Price = 19.99m, Stock = 100, Category = "Clothing" },
-            new() { Name = "Jeans", Description = "Denim jeans", Price = 49.99m, Stock = 30, Category = "Clothing" },
-            new() { Name = "Sneakers", Description = "Running shoes", Price = 79.99m, Stock = 20, Category = "Footwear" },
-            new() { Name = "Coffee Maker", Description = "Automatic coffee maker", Price = 129.99m, Stock = 15, Category = "Home" },
-            new() { Name = "Desk Lamp", Description = "LED desk lamp", Price = 34.99m, Stock = 40, Category = "Home" },
-            new() { Name = "Backpack", Description = "Travel backpack", Price = 59.99m, Stock = 35, Category = "Accessories" },
-            new() { Name = "Watch", Description = "Smart watch", Price = 199.99m, Stock = 12, Category = "Accessories" }
+            // Electronics
+            new() { Name = "Camera", Description = "Digital camera with high resolution", Price = 499.99m, Stock = 15, Category = "Electronics", ImageUrl = "/uploads/Camera.jpg" },
+            new() { Name = "Keyboard", Description = "Mechanical keyboard", Price = 89.99m, Stock = 25, Category = "Electronics", ImageUrl = "/uploads/Keyboard.jpg" },
+            new() { Name = "Gaming Keyboard", Description = "RGB gaming keyboard", Price = 129.99m, Stock = 20, Category = "Electronics", ImageUrl = "/uploads/Keyboard1.jpg" },
+            new() { Name = "MacBook Pro", Description = "Apple MacBook Pro laptop", Price = 1999.99m, Stock = 10, Category = "Electronics", ImageUrl = "/uploads/Macbook.jpg" },
+            new() { Name = "MacBook Air", Description = "Apple MacBook Air laptop", Price = 1499.99m, Stock = 12, Category = "Electronics", ImageUrl = "/uploads/Macbook1.jpg" },
+            new() { Name = "Headphones", Description = "Over-ear headphones", Price = 79.99m, Stock = 30, Category = "Electronics", ImageUrl = "/uploads/headphone.jpt" },
+            new() { Name = "Wireless Earbuds", Description = "Bluetooth wireless earbuds", Price = 49.99m, Stock = 50, Category = "Electronics", ImageUrl = "/uploads/headphone1.jpt" },
+            new() { Name = "VR Headset", Description = "Virtual reality headset", Price = 299.99m, Stock = 10, Category = "Electronics", ImageUrl = "/uploads/goggle.jpt" },
+
+            // Clothing
+            new() { Name = "T-Shirt", Description = "Cotton casual t-shirt", Price = 19.99m, Stock = 100, Category = "Clothing", ImageUrl = "/uploads/tshirt.jpg" },
+            new() { Name = "Polo T-Shirt", Description = "Premium polo t-shirt", Price = 29.99m, Stock = 80, Category = "Clothing", ImageUrl = "/uploads/tshirt1.jpg" },
+            new() { Name = "Designer T-Shirt", Description = "Designer brand t-shirt", Price = 39.99m, Stock = 60, Category = "Clothing", ImageUrl = "/uploads/tshirt2.jpg" },
+            new() { Name = "Winter Gloves", Description = "Warm winter gloves", Price = 24.99m, Stock = 40, Category = "Clothing", ImageUrl = "/uploads/Gloves.jpg" },
+
+            // Footwear
+            new() { Name = "Running Shoes", Description = "Comfortable running shoes", Price = 79.99m, Stock = 25, Category = "Footwear", ImageUrl = "/uploads/shoes.jpg" },
+            new() { Name = "Casual Sneakers", Description = "Stylish casual sneakers", Price = 69.99m, Stock = 30, Category = "Footwear", ImageUrl = "/uploads/shoes1.jpg" },
+            new() { Name = "Sports Shoes", Description = "High-performance sports shoes", Price = 89.99m, Stock = 20, Category = "Footwear", ImageUrl = "/uploads/shoes2.jpg" },
+
+            // Home
+            new() { Name = "Coffee", Description = "Premium coffee beans", Price = 14.99m, Stock = 50, Category = "Home", ImageUrl = "/uploads/Coffee.jpg" },
+            new() { Name = "Watering Can", Description = "Garden watering can", Price = 12.99m, Stock = 35, Category = "Home", ImageUrl = "/uploads/Watering_Can.jpg" },
+            new() { Name = "Garden Manure", Description = "Organic garden manure", Price = 9.99m, Stock = 100, Category = "Home", ImageUrl = "/uploads/Manure.jpeg" },
+
+            // Accessories
+            new() { Name = "Backpack", Description = "Travel backpack", Price = 59.99m, Stock = 35, Category = "Accessories", ImageUrl = "/uploads/Bag.jpg" },
+            new() { Name = "Tote Bag", Description = "Canvas tote bag", Price = 19.99m, Stock = 50, Category = "Accessories", ImageUrl = "/uploads/Jhola.jpg" },
+            new() { Name = "Analog Watch", Description = "Classic analog watch", Price = 149.99m, Stock = 15, Category = "Accessories", ImageUrl = "/uploads/watcht.jpg" },
+            new() { Name = "Digital Watch", Description = "Digital sports watch", Price = 79.99m, Stock = 25, Category = "Accessories", ImageUrl = "/uploads/watcht1.jpg" },
+            new() { Name = "Smart Watch", Description = "Smart watch with fitness tracking", Price = 199.99m, Stock = 12, Category = "Accessories", ImageUrl = "/uploads/watcht2.jpg" },
+            new() { Name = "Handbag", Description = "Women's handbag", Price = 49.99m, Stock = 20, Category = "Accessories", ImageUrl = "/uploads/Perse.jpg" },
+
+            // Beauty
+            new() { Name = "Baby Cream", Description = "Gentle baby cream", Price = 8.99m, Stock = 60, Category = "Beauty", ImageUrl = "/uploads/Baby_Cream.jpg" },
+            new() { Name = "Baby Powder", Description = "Baby powder", Price = 5.99m, Stock = 80, Category = "Beauty", ImageUrl = "/uploads/Baby_Powder.jpg" },
+            new() { Name = "Baby Shampoo", Description = "Tear-free baby shampoo", Price = 7.99m, Stock = 50, Category = "Beauty", ImageUrl = "/uploads/Baby_Shampoo.jpg" },
+            new() { Name = "Baby Wipes", Description = "Soft baby wipes", Price = 4.99m, Stock = 100, Category = "Beauty", ImageUrl = "/uploads/Baby_Wipes.jpg" },
+            new() { Name = "Baby Care Set", Description = "Complete baby care set", Price = 24.99m, Stock = 30, Category = "Beauty", ImageUrl = "/uploads/Baby_care_products.jpg" },
+            new() { Name = "Diapers", Description = "Baby diapers pack", Price = 19.99m, Stock = 100, Category = "Beauty", ImageUrl = "/uploads/Diapers.jpg" },
+            new() { Name = "Beard Oil", Description = "Men's beard oil", Price = 12.99m, Stock = 40, Category = "Beauty", ImageUrl = "/uploads/Beard_Oil.jpg" },
+            new() { Name = "Face Cream", Description = "Moisturizing face cream", Price = 14.99m, Stock = 45, Category = "Beauty", ImageUrl = "/uploads/Face_Cream.jpg" },
+            new() { Name = "Baby Oil", Description = "Johnson's baby oil", Price = 6.99m, Stock = 70, Category = "Beauty", ImageUrl = "/uploads/Johnson's_Baby_Oil.jpg" },
+            new() { Name = "Face Wash", Description = "Lakme face wash", Price = 9.99m, Stock = 55, Category = "Beauty", ImageUrl = "/uploads/Lakme_Facewash.jpg" },
+            new() { Name = "Lip Balm", Description = "Moisturizing lip balm", Price = 3.99m, Stock = 90, Category = "Beauty", ImageUrl = "/uploads/Lip_Balm.jpg" },
+            new() { Name = "Men's Face Wash", Description = "Men's face wash", Price = 11.99m, Stock = 45, Category = "Beauty", ImageUrl = "/uploads/Men's_Face_Wash.jpg" },
+            new() { Name = "Moisturizer", Description = "Body moisturizer", Price = 13.99m, Stock = 50, Category = "Beauty", ImageUrl = "/uploads/Moisturizer.jpg" },
+
+            // Grocery
+            new() { Name = "Fresh Apples", Description = "Fresh red apples (1kg)", Price = 4.99m, Stock = 100, Category = "Grocery", ImageUrl = "/uploads/Apple.jpg" },
+            new() { Name = "Coca Cola", Description = "Coca Cola 500ml", Price = 1.99m, Stock = 200, Category = "Grocery", ImageUrl = "/uploads/Coke.jpt" },
+            new() { Name = "Orange Juice", Description = "Fresh orange juice 1L", Price = 3.99m, Stock = 80, Category = "Grocery", ImageUrl = "/uploads/OrangeDrink.jpg" },
+            new() { Name = "Sprite", Description = "Sprite 500ml", Price = 1.99m, Stock = 200, Category = "Grocery", ImageUrl = "/uploads/Sprite.jpg" },
+            new() { Name = "Atta", Description = "Whole wheat flour 5kg", Price = 8.99m, Stock = 60, Category = "Grocery", ImageUrl = "/uploads/atta.jpg" },
+            new() { Name = "Maggi Noodles", Description = "Maggi instant noodles", Price = 0.99m, Stock = 300, Category = "Grocery", ImageUrl = "/uploads/maggi.jpg" },
+            new() { Name = "Fresh Oranges", Description = "Fresh oranges (1kg)", Price = 3.99m, Stock = 120, Category = "Grocery", ImageUrl = "/uploads/Oranges.jpg" },
+            new() { Name = "Potato Chips", Description = "Crispy potato chips", Price = 2.49m, Stock = 150, Category = "Grocery", ImageUrl = "/uploads/chip.png" },
+
+            // Medicine
+            new() { Name = "Cough Syrup", Description = "CUFRIL-D cough syrup", Price = 5.99m, Stock = 50, Category = "Medicine", ImageUrl = "/uploads/CUFRIL-D_cough_syrup.jpg" },
+            new() { Name = "Cetirizine", Description = "Cetirizine allergy tablets", Price = 3.99m, Stock = 100, Category = "Medicine", ImageUrl = "/uploads/Cetirizine.jpg" },
+            new() { Name = "Cold Medicine", Description = "Cheston Cold tablets", Price = 4.99m, Stock = 80, Category = "Medicine", ImageUrl = "/uploads/Cheston_Cold.jpg" },
+            new() { Name = "Dolo 650", Description = "Dolo 650 paracetamol", Price = 2.99m, Stock = 150, Category = "Medicine", ImageUrl = "/uploads/Dolo.jpg" },
+            new() { Name = "Gelusil", Description = "Gelusil antacid", Price = 3.49m, Stock = 60, Category = "Medicine", ImageUrl = "/uploads/Gelusil.jfif" },
+            new() { Name = "Gelusil Plus", Description = "Gelusil Plus antacid", Price = 4.49m, Stock = 55, Category = "Medicine", ImageUrl = "/uploads/Gelusil_1.jpg" },
+            new() { Name = "Medicine Kit", Description = "First aid medicine kit", Price = 19.99m, Stock = 30, Category = "Medicine", ImageUrl = "/uploads/Medicines.jpg" },
+            new() { Name = "Metolar XR 50", Description = "Metolar XR 50 tablets", Price = 8.99m, Stock = 40, Category = "Medicine", ImageUrl = "/uploads/Metolar_XR_50.jpg" },
+
+            // Stationery
+            new() { Name = "Pencil Set", Description = "Pencil set (12 pcs)", Price = 3.99m, Stock = 100, Category = "Stationery", ImageUrl = "/uploads/Pencils.jpg" },
+            new() { Name = "Pen Set", Description = "Ball pen set (10 pcs)", Price = 4.99m, Stock = 80, Category = "Stationery", ImageUrl = "/uploads/Pens.jpg" },
+            new() { Name = "Push Pins", Description = "Colored push pins (50 pcs)", Price = 2.49m, Stock = 120, Category = "Stationery", ImageUrl = "/uploads/Pins.jpg" },
+            new() { Name = "Paper Puncher", Description = "Heavy duty paper puncher", Price = 7.99m, Stock = 40, Category = "Stationery", ImageUrl = "/uploads/Puncher.jpg" },
+            new() { Name = "Stapler", Description = "Desktop stapler", Price = 5.99m, Stock = 50, Category = "Stationery", ImageUrl = "/uploads/Stapler.jpg" },
+            new() { Name = "Sticky Notes", Description = "Sticky notes pack", Price = 2.99m, Stock = 100, Category = "Stationery", ImageUrl = "/uploads/Sticky_Notes.jpg" }
         };
 
-        context.Products.AddRange(products);
-        context.SaveChanges();
+        var newProducts = products.Where(p => !existingNames.Contains(p.Name)).ToList();
+        if (newProducts.Count > 0)
+        {
+            context.Products.AddRange(newProducts);
+            context.SaveChanges();
+        }
     }
 }

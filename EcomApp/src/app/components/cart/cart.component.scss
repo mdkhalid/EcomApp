@@ -151,8 +151,41 @@
 
 /* Cart Footer */
 .cart-footer-actions {
-  padding: var(--space-md) var(--space-lg);
-  border-top: 1px solid var(--border-light);
+   padding: var(--space-md) var(--space-lg);
+   border-top: 1px solid var(--border-light);
+   text-align: center;
+}
+
+/* Clear Cart Button */
+.cart-footer-actions .btn-outline {
+   display: inline-flex;
+   align-items: center;
+   gap: var(--space-xs);
+   background: var(--error);
+   color: white;
+   border: none;
+   padding: var(--space-sm) var(--space-lg);
+   border-radius: var(--radius-sm);
+   font-size: var(--font-size-base);
+   font-weight: 500;
+   cursor: pointer;
+   transition: all 0.15s;
+   width: auto;
+   box-shadow: 0 2px 4px rgba(244, 67, 54, 0.2);
+}
+
+.cart-footer-actions .btn-outline:hover {
+   background: #d32f2f;
+   transform: translateY(-2px);
+   box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+}
+
+.cart-footer-actions .btn-outline:active {
+   transform: translateY(0);
+}
+
+.cart-footer-actions .btn-outline .material-icons {
+   font-size: 18px;
 }
 
 /* === Summary Sidebar === */
