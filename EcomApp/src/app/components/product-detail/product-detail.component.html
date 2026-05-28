@@ -207,26 +207,38 @@
 
       <!-- Write Review -->
       @if (authService.isAuthenticated() && !authService.isAdmin()) {
-        <div class="pd-write-review">
-          <h4>Write a Review</h4>
-          <div class="pd-star-input">
-            @for (s of [1,2,3,4,5]; track s) {
-              <button class="star-btn" [class.active]="s <= newReview().rating" (click)="setRating(s)" type="button">
-                ★
-              </button>
-            }
-            <span class="star-label">{{ ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][newReview().rating] }}</span>
+        @if (hasPurchased() && !hasReviewed()) {
+          <div class="pd-write-review">
+            <h4>Write a Review</h4>
+            <div class="pd-star-input">
+              @for (s of [1,2,3,4,5]; track s) {
+                <button class="star-btn" [class.active]="s <= newReview().rating" (click)="setRating(s)" type="button">
+                  ★
+                </button>
+              }
+              <span class="star-label">{{ ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][newReview().rating] }}</span>
+            </div>
+            <textarea
+              [(ngModel)]="newReview().comment"
+              name="reviewComment"
+              placeholder="Share your experience with this product..."
+              rows="3"
+            ></textarea>
+            <button class="btn-submit-review" (click)="submitReview()" [disabled]="submittingReview() || !newReview().comment.trim()">
+              {{ submittingReview() ? 'Submitting...' : 'Submit Review' }}
+            </button>
           </div>
-          <textarea
-            [(ngModel)]="newReview().comment"
-            name="reviewComment"
-            placeholder="Share your experience with this product..."
-            rows="3"
-          ></textarea>
-          <button class="btn-submit-review" (click)="submitReview()" [disabled]="submittingReview() || !newReview().comment.trim()">
-            {{ submittingReview() ? 'Submitting...' : 'Submit Review' }}
-          </button>
-        </div>
+        } @else if (hasReviewed()) {
+          <div class="pd-review-notice already-reviewed">
+            <span class="material-icons">check_circle</span>
+            You have already reviewed this product.
+          </div>
+        } @else {
+          <div class="pd-review-notice not-purchased">
+            <span class="material-icons">shopping_bag</span>
+            {{ reviewCheckMessage() || 'Purchase this product to write a review.' }}
+          </div>
+        }
       } @else if (!authService.isAuthenticated()) {
         <div class="pd-login-review">
           <a routerLink="/login" [queryParams]="{ returnUrl: '/products/' + p.id }">Log in</a> to write a review.

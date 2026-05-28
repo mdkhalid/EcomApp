@@ -40,6 +40,8 @@ public class OrderRepository : IOrderRepository
         if (cart == null || cart.Items.Count == 0)
             return null;
 
+        var estimatedDelivery = CalculateEstimatedDelivery(DateTime.UtcNow);
+
         var order = new Order
         {
             UserId = cart.UserId,
@@ -49,6 +51,9 @@ public class OrderRepository : IOrderRepository
             ShippingAddress = createDto.ShippingAddress,
             ShippingCity = createDto.ShippingCity,
             ShippingZip = createDto.ShippingZip,
+            CustomerEmail = createDto.CustomerEmail,
+            CustomerPhone = createDto.CustomerPhone,
+            EstimatedDeliveryDate = estimatedDelivery,
             Items = cart.Items.Select(ci => new OrderItem
             {
                 ProductId = ci.ProductId,
@@ -58,6 +63,16 @@ public class OrderRepository : IOrderRepository
                 UnitPrice = ci.UnitPrice,
                 TotalPrice = ci.TotalPrice
             }).ToList(),
+            StatusHistory = new List<OrderStatusHistory>
+            {
+                new OrderStatusHistory
+                {
+                    Status = OrderStatus.Pending,
+                    Note = "Order placed successfully",
+                    Location = "Online",
+                    CreatedAt = DateTime.UtcNow
+                }
+            },
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -74,13 +89,14 @@ public class OrderRepository : IOrderRepository
         _context.Carts.Remove(cart);
 
         await _context.SaveChangesAsync();
-        return await GetByIdAsync(order.Id);
+        return await GetWithHistoryAsync(order.Id);
     }
 
     public async Task<IEnumerable<Order>> GetBySessionIdAsync(string sessionId)
     {
         return await _context.Orders
             .Include(o => o.Items)
+            .Include(o => o.StatusHistory)
             .Where(o => o.SessionId == sessionId)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
@@ -91,6 +107,7 @@ public class OrderRepository : IOrderRepository
         var query = _context.Orders
             .AsNoTracking()
             .Include(o => o.Items)
+            .Include(o => o.StatusHistory)
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAt);
 
@@ -107,19 +124,62 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.Orders
             .Include(o => o.Items)
+            .Include(o => o.StatusHistory)
             .FirstOrDefaultAsync(o => o.Id == orderId);
     }
 
-    public async Task<Order?> UpdateStatusAsync(int orderId, OrderStatus status)
+    public async Task<Order?> GetWithHistoryAsync(int orderId)
+    {
+        return await _context.Orders
+            .Include(o => o.Items)
+            .Include(o => o.StatusHistory.OrderByDescending(h => h.CreatedAt))
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
+    public async Task<Order?> UpdateStatusAsync(int orderId, OrderStatus status, string? note = null, string? location = null)
     {
         var order = await _context.Orders.FindAsync(orderId);
         if (order == null)
             return null;
 
+        var previousStatus = order.Status;
         order.Status = status;
         order.UpdatedAt = DateTime.UtcNow;
+
+        if (status == OrderStatus.Delivered)
+        {
+            order.ActualDeliveryDate = DateTime.UtcNow;
+        }
+
+        // Add status history
+        var historyEntry = new OrderStatusHistory
+        {
+            OrderId = orderId,
+            Status = status,
+            Note = note ?? GetDefaultNote(status),
+            Location = location,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.OrderStatusHistories.Add(historyEntry);
+
         await _context.SaveChangesAsync();
-        return await GetByIdAsync(orderId);
+        return await GetWithHistoryAsync(orderId);
+    }
+
+    public async Task<Order?> UpdateTrackingAsync(int orderId, string trackingNumber, string carrier, DateTime? estimatedDeliveryDate)
+    {
+        var order = await _context.Orders.FindAsync(orderId);
+        if (order == null)
+            return null;
+
+        order.TrackingNumber = trackingNumber;
+        order.Carrier = carrier;
+        if (estimatedDeliveryDate.HasValue)
+            order.EstimatedDeliveryDate = estimatedDeliveryDate.Value;
+        order.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return await GetWithHistoryAsync(orderId);
     }
 
     public async Task<(IEnumerable<Order> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? status = null)
@@ -127,6 +187,7 @@ public class OrderRepository : IOrderRepository
         var query = _context.Orders
             .AsNoTracking()
             .Include(o => o.Items)
+            .Include(o => o.StatusHistory)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var orderStatus))
@@ -166,5 +227,39 @@ public class OrderRepository : IOrderRepository
         return await _context.Orders
             .Where(o => o.UserId == userId && o.Status == OrderStatus.Delivered)
             .AnyAsync(o => o.Items.Any(i => i.ProductId == productId));
+    }
+
+    private static DateTime CalculateEstimatedDelivery(DateTime orderDate)
+    {
+        // Add 5-7 business days for delivery
+        var deliveryDays = 5;
+        var estimated = orderDate;
+        var daysAdded = 0;
+
+        while (daysAdded < deliveryDays)
+        {
+            estimated = estimated.AddDays(1);
+            if (estimated.DayOfWeek != DayOfWeek.Saturday && estimated.DayOfWeek != DayOfWeek.Sunday)
+            {
+                daysAdded++;
+            }
+        }
+
+        return estimated;
+    }
+
+    private static string GetDefaultNote(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Pending => "Order placed and awaiting confirmation",
+            OrderStatus.Processing => "Order is being prepared",
+            OrderStatus.Shipped => "Order has been shipped",
+            OrderStatus.OutForDelivery => "Order is out for delivery",
+            OrderStatus.Delivered => "Order has been delivered",
+            OrderStatus.Cancelled => "Order has been cancelled",
+            OrderStatus.Returned => "Order has been returned",
+            _ => ""
+        };
     }
 }

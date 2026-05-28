@@ -12,7 +12,14 @@ public class OrderDto
     public string ShippingCity { get; set; } = string.Empty;
     public string ShippingZip { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
+    public string? TrackingNumber { get; set; }
+    public string? Carrier { get; set; }
+    public DateTime? EstimatedDeliveryDate { get; set; }
+    public DateTime? ActualDeliveryDate { get; set; }
+    public string? CustomerEmail { get; set; }
+    public string? CustomerPhone { get; set; }
     public List<OrderItemDto> Items { get; set; } = new();
+    public List<OrderStatusHistoryDto> StatusHistory { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
@@ -26,6 +33,15 @@ public class OrderItemDto
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice { get; set; }
+}
+
+public class OrderStatusHistoryDto
+{
+    public int Id { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string? Note { get; set; }
+    public string? Location { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public class CreateOrderDto
@@ -45,12 +61,39 @@ public class CreateOrderDto
     [Required]
     [StringLength(20, MinimumLength = 1)]
     public string ShippingZip { get; set; } = string.Empty;
+
+    [EmailAddress]
+    [StringLength(255)]
+    public string? CustomerEmail { get; set; }
+
+    [Phone]
+    [StringLength(20)]
+    public string? CustomerPhone { get; set; }
 }
 
 public class UpdateOrderStatusDto
 {
     [Required]
     public string Status { get; set; } = string.Empty;
+
+    [StringLength(500)]
+    public string? Note { get; set; }
+
+    [StringLength(200)]
+    public string? Location { get; set; }
+}
+
+public class UpdateOrderTrackingDto
+{
+    [Required]
+    [StringLength(100)]
+    public string TrackingNumber { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100)]
+    public string Carrier { get; set; } = string.Empty;
+
+    public DateTime? EstimatedDeliveryDate { get; set; }
 }
 
 public class ShippingAddressDto

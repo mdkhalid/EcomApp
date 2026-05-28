@@ -1,0 +1,267 @@
+.tracking-container {
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg);
+}
+
+/* Progress Bar */
+.progress-section {
+  margin-bottom: var(--space-xl);
+}
+
+.progress-bar {
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.progress-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.estimated-delivery {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--flipkart-blue);
+  background: var(--flipkart-blue-light);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-xl);
+
+  .material-icons {
+    font-size: 16px;
+  }
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-step {
+  position: relative;
+  padding-bottom: var(--space-xl);
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.connector-line {
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-color);
+
+  &.filled {
+    background: var(--success);
+  }
+}
+
+.step-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  position: relative;
+}
+
+.step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+  z-index: 1;
+  transition: all 0.3s ease;
+
+  .material-icons {
+    font-size: 20px;
+    color: var(--text-tertiary);
+  }
+
+  .completed &,
+  .current & {
+    .material-icons {
+      color: white;
+    }
+  }
+}
+
+.step-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.step-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 8px;
+}
+
+.step-label {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--text-tertiary);
+
+  &.active {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+}
+
+.step-timestamp {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.step-note {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.step-location {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+
+  .material-icons {
+    font-size: 12px;
+  }
+}
+
+.current-badge {
+  position: absolute;
+  right: 0;
+  top: 8px;
+  padding: 2px 10px;
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+/* Tracking Info */
+.tracking-info {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-light);
+}
+
+.tracking-info-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+
+  .material-icons {
+    color: var(--flipkart-blue);
+  }
+}
+
+.tracking-details {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-md);
+}
+
+.tracking-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-xs) 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--border-light);
+  }
+}
+
+.tracking-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.tracking-value {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.tracking-number {
+  font-family: monospace;
+  background: var(--flipkart-blue-light);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--flipkart-blue);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .progress-text {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .current-badge {
+    position: static;
+    margin-top: var(--space-xs);
+    width: fit-content;
+  }
+
+  .step-content {
+    gap: var(--space-sm);
+  }
+
+  .step-icon {
+    width: 36px;
+    height: 36px;
+
+    .material-icons {
+      font-size: 18px;
+    }
+  }
+
+  .connector-line {
+    left: 17px;
+  }
+}

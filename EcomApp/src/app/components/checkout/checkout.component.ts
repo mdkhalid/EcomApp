@@ -39,10 +39,12 @@ export class CheckoutComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    this.loadCart();
-    if (this.authService.isAuthenticated()) {
-      this.loadSavedAddresses();
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
+      return;
     }
+    this.loadCart();
+    this.loadSavedAddresses();
   }
 
   loadSavedAddresses(): void {
@@ -97,6 +99,7 @@ export class CheckoutComponent implements OnInit {
     this.placing.set(true);
     this.orderService.createOrder(this.orderForm).subscribe({
       next: (order) => {
+        this.cartService.resetCount();
         this.notification.showSuccess('Order placed successfully!');
         this.router.navigate(['/orders', order.id]);
       },

@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
     public DbSet<Category> Categories => Set<Category>();
@@ -101,7 +102,12 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ShippingCity).IsRequired().HasMaxLength(100);
             entity.Property(e => e.ShippingZip).IsRequired().HasMaxLength(20);
             entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+            entity.Property(e => e.TrackingNumber).HasMaxLength(100);
+            entity.Property(e => e.Carrier).HasMaxLength(100);
+            entity.Property(e => e.CustomerEmail).HasMaxLength(255);
+            entity.Property(e => e.CustomerPhone).HasMaxLength(20);
             entity.HasMany(e => e.Items).WithOne(e => e.Order).HasForeignKey(e => e.OrderId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(e => e.StatusHistory).WithOne(e => e.Order).HasForeignKey(e => e.OrderId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.User).WithMany(u => u.Orders).HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -112,6 +118,15 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ProductImage).HasMaxLength(500);
             entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
             entity.Property(e => e.TotalPrice).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<OrderStatusHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.Status);
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.Location).HasMaxLength(200);
         });
 
         modelBuilder.Entity<Review>(entity =>

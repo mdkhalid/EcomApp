@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Order, CreateOrder, SavedAddress } from '../models/order.model';
+import { Observable, map } from 'rxjs';
+import { Order, CreateOrder, SavedAddress, OrderTracking } from '../models/order.model';
 
 @Injectable({
   providedIn: 'root'
@@ -15,11 +15,17 @@ export class OrderService {
   }
 
   getOrders(): Observable<Order[]> {
-    return this.http.get<Order[]>(this.apiUrl);
+    return this.http.get<{ items: Order[] }>(this.apiUrl).pipe(
+      map(res => res.items)
+    );
   }
 
   getById(id: number): Observable<Order> {
     return this.http.get<Order>(`${this.apiUrl}/${id}`);
+  }
+
+  getTracking(id: number): Observable<OrderTracking> {
+    return this.http.get<OrderTracking>(`${this.apiUrl}/${id}/tracking`);
   }
 
   getPreviousAddresses(): Observable<SavedAddress[]> {

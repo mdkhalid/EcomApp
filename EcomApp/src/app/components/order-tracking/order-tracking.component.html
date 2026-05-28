@@ -1,0 +1,85 @@
+<div class="tracking-container">
+  <!-- Progress Bar -->
+  <div class="progress-section">
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="progressPercentage" [style.background]="getStatusColor(currentStatus)"></div>
+    </div>
+    <div class="progress-text">
+      <span class="progress-label">{{ completedStepsCount }} of {{ steps.length }} steps completed</span>
+      @if (estimatedDeliveryDate && currentStatus !== 'Delivered' && currentStatus !== 'Cancelled' && currentStatus !== 'Returned') {
+        <span class="estimated-delivery">
+          <span class="material-icons">schedule</span>
+          Expected by {{ formatDate(estimatedDeliveryDate) }}
+        </span>
+      }
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline">
+    @for (step of timelineSteps; track step.status; let last = $last; let i = $index) {
+      <div class="timeline-step" [class.completed]="step.completed" [class.current]="step.current" [class.cancelled]="currentStatus === 'Cancelled' || currentStatus === 'Returned'">
+        <!-- Connector Line -->
+        @if (!last) {
+          <div class="connector-line" [class.filled]="step.completed"></div>
+        }
+
+        <!-- Step Content -->
+        <div class="step-content">
+          <!-- Icon -->
+          <div class="step-icon" [style.background]="step.completed || step.current ? getStatusColor(step.status) : ''">
+            @if (step.completed) {
+              <span class="material-icons">check</span>
+            } @else if (step.current) {
+              <span class="material-icons step-pulse">{{ step.icon }}</span>
+            } @else {
+              <span class="material-icons">{{ step.icon }}</span>
+            }
+          </div>
+
+          <!-- Info -->
+          <div class="step-info">
+            <span class="step-label" [class.active]="step.completed || step.current">{{ step.label }}</span>
+            @if (step.timestamp) {
+              <span class="step-timestamp">{{ formatDateTime(step.timestamp) }}</span>
+            }
+            @if (step.note) {
+              <span class="step-note">{{ step.note }}</span>
+            }
+            @if (step.location) {
+              <span class="step-location">
+                <span class="material-icons">location_on</span>
+                {{ step.location }}
+              </span>
+            }
+          </div>
+
+          <!-- Status Badge -->
+          @if (step.current) {
+            <span class="current-badge" [style.background]="getStatusColor(step.status)">Current</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Tracking Info -->
+  @if (trackingNumber && carrier) {
+    <div class="tracking-info">
+      <div class="tracking-info-header">
+        <span class="material-icons">local_shipping</span>
+        <span>Shipping Details</span>
+      </div>
+      <div class="tracking-details">
+        <div class="tracking-row">
+          <span class="tracking-label">Carrier</span>
+          <span class="tracking-value">{{ carrier }}</span>
+        </div>
+        <div class="tracking-row">
+          <span class="tracking-label">Tracking Number</span>
+          <span class="tracking-value tracking-number">{{ trackingNumber }}</span>
+        </div>
+      </div>
+    </div>
+  }
+</div>

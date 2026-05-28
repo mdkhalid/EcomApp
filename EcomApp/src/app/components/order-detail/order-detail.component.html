@@ -22,27 +22,29 @@
         <span class="material-icons">arrow_back</span>
         Back to Orders
       </a>
-      <h1>Order #{{ order()!.id }}</h1>
-      <span class="order-status-badge" [class]="getStatusClass(order()!.status)">{{ order()!.status }}</span>
+      <div class="header-row">
+        <h1>Order #{{ order()!.id }}</h1>
+        <span class="order-status-badge" [class]="getStatusClass(order()!.status)">
+          {{ getStatusLabel(order()!.status) }}
+        </span>
+      </div>
+      <p class="order-date">Placed on {{ order()!.createdAt | date:'fullDate' }}</p>
     </div>
 
-    <!-- Status Timeline -->
-    <div class="timeline-card">
-      <div class="timeline">
-        @for (step of statusSteps; track step; let last = $last) {
-          <div class="timeline-step" [class]="getStepClass(step)">
-            <div class="timeline-dot">
-              @if (getStepClass(step) === 'step-completed') {
-                <span class="material-icons">check</span>
-              }
-            </div>
-            <span class="timeline-label">{{ step }}</span>
-            @if (!last) {
-              <div class="timeline-line"></div>
-            }
-          </div>
-        }
-      </div>
+    <!-- Order Tracking Timeline -->
+    <div class="tracking-card">
+      <h2 class="section-title">
+        <span class="material-icons">track_changes</span>
+        Order Tracking
+      </h2>
+      <app-order-tracking
+        [currentStatus]="order()!.status"
+        [statusHistory]="order()!.statusHistory || []"
+        [estimatedDeliveryDate]="order()!.estimatedDeliveryDate"
+        [trackingNumber]="order()!.trackingNumber"
+        [carrier]="order()!.carrier"
+        [createdAt]="order()!.createdAt"
+      ></app-order-tracking>
     </div>
 
     <!-- Delivery Info -->
@@ -67,6 +69,18 @@
         <div class="info-card-body">
           <p class="info-date">{{ order()!.createdAt | date:'fullDate' }}</p>
           <p class="info-time">{{ order()!.createdAt | date:'shortTime' }}</p>
+          @if (order()!.estimatedDeliveryDate && order()!.status !== 'Delivered' && order()!.status !== 'Cancelled') {
+            <p class="delivery-estimate">
+              <span class="material-icons">schedule</span>
+              Expected: {{ formatDate(order()!.estimatedDeliveryDate) }}
+            </p>
+          }
+          @if (order()!.actualDeliveryDate) {
+            <p class="delivery-actual">
+              <span class="material-icons">check_circle</span>
+              Delivered: {{ formatDate(order()!.actualDeliveryDate) }}
+            </p>
+          }
         </div>
       </div>
 

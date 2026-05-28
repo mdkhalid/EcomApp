@@ -16,6 +16,10 @@ export class ReviewService {
     });
   }
 
+  canReview(productId: number): Observable<{ canReview: boolean; reason: string }> {
+    return this.http.get<{ canReview: boolean; reason: string }>(`${this.apiUrl}/product/${productId}/can-review`);
+  }
+
   create(productId: number, review: CreateReview): Observable<Review> {
     return this.http.post<Review>(`${this.apiUrl}/product/${productId}`, review);
   }

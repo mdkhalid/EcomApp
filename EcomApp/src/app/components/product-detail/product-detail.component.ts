@@ -40,7 +40,8 @@ export class ProductDetailComponent implements OnInit {
   newReview = signal<CreateReview>({ rating: 5, comment: '' });
   submittingReview = signal(false);
   hasReviewed = signal(false);
-  hasPurchased = signal(true);
+  hasPurchased = signal(false);
+  reviewCheckMessage = signal('');
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -59,11 +60,25 @@ export class ProductDetailComponent implements OnInit {
         this.loading.set(false);
         if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
           this.wishlistService.check(id).subscribe();
+          this.checkCanReview(id);
         }
       },
       error: () => {
         this.notification.showError('Failed to load product');
         this.loading.set(false);
+      }
+    });
+  }
+
+  checkCanReview(productId: number): void {
+    this.reviewService.canReview(productId).subscribe({
+      next: (res) => {
+        this.hasPurchased.set(res.canReview);
+        this.reviewCheckMessage.set(res.reason);
+      },
+      error: () => {
+        this.hasPurchased.set(false);
+        this.reviewCheckMessage.set('Unable to verify purchase');
       }
     });
   }

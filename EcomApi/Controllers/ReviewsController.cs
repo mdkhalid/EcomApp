@@ -56,6 +56,23 @@ public class ReviewsController : ControllerBase
         });
     }
 
+    [HttpGet("product/{productId}/can-review")]
+    [Authorize]
+    public async Task<ActionResult> CanReview(int productId)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var existing = await _repository.GetByUserAndProductAsync(userId, productId);
+        if (existing != null)
+            return Ok(new { canReview = false, reason = "You have already reviewed this product." });
+
+        var hasOrdered = await _orderRepository.HasUserPurchasedProductAsync(userId, productId);
+        if (!hasOrdered)
+            return Ok(new { canReview = false, reason = "You can only review products you have purchased." });
+
+        return Ok(new { canReview = true, reason = "" });
+    }
+
     [HttpGet("product/{productId}/rating")]
     public async Task<ActionResult<ProductRatingDto>> GetProductRating(int productId)
     {

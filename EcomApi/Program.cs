@@ -56,6 +56,7 @@ builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IBannerRepository, BannerRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
