@@ -42,11 +42,20 @@
   </div>
   }
 
+  <!-- Search Bar Section -->
+  <div class="search-section">
+    <app-search-bar
+      (searchSubmitted)="onSearchSubmitted($event)"
+    ></app-search-bar>
+  </div>
+
   <!-- Page Header -->
   <div class="page-header-bar">
     <div class="page-header-left">
       <h1 class="page-title">
-        @if (categoryFilter()) {
+        @if (searchTerm()) {
+          Results for "{{ searchTerm() }}"
+        } @else if (categoryFilter()) {
           {{ categoryFilter() }}
         } @else {
           All Products
@@ -55,85 +64,76 @@
       <span class="result-count">{{ totalCount() }} results</span>
     </div>
     <div class="page-header-right">
-      <div class="sort-select">
-        <label>Sort by:</label>
-        <select #sortSelect (change)="onSortChange(sortSelect.value)">
-          <option value="popularity">Popularity</option>
-          <option value="price_asc">Price -- Low to High</option>
-          <option value="price_desc">Price -- High to Low</option>
-          <option value="newest">Newest First</option>
-        </select>
-      </div>
+      <button class="mobile-filter-btn" (click)="toggleMobileFilters()">
+        <span class="material-icons">filter_list</span>
+        Filters
+        @if (filters()) {
+          <span class="filter-count">({{ filters()!.categories.length + filters()!.brands.length }})</span>
+        }
+      </button>
     </div>
   </div>
 
   <div class="products-layout">
     <!-- Sidebar Filters -->
-    <aside class="filter-sidebar">
-      <div class="filter-header">
-        <h3>Filters</h3>
-        <button class="clear-all" (click)="clearFilters()">Clear All</button>
-      </div>
+    <app-filter-sidebar
+      [filters]="filters()"
+      [currentFilter]="currentFilter()"
+      [totalCount]="totalCount()"
+      (filterChanged)="onFilterChanged($event)"
+      (clearAll)="onClearFilters()"
+      [class.mobile-open]="showMobileFilters()"
+    ></app-filter-sidebar>
 
-      <div class="filter-section">
-        <h4 class="filter-section-title">Category</h4>
-        <div class="filter-options">
-          <label class="filter-option" [class.active]="categoryFilter() === ''">
-            <input type="radio" name="category" value="" [checked]="categoryFilter() === ''" (change)="onCategoryChange('')" />
-            <span>All</span>
-          </label>
-          @for (cat of categories(); track cat.id) {
-            <label class="filter-option" [class.active]="categoryFilter() === cat.name">
-              <input type="radio" name="category" [value]="cat.name" [checked]="categoryFilter() === cat.name" (change)="onCategoryChange(cat.name)" />
-              <span>{{ cat.name }}</span>
-            </label>
-          }
-        </div>
-      </div>
-
-      <div class="filter-section">
-        <h4 class="filter-section-title">Price</h4>
-        <div class="price-inputs">
-          <input type="number" placeholder="Min" class="price-input" [(ngModel)]="minPrice" />
-          <span class="price-separator">to</span>
-          <input type="number" placeholder="Max" class="price-input" [(ngModel)]="maxPrice" />
-        </div>
-        <button class="price-apply" (click)="applyPriceFilter()">Apply</button>
-      </div>
-
-      <div class="filter-section">
-        <h4 class="filter-section-title">Availability</h4>
-        <label class="filter-option">
-          <input type="checkbox" />
-          <span>Include Out of Stock</span>
-        </label>
-      </div>
-
-      <button class="mobile-filter-close hide-desktop" (click)="showMobileFilters.set(false)">
-        <span class="material-icons">close</span>
-      </button>
-    </aside>
+    <!-- Mobile Filter Overlay -->
+    @if (showMobileFilters()) {
+      <div class="mobile-filter-overlay" (click)="showMobileFilters.set(false)"></div>
+    }
 
     <!-- Main Content -->
     <div class="products-content">
-      <!-- Search Bar (within page) -->
-      <div class="products-search-bar">
-        <div class="psb-inner">
-          <span class="material-icons psb-icon">search</span>
-          <input
-            type="text"
-            [value]="searchTerm()"
-            (input)="onSearchInput(($any($event.target).value))"
-            (keyup.enter)="onSearch()"
-            placeholder="Search products..."
-          />
-          <button class="psb-btn" (click)="onSearch()">Search</button>
+      <!-- Active Filters -->
+      @if (currentFilter()) {
+        <div class="active-filters">
+          @if (searchTerm()) {
+            <span class="filter-tag">
+              Search: {{ searchTerm() }}
+              <button class="remove-tag" (click)="searchTerm.set(''); loadProducts()">×</button>
+            </span>
+          }
+          @if (categoryFilter()) {
+            <span class="filter-tag">
+              Category: {{ categoryFilter() }}
+              <button class="remove-tag" (click)="categoryFilter.set(''); loadProducts()">×</button>
+            </span>
+          }
+          @if (minPrice != null) {
+            <span class="filter-tag">
+              Min Price: ₹{{ minPrice }}
+              <button class="remove-tag" (click)="minPrice = null; loadProducts()">×</button>
+            </span>
+          }
+          @if (maxPrice != null) {
+            <span class="filter-tag">
+              Max Price: ₹{{ maxPrice }}
+              <button class="remove-tag" (click)="maxPrice = null; loadProducts()">×</button>
+            </span>
+          }
+          @if (sortBy() !== 'popularity') {
+            <span class="filter-tag">
+              Sort: {{ sortBy() }}
+              <button class="remove-tag" (click)="sortBy.set('popularity'); loadProducts()">×</button>
+            </span>
+          }
         </div>
-      </div>
+      }
 
       <!-- Loading State -->
       @if (isLoading()) {
-        <div class="spinner"></div>
+        <div class="loading-container">
+          <div class="spinner"></div>
+          <p class="loading-text">Loading products...</p>
+        </div>
       }
 
       <!-- Empty State -->
@@ -142,6 +142,7 @@
           <span class="material-icons empty-icon">search_off</span>
           <h3>No products found</h3>
           <p>Try adjusting your search or filter criteria</p>
+          <button class="clear-filters-btn" (click)="clearFilters()">Clear All Filters</button>
         </div>
       }
 
@@ -162,9 +163,11 @@
                   }
                 </a>
 
-                <!-- Discount Badge (mock) -->
-                @if (product.averageRating > 0) {
-                  <span class="offer-badge">Top Rated</span>
+                <!-- Discount Badge -->
+                @if (product.discountPercent > 0) {
+                  <span class="offer-badge">{{ product.discountPercent }}% off</span>
+                } @else if (product.averageRating > 4) {
+                  <span class="offer-badge top-rated">Top Rated</span>
                 }
 
                 <!-- Wishlist Heart -->
@@ -180,6 +183,11 @@
                 <a [routerLink]="['/products', product.id]" class="product-name-link">
                   <h3 class="product-name" title="{{ product.name }}">{{ product.name }}</h3>
                 </a>
+
+                <!-- Brand -->
+                @if (product.brand) {
+                  <span class="product-brand">{{ product.brand }}</span>
+                }
 
                 <!-- Rating -->
                 @if (product.averageRating > 0) {
@@ -202,9 +210,9 @@
                 <!-- Price -->
                 <div class="product-price-row">
                   <span class="current-price">₹{{ product.price.toLocaleString('en-IN') }}</span>
-                  @if (product.averageRating > 0) {
-                    <span class="original-price">₹{{ (product.price * 1.3).toLocaleString('en-IN', {maximumFractionDigits: 0}) }}</span>
-                    <span class="discount-percent">{{ 30 }}% off</span>
+                  @if (product.originalPrice && product.originalPrice > product.price) {
+                    <span class="original-price">₹{{ product.originalPrice.toLocaleString('en-IN') }}</span>
+                    <span class="discount-percent">{{ product.discountPercent }}% off</span>
                   }
                 </div>
 
@@ -256,13 +264,4 @@
       }
     </div>
   </div>
-
-  <!-- Mobile Filter Toggle -->
-  @if (showMobileFilters()) {
-    <div class="mobile-filter-overlay" (click)="showMobileFilters.set(false)"></div>
-  }
-  <button class="mobile-filter-btn hide-desktop" (click)="showMobileFilters.set(true)">
-    <span class="material-icons">filter_list</span>
-    Filters
-  </button>
 </div>

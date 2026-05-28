@@ -48,7 +48,7 @@ export class AdminComponent implements OnInit {
   userPage = signal(1);
   userSearch = signal('');
   userRoleFilter = signal('');
-  orderStatusFilter = signal<string>('');
+  orderStatusFilter = '';
   productSearch = signal('');
   productCategoryFilter = signal('');
 
@@ -56,7 +56,7 @@ export class AdminComponent implements OnInit {
 
   showProductModal = signal(false);
   editingProduct: Product | null = null;
-  productForm: CreateProduct = { name: '', description: '', price: 0, stock: 0, category: '' };
+  productForm = { name: '', description: '', price: 0, originalPrice: 0, stock: 0, category: '', brand: '' };
   selectedFile: File | null = null;
   imagePreview: string | null = null;
 
@@ -141,7 +141,7 @@ export class AdminComponent implements OnInit {
 
   loadOrders(): void {
     this.isLoading.set(true);
-    const status = this.orderStatusFilter();
+    const status = this.orderStatusFilter;
     let url = `${this.apiUrl}/orders/all?pageNumber=${this.orderPage()}&pageSize=20`;
     if (status) url += `&status=${status}`;
 
@@ -311,7 +311,7 @@ export class AdminComponent implements OnInit {
 
   openAddProduct(): void {
     this.editingProduct = null;
-    this.productForm = { name: '', description: '', price: 0, stock: 0, category: '' };
+    this.productForm = { name: '', description: '', price: 0, originalPrice: 0, stock: 0, category: '', brand: '' };
     this.selectedFile = null;
     this.imagePreview = null;
     this.showProductModal.set(true);
@@ -319,7 +319,7 @@ export class AdminComponent implements OnInit {
 
   openEditProduct(product: Product): void {
     this.editingProduct = product;
-    this.productForm = { name: product.name, description: product.description, price: product.price, stock: product.stock, category: product.category };
+    this.productForm = { name: product.name, description: product.description, price: product.price, originalPrice: product.originalPrice || 0, stock: product.stock, category: product.category, brand: product.brand || '' };
     this.selectedFile = null;
     this.imagePreview = product.imageUrl ? this.getFullImageUrl(product.imageUrl) : null;
     this.showProductModal.set(true);
@@ -353,8 +353,10 @@ export class AdminComponent implements OnInit {
         name: this.productForm.name,
         description: this.productForm.description,
         price: this.productForm.price,
+        originalPrice: this.productForm.originalPrice || undefined,
         stock: this.productForm.stock,
-        category: this.productForm.category
+        category: this.productForm.category,
+        brand: this.productForm.brand || undefined
       };
       this.http.put<Product>(`${this.apiUrl}/products/${this.editingProduct.id}`, updateDto).subscribe({
         next: (updated) => {
@@ -370,7 +372,16 @@ export class AdminComponent implements OnInit {
         error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update product')
       });
     } else {
-      this.http.post<Product>(`${this.apiUrl}/products`, this.productForm).subscribe({
+      const createDto: CreateProduct = {
+        name: this.productForm.name,
+        description: this.productForm.description,
+        price: this.productForm.price,
+        originalPrice: this.productForm.originalPrice || undefined,
+        stock: this.productForm.stock,
+        category: this.productForm.category,
+        brand: this.productForm.brand || undefined
+      };
+      this.http.post<Product>(`${this.apiUrl}/products`, createDto).subscribe({
         next: (created) => {
           if (this.selectedFile) {
             this.uploadImage(created.id);
@@ -393,8 +404,10 @@ export class AdminComponent implements OnInit {
       name: product.name,
       description: product.description,
       price: product.price,
+      originalPrice: product.originalPrice || undefined,
       stock: newStock,
-      category: product.category
+      category: product.category,
+      brand: product.brand || undefined
     };
     this.http.put<Product>(`${this.apiUrl}/products/${product.id}`, updateDto).subscribe({
       next: () => {
@@ -671,7 +684,7 @@ export class AdminComponent implements OnInit {
     let items = this.products();
     const search = this.productSearch().toLowerCase();
     const category = this.productCategoryFilter();
-    if (search) items = items.filter(p => p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search));
+    if (search) items = items.filter(p => p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.brand && p.brand.toLowerCase().includes(search)));
     if (category) items = items.filter(p => p.category === category);
     return items;
   }

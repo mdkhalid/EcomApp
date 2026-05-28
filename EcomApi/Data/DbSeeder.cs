@@ -239,5 +239,16 @@ public static class DbSeeder
             context.Products.AddRange(newProducts);
             context.SaveChanges();
         }
+
+        // Ensure all existing products are active
+        var inactiveProducts = context.Products.Where(p => !p.IsActive).ToList();
+        if (inactiveProducts.Count > 0)
+        {
+            foreach (var product in inactiveProducts)
+            {
+                product.IsActive = true;
+            }
+            context.SaveChanges();
+        }
     }
 }

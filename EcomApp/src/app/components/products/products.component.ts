@@ -1,22 +1,24 @@
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ProductService, PaginatedResponse } from '../../services/product.service';
+import { ActivatedRoute, Router, RouterLink, withComponentInputBinding } from '@angular/router';
+import { ProductService } from '../../services/product.service';
 import { NotificationService } from '../../services/notification.service';
 import { CartService } from '../../services/cart.service';
 import { AuthService } from '../../services/auth.service';
 import { WishlistService } from '../../services/wishlist.service';
 import { CategoryService } from '../../services/category.service';
 import { BannerService } from '../../services/banner.service';
-import { Product } from '../../models/product.model';
+import { Product, SearchFilter, SearchResult, FilterMetadata } from '../../models/product.model';
 import { Category } from '../../models/category.model';
 import { Banner } from '../../models/banner.model';
+import { SearchBarComponent } from '../search/search-bar.component';
+import { FilterSidebarComponent, FilterState } from '../filter-sidebar/filter-sidebar.component';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, SearchBarComponent, FilterSidebarComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
 })
@@ -39,7 +41,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   pageSize = signal(12);
   searchTerm = signal('');
   categoryFilter = signal('');
-  sortBy = signal('');
+  sortBy = signal('popularity');
   isLoading = signal(false);
   showMobileFilters = signal(false);
   minPrice: number | null = null;
@@ -50,6 +52,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
   currentBanner = signal(0);
   private bannerInterval: ReturnType<typeof setInterval> | null = null;
   bannerPaused = signal(false);
+
+  filters = signal<FilterMetadata | null>(null);
+  currentFilter = signal<SearchFilter | null>(null);
 
   totalPages = computed(() => Math.ceil(this.totalCount() / this.pageSize()));
 
@@ -69,6 +74,30 @@ export class ProductsComponent implements OnInit, OnDestroy {
       }
       if (params['category']) {
         this.categoryFilter.set(params['category']);
+      }
+      if (params['brand']) {
+        // Handle brand from URL
+      }
+      if (params['minPrice']) {
+        this.minPrice = +params['minPrice'];
+      }
+      if (params['maxPrice']) {
+        this.maxPrice = +params['maxPrice'];
+      }
+      if (params['minRating']) {
+        // Handle rating from URL
+      }
+      if (params['minDiscount']) {
+        // Handle discount from URL
+      }
+      if (params['inStock']) {
+        // Handle inStock from URL
+      }
+      if (params['sortBy']) {
+        this.sortBy.set(params['sortBy']);
+      }
+      if (params['page']) {
+        this.pageNumber.set(+params['page']);
       }
       this.loadProducts();
     });
@@ -103,18 +132,24 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
   loadProducts(): void {
     this.isLoading.set(true);
-    this.productService.getAll({
-      pageNumber: this.pageNumber(),
-      pageSize: this.pageSize(),
+
+    const filter: SearchFilter = {
       search: this.searchTerm() || undefined,
       category: this.categoryFilter() || undefined,
       minPrice: this.minPrice ?? undefined,
       maxPrice: this.maxPrice ?? undefined,
-      sortBy: this.sortBy() || undefined
-    }).subscribe({
-      next: (data: PaginatedResponse<Product>) => {
+      sortBy: this.sortBy() || undefined,
+      pageNumber: this.pageNumber(),
+      pageSize: this.pageSize()
+    };
+
+    this.currentFilter.set(filter);
+
+    this.productService.search(filter).subscribe({
+      next: (data: SearchResult<Product>) => {
         this.products.set(data.items);
         this.totalCount.set(data.totalCount);
+        this.filters.set(data.filters);
         this.isLoading.set(false);
       },
       error: () => {
@@ -124,45 +159,68 @@ export class ProductsComponent implements OnInit, OnDestroy {
     });
   }
 
-  onSearchInput(value: string): void {
-    this.searchTerm.set(value);
-  }
-
-  onSortChange(value: string): void {
-    this.sortBy.set(value);
+  onSearchSubmitted(searchTerm: string): void {
+    this.searchTerm.set(searchTerm);
     this.pageNumber.set(1);
+    this.updateUrl();
     this.loadProducts();
   }
 
-  onSearch(): void {
+  onFilterChanged(filterState: FilterState): void {
+    this.categoryFilter.set(filterState.categories.join(','));
+    this.minPrice = filterState.minPrice;
+    this.maxPrice = filterState.maxPrice;
+    this.sortBy.set(filterState.sortBy);
     this.pageNumber.set(1);
-    this.router.navigate(['/products'], { queryParams: { search: this.searchTerm() || undefined, category: this.categoryFilter() || undefined } });
+    this.updateUrl();
     this.loadProducts();
   }
 
-  onCategoryChange(category: string): void {
-    this.categoryFilter.set(category);
+  onClearFilters(): void {
+    this.searchTerm.set('');
+    this.categoryFilter.set('');
+    this.minPrice = null;
+    this.maxPrice = null;
+    this.sortBy.set('popularity');
     this.pageNumber.set(1);
-    this.router.navigate(['/products'], { queryParams: { search: this.searchTerm() || undefined, category: category || undefined } });
+    this.updateUrl();
     this.loadProducts();
+  }
+
+  private updateUrl(): void {
+    const queryParams: any = {};
+    if (this.searchTerm()) queryParams.search = this.searchTerm();
+    if (this.categoryFilter()) queryParams.category = this.categoryFilter();
+    if (this.minPrice != null) queryParams.minPrice = this.minPrice;
+    if (this.maxPrice != null) queryParams.maxPrice = this.maxPrice;
+    if (this.sortBy() !== 'popularity') queryParams.sortBy = this.sortBy();
+    if (this.pageNumber() > 1) queryParams.page = this.pageNumber();
+
+    this.router.navigate(['/products'], { queryParams, queryParamsHandling: 'merge' });
   }
 
   goToPage(page: number): void {
     this.pageNumber.set(page);
+    this.updateUrl();
     this.loadProducts();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   nextPage(): void {
     if (this.pageNumber() < this.totalPages()) {
       this.pageNumber.update(p => p + 1);
+      this.updateUrl();
       this.loadProducts();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   previousPage(): void {
     if (this.pageNumber() > 1) {
       this.pageNumber.update(p => p - 1);
+      this.updateUrl();
       this.loadProducts();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
@@ -204,16 +262,10 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.categoryFilter.set('');
-    this.searchTerm.set('');
-    this.minPrice = null;
-    this.maxPrice = null;
-    this.pageNumber.set(1);
-    this.loadProducts();
+    this.onClearFilters();
   }
 
-  applyPriceFilter(): void {
-    this.pageNumber.set(1);
-    this.loadProducts();
+  toggleMobileFilters(): void {
+    this.showMobileFilters.update(v => !v);
   }
 }

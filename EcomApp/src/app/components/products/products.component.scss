@@ -1,6 +1,14 @@
 /* ============================================
    Products Page - Flipkart Inspired
    ============================================ */
+
+/* --- Search Section --- */
+.search-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+}
+
 /* --- Banner Carousel --- */
 .banner-carousel {
   position: relative;
@@ -349,6 +357,133 @@
 .products-content {
   flex: 1;
   min-width: 0;
+}
+
+/* Active Filters */
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--flipkart-blue-light);
+  color: var(--flipkart-blue);
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.remove-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: var(--flipkart-blue);
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--flipkart-blue-dark);
+  }
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl);
+}
+
+.loading-text {
+  margin-top: var(--space-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl);
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64px !important;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-md);
+}
+
+.empty-state h3 {
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-sm);
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-lg);
+}
+
+.clear-filters-btn {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--flipkart-blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--flipkart-blue-dark);
+  }
+}
+
+/* Mobile Filter Button */
+.mobile-filter-btn {
+  display: none;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--flipkart-blue);
+    color: var(--flipkart-blue);
+  }
+
+  .filter-count {
+    color: var(--text-secondary);
+  }
+}
+
+/* Mobile Filter Overlay */
+.mobile-filter-overlay {
+  display: none;
 }
 
 /* Search Bar */
@@ -882,63 +1017,20 @@
     padding: var(--space-md);
   }
 
-  .filter-sidebar {
-    display: none;
+  .search-section {
+    margin-bottom: var(--space-md);
+  }
 
-    &.show-mobile {
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 300px;
-      height: 100vh;
-      z-index: 1001;
-      border-radius: 0;
-      overflow-y: auto;
-    }
+  .mobile-filter-btn {
+    display: flex;
   }
 
   .mobile-filter-overlay {
+    display: block;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
-  }
-
-  .mobile-filter-btn {
-    position: fixed;
-    bottom: var(--space-lg);
-    right: var(--space-lg);
-    background: var(--flipkart-blue);
-    color: white;
-    border: none;
-    padding: var(--space-md) var(--space-lg);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg);
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-size: var(--font-size-base);
-    font-weight: 500;
-    z-index: 100;
-    cursor: pointer;
-    font-family: inherit;
-  }
-
-  .mobile-filter-close {
-    position: sticky;
-    bottom: 0;
-    width: 100%;
-    padding: var(--space-md);
-    background: var(--flipkart-blue);
-    color: white;
-    border: none;
-    font-size: var(--font-size-base);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-sm);
   }
 
   .product-grid {
@@ -969,5 +1061,20 @@
 
   .pagination {
     flex-wrap: wrap;
+  }
+
+  .active-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: var(--space-sm);
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .filter-tag {
+    flex-shrink: 0;
   }
 }

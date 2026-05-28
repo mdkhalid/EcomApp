@@ -60,9 +60,15 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Price).HasPrecision(18, 2);
+            entity.Property(e => e.OriginalPrice).HasPrecision(18, 2);
             entity.Property(e => e.Category).HasMaxLength(100);
+            entity.Property(e => e.Brand).HasMaxLength(100);
             entity.HasIndex(e => e.Category);
             entity.HasIndex(e => e.Name);
+            entity.HasIndex(e => e.Brand);
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.Ignore(e => e.DiscountPercent);
         });
 
         modelBuilder.Entity<Cart>(entity =>
@@ -115,7 +121,7 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.ProductId);
             entity.Property(e => e.Comment).HasMaxLength(2000);
             entity.Property(e => e.Rating).IsRequired();
-            entity.HasOne(e => e.Product).WithMany().HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Product).WithMany(p => p.Reviews).HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Restrict);
         });
 

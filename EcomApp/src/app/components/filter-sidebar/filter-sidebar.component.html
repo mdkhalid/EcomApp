@@ -1,0 +1,222 @@
+<aside class="filter-sidebar" [class.mobile-open]="false">
+  <div class="filter-header">
+    <h3 class="filter-title">Filters</h3>
+    @if (getActiveFilterCount() > 0) {
+      <button class="clear-all-btn" (click)="clearAllFilters()">
+        Clear All ({{ getActiveFilterCount() }})
+      </button>
+    }
+  </div>
+
+  <!-- Sort Section -->
+  <div class="filter-section">
+    <div class="section-header" (click)="toggleSection('sort')">
+      <h4 class="section-title">Sort By</h4>
+      <span class="material-icons expand-icon" [class.expanded]="expandedSections()['sort']">
+        expand_more
+      </span>
+    </div>
+    @if (expandedSections()['sort']) {
+      <div class="section-content">
+        <div class="sort-options">
+          @for (option of sortOptions; track option.value) {
+            <label class="sort-option" [class.active]="filterState().sortBy === option.value">
+              <input
+                type="radio"
+                name="sortBy"
+                [value]="option.value"
+                [checked]="filterState().sortBy === option.value"
+                (change)="onSortChange(option.value)"
+              />
+              <span class="option-label">{{ option.label }}</span>
+            </label>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Category Section -->
+  <div class="filter-section">
+    <div class="section-header" (click)="toggleSection('category')">
+      <h4 class="section-title">Category</h4>
+      <span class="material-icons expand-icon" [class.expanded]="expandedSections()['category']">
+        expand_more
+      </span>
+    </div>
+    @if (expandedSections()['category']) {
+      <div class="section-content">
+        @for (category of filters?.categories || []; track category) {
+          <label class="filter-option" [class.active]="filterState().categories.includes(category)">
+            <input
+              type="checkbox"
+              [checked]="filterState().categories.includes(category)"
+              (change)="toggleCategory(category)"
+            />
+            <span class="option-label">{{ category }}</span>
+          </label>
+        }
+        @if (!filters?.categories?.length) {
+          <p class="no-options">No categories available</p>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Brand Section -->
+  <div class="filter-section">
+    <div class="section-header" (click)="toggleSection('brand')">
+      <h4 class="section-title">Brand</h4>
+      <span class="material-icons expand-icon" [class.expanded]="expandedSections()['brand']">
+        expand_more
+      </span>
+    </div>
+    @if (expandedSections()['brand']) {
+      <div class="section-content">
+        @for (brand of filters?.brands || []; track brand) {
+          <label class="filter-option" [class.active]="filterState().brands.includes(brand)">
+            <input
+              type="checkbox"
+              [checked]="filterState().brands.includes(brand)"
+              (change)="toggleBrand(brand)"
+            />
+            <span class="option-label">{{ brand }}</span>
+          </label>
+        }
+        @if (!filters?.brands?.length) {
+          <p class="no-options">No brands available</p>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Price Section -->
+  <div class="filter-section">
+    <div class="section-header" (click)="toggleSection('price')">
+      <h4 class="section-title">Price Range</h4>
+      <span class="material-icons expand-icon" [class.expanded]="expandedSections()['price']">
+        expand_more
+      </span>
+    </div>
+    @if (expandedSections()['price']) {
+      <div class="section-content">
+        <div class="price-inputs">
+          <div class="price-input-group">
+            <span class="price-currency">₹</span>
+            <input
+              type="number"
+              class="price-input"
+              [value]="tempMinPrice"
+              (input)="setMinPrice($any($event.target).value ? +$any($event.target).value : null)"
+              [placeholder]="'Min'"
+              [min]="0"
+            />
+          </div>
+          <span class="price-separator">to</span>
+          <div class="price-input-group">
+            <span class="price-currency">₹</span>
+            <input
+              type="number"
+              class="price-input"
+              [value]="tempMaxPrice"
+              (input)="setMaxPrice($any($event.target).value ? +$any($event.target).value : null)"
+              [placeholder]="'Max'"
+              [min]="0"
+            />
+          </div>
+        </div>
+        <button class="apply-btn" (click)="applyPriceFilter()">Apply</button>
+
+        <!-- Quick Price Ranges -->
+        <div class="price-ranges">
+          @for (range of priceRanges; track range.label) {
+            <button
+              class="price-range-btn"
+              [class.active]="filterState().minPrice === range.min && filterState().maxPrice === range.max"
+              (click)="setMinPrice(range.min); setMaxPrice(range.max); applyPriceFilter()"
+            >
+              {{ range.label }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Rating Section -->
+  <div class="filter-section">
+    <div class="section-header" (click)="toggleSection('rating')">
+      <h4 class="section-title">Customer Rating</h4>
+      <span class="material-icons expand-icon" [class.expanded]="expandedSections()['rating']">
+        expand_more
+      </span>
+    </div>
+    @if (expandedSections()['rating']) {
+      <div class="section-content">
+        @for (bucket of filters?.ratingBuckets || []; track bucket.label) {
+          <label class="filter-option rating-option" [class.active]="filterState().minRating === bucket.minRating">
+            <input
+              type="radio"
+              name="rating"
+              [checked]="filterState().minRating === bucket.minRating"
+              (change)="setRating(bucket.minRating)"
+            />
+            <span class="rating-stars">
+              @for (star of [1, 2, 3, 4, 5]; track star) {
+                <span class="star" [class.filled]="star <= bucket.minRating">★</span>
+              }
+            </span>
+            <span class="option-label">& up</span>
+          </label>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Discount Section -->
+  <div class="filter-section">
+    <div class="section-header" (click)="toggleSection('discount')">
+      <h4 class="section-title">Discount</h4>
+      <span class="material-icons expand-icon" [class.expanded]="expandedSections()['discount']">
+        expand_more
+      </span>
+    </div>
+    @if (expandedSections()['discount']) {
+      <div class="section-content">
+        @for (bucket of filters?.discountBuckets || []; track bucket.label) {
+          <label class="filter-option" [class.active]="filterState().minDiscount === bucket.minDiscount">
+            <input
+              type="radio"
+              name="discount"
+              [checked]="filterState().minDiscount === bucket.minDiscount"
+              (change)="setDiscount(bucket.minDiscount)"
+            />
+            <span class="option-label">{{ bucket.label }}</span>
+          </label>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Availability Section -->
+  <div class="filter-section">
+    <div class="section-header" (click)="toggleSection('availability')">
+      <h4 class="section-title">Availability</h4>
+      <span class="material-icons expand-icon" [class.expanded]="expandedSections()['availability']">
+        expand_more
+      </span>
+    </div>
+    @if (expandedSections()['availability']) {
+      <div class="section-content">
+        <label class="filter-option" [class.active]="filterState().inStock">
+          <input
+            type="checkbox"
+            [checked]="filterState().inStock"
+            (change)="toggleInStock()"
+          />
+          <span class="option-label">In Stock Only</span>
+        </label>
+      </div>
+    }
+  </div>
+</aside>

@@ -21,31 +21,71 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5, [FromQuery] string? search = null, [FromQuery] string? category = null, [FromQuery] decimal? minPrice = null, [FromQuery] decimal? maxPrice = null, [FromQuery] string? sortBy = null)
+    public async Task<ActionResult<SearchResultDto<ProductDto>>> GetAll([FromQuery] SearchFilterDto filter)
     {
-        if (pageNumber < 1) pageNumber = 1;
-        if (pageSize < 1) pageSize = 5;
+        if (filter.PageNumber < 1) filter.PageNumber = 1;
+        if (filter.PageSize < 1) filter.PageSize = 12;
 
-        var (items, totalCount) = await _repository.GetAllAsync(pageNumber, pageSize, search, category, minPrice, maxPrice, sortBy);
+        var searchResult = await _repository.SearchProductsAsync(filter);
 
-        var productDtos = items.Adapt<List<ProductDto>>();
+        var productDtos = searchResult.Items.Adapt<List<ProductDto>>();
 
-        var productIds = items.Select(p => p.Id).ToList();
+        // Get ratings for all products
+        var productIds = searchResult.Items.Select(p => p.Id).ToList();
         var ratings = await _reviewRepository.GetRatingsForProductsAsync(productIds);
 
         for (int i = 0; i < productDtos.Count; i++)
         {
-            productDtos[i].AverageRating = ratings[productIds[i]].AverageRating;
-            productDtos[i].TotalReviews = ratings[productIds[i]].TotalReviews;
+            if (ratings.ContainsKey(productIds[i]))
+            {
+                productDtos[i].AverageRating = ratings[productIds[i]].AverageRating;
+                productDtos[i].TotalReviews = ratings[productIds[i]].TotalReviews;
+            }
         }
 
-        return Ok(new
+        // Get filter metadata
+        var filterMetadata = await _repository.GetFilterMetadataAsync(filter);
+
+        return Ok(new SearchResultDto<ProductDto>
         {
-            items = productDtos,
-            totalCount,
-            pageNumber,
-            pageSize
+            Items = productDtos,
+            TotalCount = searchResult.TotalCount,
+            PageNumber = searchResult.PageNumber,
+            PageSize = searchResult.PageSize,
+            Filters = filterMetadata
         });
+    }
+
+    [HttpGet("suggestions")]
+    public async Task<ActionResult<SearchSuggestionDto>> GetSuggestions([FromQuery] string query)
+    {
+        var suggestions = await _repository.GetSearchSuggestionsAsync(query);
+        return Ok(new SearchSuggestionDto
+        {
+            Suggestions = suggestions,
+            PopularCategories = await _repository.GetBrandsAsync()
+        });
+    }
+
+    [HttpGet("filters")]
+    public async Task<ActionResult<FilterMetadataDto>> GetFilters([FromQuery] SearchFilterDto filter)
+    {
+        var metadata = await _repository.GetFilterMetadataAsync(filter);
+        return Ok(metadata);
+    }
+
+    [HttpGet("brands")]
+    public async Task<ActionResult<List<string>>> GetBrands()
+    {
+        var brands = await _repository.GetBrandsAsync();
+        return Ok(brands);
+    }
+
+    [HttpGet("price-range")]
+    public async Task<ActionResult<PriceRangeDto>> GetPriceRange([FromQuery] string? category = null)
+    {
+        var range = await _repository.GetPriceRangeAsync(category);
+        return Ok(range);
     }
 
     [HttpGet("{id}")]
@@ -69,6 +109,7 @@ public class ProductsController : ControllerBase
     {
         var product = createDto.Adapt<Product>();
         product.CreatedAt = DateTime.UtcNow;
+        product.UpdatedAt = DateTime.UtcNow;
         var created = await _repository.AddAsync(product);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.Adapt<ProductDto>());
     }
@@ -81,6 +122,7 @@ public class ProductsController : ControllerBase
         if (product == null)
             return NotFound();
         updateDto.Adapt(product);
+        product.UpdatedAt = DateTime.UtcNow;
         var updated = await _repository.UpdateAsync(product);
         return Ok(updated.Adapt<ProductDto>());
     }
@@ -123,6 +165,7 @@ public class ProductsController : ControllerBase
         }
 
         product.ImageUrl = $"/uploads/{fileName}";
+        product.UpdatedAt = DateTime.UtcNow;
         var updated = await _repository.UpdateAsync(product);
         return Ok(updated.Adapt<ProductDto>());
     }
