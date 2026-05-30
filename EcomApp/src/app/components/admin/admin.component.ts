@@ -95,7 +95,7 @@ export class AdminComponent implements OnInit {
     this.activeTab.set(tab);
     if (tab === 'orders') this.loadOrders();
     if (tab === 'users') { this.loadUsers(); this.loadRoles(); }
-    if (tab === 'products') this.loadProducts();
+    if (tab === 'products') { this.loadProducts(); this.loadCategories(); }
     if (tab === 'categories') this.loadCategories();
     if (tab === 'banners') this.loadBanners();
   }

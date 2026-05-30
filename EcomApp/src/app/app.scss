@@ -288,6 +288,19 @@
   line-height: 1;
 }
 
+/* Theme Toggle */
+.theme-toggle {
+  .material-icons {
+    font-size: 20px;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+  }
+
+  &:hover .material-icons {
+    color: var(--flipkart-yellow);
+  }
+}
+
 /* ============================================
    Categories Navigation Bar
    ============================================ */
@@ -296,7 +309,6 @@
   top: var(--header-height);
   left: 0;
   right: 0;
-  height: var(--category-bar-height);
   background: var(--card-bg);
   z-index: 999;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -311,25 +323,24 @@
 .category-bar-inner {
   max-width: var(--max-width);
   margin: 0 auto;
-  height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: space-around;
+  align-items: stretch;
   padding: 0 var(--space-lg);
-  gap: var(--space-sm);
 }
 
 .category-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 4px 12px;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 20px;
   text-decoration: none;
   color: var(--text-primary);
   transition: all 0.15s;
   position: relative;
   white-space: nowrap;
+  flex: 1;
 
   &:hover {
     color: var(--flipkart-blue);
@@ -363,7 +374,7 @@
 }
 
 .category-icon {
-  font-size: 18px !important;
+  font-size: 22px !important;
   color: var(--text-secondary);
   transition: color 0.15s;
 }
@@ -372,14 +383,15 @@
   font-size: var(--font-size-xs);
   font-weight: 500;
   line-height: 1.2;
+  text-align: center;
 }
 
 /* ============================================
    Main Content
    ============================================ */
 .main-content {
-  min-height: calc(100vh - var(--header-height) - var(--category-bar-height) - 200px);
-  padding-top: calc(var(--header-height) + var(--category-bar-height));
+  min-height: calc(100vh - var(--header-height) - 60px - 200px);
+  padding-top: calc(var(--header-height) + 60px);
 }
 
 /* ============================================
@@ -514,14 +526,13 @@
 
   .category-bar-inner {
     justify-content: flex-start;
-    gap: 0;
     padding: 0 var(--space-sm);
     overflow-x: auto;
   }
 
   .category-item {
-    padding: 4px 10px;
-    flex-shrink: 0;
+    padding: 6px 14px;
+    flex: 0 0 auto;
   }
 
   .footer-grid {

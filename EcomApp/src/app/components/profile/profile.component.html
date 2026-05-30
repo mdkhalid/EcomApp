@@ -11,9 +11,30 @@
   @if (loading()) {
     <div class="loading-state"><div class="spinner"></div></div>
   } @else if (user()) {
+    <!-- Profile Header -->
     <div class="profile-header">
-      <div class="profile-avatar">
-        <span class="avatar-text">{{ getInitials() }}</span>
+      <div class="profile-avatar-wrapper">
+        <div class="profile-avatar">
+          @if (user()!.profilePictureUrl) {
+            <img [src]="getFullImageUrl(user()!.profilePictureUrl!)" alt="Profile" class="avatar-image" />
+          } @else {
+            <span class="avatar-text">{{ getInitials() }}</span>
+          }
+        </div>
+        <div class="avatar-actions">
+          <label class="avatar-btn camera-btn" title="Upload photo">
+            <span class="material-icons">photo_camera</span>
+            <input type="file" accept=".jpg,.jpeg,.png,.webp" (change)="onProfilePictureSelected($event)" hidden />
+          </label>
+          @if (user()!.profilePictureUrl) {
+            <button class="avatar-btn remove-btn" (click)="removeProfilePicture()" title="Remove photo">
+              <span class="material-icons">delete</span>
+            </button>
+          }
+        </div>
+        @if (profilePictureUploading()) {
+          <div class="upload-overlay"><div class="spinner small"></div></div>
+        }
       </div>
       <div class="profile-title">
         <h1>{{ user()!.firstName || user()!.username }} {{ user()!.lastName }}</h1>
@@ -22,7 +43,27 @@
       </div>
     </div>
 
+    <!-- Profile Completion Bar -->
+    <div class="completion-card">
+      <div class="completion-header">
+        <span class="completion-title">Profile Completion</span>
+        <span class="completion-percent">{{ profileCompletion() }}%</span>
+      </div>
+      <div class="completion-bar-bg">
+        <div class="completion-bar" [style.width.%]="profileCompletion()"></div>
+      </div>
+      <div class="completion-items">
+        @for (item of getCompletionItems(); track item.label) {
+          <div class="completion-item" [class.filled]="item.filled">
+            <span class="material-icons">{{ item.filled ? 'check_circle' : 'radio_button_unchecked' }}</span>
+            <span>{{ item.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
     <div class="profile-content">
+      <!-- Personal Information -->
       <div class="profile-card">
         <h2>Personal Information</h2>
         <form (ngSubmit)="saveProfile()" #profileForm="ngForm">
@@ -49,60 +90,176 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label>Phone Number</label>
-            <input type="tel" [(ngModel)]="editForm().phone" name="phone" placeholder="Enter phone number" />
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" [(ngModel)]="editForm().phone" name="phone" placeholder="Enter phone number" />
+            </div>
+            <div class="form-group">
+              <label>Gender</label>
+              <select [(ngModel)]="editForm().gender" name="gender">
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
           </div>
 
-          <button type="submit" class="btn-save" [disabled]="saving()">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date of Birth</label>
+              <input type="date" [(ngModel)]="editForm().dateOfBirth" name="dateOfBirth" />
+            </div>
+            <div class="form-group"></div>
+          </div>
+
+          <button type="submit" class="btn-primary" [disabled]="saving()">
             {{ saving() ? 'Saving...' : 'Save Changes' }}
           </button>
         </form>
       </div>
 
-       <div class="profile-card">
-         <h2>Account Details</h2>
-         <div class="detail-row">
-           <span class="detail-label">Member Since</span>
-           <span class="detail-value">{{ user()!.createdAt | date:'longDate' }}</span>
-         </div>
-         <div class="detail-row">
-           <span class="detail-label">Last Login</span>
-           <span class="detail-value">{{ user()!.lastLoginAt ? (user()!.lastLoginAt | date:'medium') : 'First visit' }}</span>
-         </div>
-         <div class="detail-row">
-           <span class="detail-label">Account Status</span>
-           <span class="detail-value status-active">Active</span>
-         </div>
-         <div class="detail-row">
-           <span class="detail-label">User ID</span>
-           <span class="detail-value">#{{ user()!.id }}</span>
-         </div>
-       </div>
+      <!-- Right Column -->
+      <div class="right-column">
+        <!-- Account Details -->
+        <div class="profile-card">
+          <h2>Account Details</h2>
+          <div class="detail-row">
+            <span class="detail-label">Member Since</span>
+            <span class="detail-value">{{ user()!.createdAt | date:'longDate' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Last Login</span>
+            <span class="detail-value">{{ user()!.lastLoginAt ? (user()!.lastLoginAt | date:'medium') : 'First visit' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Account Status</span>
+            <span class="detail-value status-active">Active</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">User ID</span>
+            <span class="detail-value">#{{ user()!.id }}</span>
+          </div>
+        </div>
 
-       <div class="profile-card">
-         <h2>Change Password</h2>
-         <form (ngSubmit)="changePassword()" #passwordChangeForm="ngForm">
-           <div class="form-group">
-             <label>Current Password</label>
-             <input type="password" [(ngModel)]="passwordForm().currentPassword" name="currentPassword" placeholder="Enter current password" required />
-           </div>
-           
-           <div class="form-group">
-             <label>New Password</label>
-             <input type="password" [(ngModel)]="passwordForm().newPassword" name="newPassword" placeholder="Enter new password (min 8 characters)" required minlength="8" />
-           </div>
-           
-           <div class="form-group">
-             <label>Confirm New Password</label>
-             <input type="password" [(ngModel)]="passwordForm().confirmNewPassword" name="confirmNewPassword" placeholder="Confirm new password" required />
-           </div>
-           
-           <button type="submit" class="btn-save" [disabled]="changingPassword()">
-             {{ changingPassword() ? 'Changing...' : 'Change Password' }}
-           </button>
-         </form>
-       </div>
+        <!-- Change Password -->
+        <div class="profile-card">
+          <h2>Change Password</h2>
+          <form (ngSubmit)="changePassword()" #passwordFormRef="ngForm">
+            <div class="form-group">
+              <label>Current Password</label>
+              <input type="password" [(ngModel)]="passwordForm().currentPassword" name="currentPassword" required placeholder="Enter current password" />
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" [(ngModel)]="passwordForm().newPassword" name="newPassword" required minlength="8" placeholder="Min 8 characters" />
+            </div>
+            <div class="form-group">
+              <label>Confirm New Password</label>
+              <input type="password" [(ngModel)]="passwordForm().confirmNewPassword" name="confirmNewPassword" required placeholder="Confirm new password" />
+            </div>
+            <button type="submit" class="btn-primary" [disabled]="changingPassword()">
+              {{ changingPassword() ? 'Changing...' : 'Change Password' }}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Address Book -->
+    <div class="profile-card address-section">
+      <div class="address-header">
+        <h2>Address Book</h2>
+        <button class="btn-add-address" (click)="openAddressForm()">
+          <span class="material-icons">add</span> Add New Address
+        </button>
+      </div>
+
+      @if (showAddressForm()) {
+        <div class="address-form">
+          <h3>{{ editingAddress() ? 'Edit Address' : 'Add New Address' }}</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Label</label>
+              <select [(ngModel)]="addressForm().label" name="addrLabel">
+                <option value="Home">Home</option>
+                <option value="Work">Work</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Country</label>
+              <input type="text" [(ngModel)]="addressForm().country" name="addrCountry" placeholder="Country" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Street Address</label>
+            <input type="text" [(ngModel)]="addressForm().street" name="addrStreet" placeholder="Street address" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" [(ngModel)]="addressForm().city" name="addrCity" placeholder="City" required />
+            </div>
+            <div class="form-group">
+              <label>State</label>
+              <input type="text" [(ngModel)]="addressForm().state" name="addrState" placeholder="State" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Zip Code</label>
+              <input type="text" [(ngModel)]="addressForm().zipCode" name="addrZip" placeholder="Zip code" required />
+            </div>
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="addressForm().isDefault" name="addrDefault" />
+                <span>Set as default address</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" (click)="saveAddress()" [disabled]="addressSaving()">
+              {{ addressSaving() ? 'Saving...' : (editingAddress() ? 'Update Address' : 'Add Address') }}
+            </button>
+            <button class="btn-secondary" (click)="closeAddressForm()">Cancel</button>
+          </div>
+        </div>
+      }
+
+      @if (addresses().length === 0 && !showAddressForm()) {
+        <div class="empty-addresses">
+          <span class="material-icons">location_on</span>
+          <p>No addresses saved yet</p>
+        </div>
+      }
+
+      <div class="address-list">
+        @for (addr of addresses(); track addr.id) {
+          <div class="address-card" [class.default]="addr.isDefault">
+            <div class="address-card-header">
+              <span class="address-label-badge" [class]="addr.label.toLowerCase()">{{ addr.label }}</span>
+              @if (addr.isDefault) {
+                <span class="default-badge">Default</span>
+              }
+            </div>
+            <p class="address-text">{{ addr.street }}, {{ addr.city }}, {{ addr.state }} {{ addr.zipCode }}, {{ addr.country }}</p>
+            <div class="address-actions">
+              @if (!addr.isDefault) {
+                <button class="btn-link" (click)="setDefaultAddress(addr.id)">Set as Default</button>
+              }
+              <button class="btn-icon" (click)="openAddressForm(addr)" title="Edit">
+                <span class="material-icons">edit</span>
+              </button>
+              <button class="btn-icon delete" (click)="deleteAddress(addr.id)" [disabled]="addressDeleting() === addr.id" title="Delete">
+                <span class="material-icons">{{ addressDeleting() === addr.id ? 'hourglass_empty' : 'delete' }}</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
     </div>
   }
 </div>

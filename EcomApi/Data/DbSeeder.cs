@@ -11,6 +11,7 @@ public static class DbSeeder
         SeedCategories(context);
         SeedBanners(context);
         SeedProducts(context);
+        SeedAddresses(context);
     }
 
     private static void SeedUsers(ApplicationDbContext context)
@@ -26,12 +27,25 @@ public static class DbSeeder
                 Role = UserRoles.Admin,
                 FirstName = "System",
                 LastName = "Administrator",
+                Phone = "+1-555-0100",
+                Gender = "Male",
+                DateOfBirth = new DateTime(1990, 1, 15),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "System"
             };
             admin.PasswordHash = passwordHasher.HashPassword(admin, "Admin@123");
             context.Users.Add(admin);
+        }
+        else
+        {
+            var existingAdmin = context.Users.First(u => u.Email == "admin@ecom.com");
+            if (existingAdmin.Gender == null)
+            {
+                existingAdmin.Phone ??= "+1-555-0100";
+                existingAdmin.Gender = "Male";
+                existingAdmin.DateOfBirth = new DateTime(1990, 1, 15);
+            }
         }
 
         if (!context.Users.Any(u => u.Email == "demo@ecom.com"))
@@ -43,12 +57,25 @@ public static class DbSeeder
                 Role = UserRoles.Customer,
                 FirstName = "Demo",
                 LastName = "User",
+                Phone = "+1-555-0200",
+                Gender = "Female",
+                DateOfBirth = new DateTime(1995, 6, 20),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "System"
             };
             demoUser.PasswordHash = passwordHasher.HashPassword(demoUser, "Demo@123");
             context.Users.Add(demoUser);
+        }
+        else
+        {
+            var existingDemo = context.Users.First(u => u.Email == "demo@ecom.com");
+            if (existingDemo.Gender == null)
+            {
+                existingDemo.Phone ??= "+1-555-0200";
+                existingDemo.Gender = "Female";
+                existingDemo.DateOfBirth = new DateTime(1995, 6, 20);
+            }
         }
 
         context.SaveChanges();
@@ -62,7 +89,7 @@ public static class DbSeeder
         {
             new() { Name = "Electronics", Icon = "devices" },
             new() { Name = "Clothing", Icon = "checkroom" },
-            new() { Name = "Footwear", Icon = "sports_and_outdoors" },
+            new() { Name = "Footwear", Icon = "directions_walk" },
             new() { Name = "Home", Icon = "home" },
             new() { Name = "Accessories", Icon = "work" },
             new() { Name = "Beauty", Icon = "spa" },
@@ -80,6 +107,18 @@ public static class DbSeeder
             context.Categories.AddRange(newCategories);
             context.SaveChanges();
         }
+
+        // Fix invalid icons on existing categories
+        var iconMap = categories.ToDictionary(c => c.Name, c => c.Icon);
+        var existingCategories = context.Categories.Where(c => iconMap.Keys.Contains(c.Name)).ToList();
+        foreach (var cat in existingCategories)
+        {
+            if (iconMap.TryGetValue(cat.Name, out var correctIcon) && cat.Icon != correctIcon)
+            {
+                cat.Icon = correctIcon;
+            }
+        }
+        context.SaveChanges();
     }
 
     private static void SeedBanners(ApplicationDbContext context)
@@ -161,9 +200,9 @@ public static class DbSeeder
             new() { Name = "Gaming Keyboard", Description = "RGB gaming keyboard", Price = 129.99m, Stock = 20, Category = "Electronics", ImageUrl = "/uploads/Keyboard1.jpg" },
             new() { Name = "MacBook Pro", Description = "Apple MacBook Pro laptop", Price = 1999.99m, Stock = 10, Category = "Electronics", ImageUrl = "/uploads/Macbook.jpg" },
             new() { Name = "MacBook Air", Description = "Apple MacBook Air laptop", Price = 1499.99m, Stock = 12, Category = "Electronics", ImageUrl = "/uploads/Macbook1.jpg" },
-            new() { Name = "Headphones", Description = "Over-ear headphones", Price = 79.99m, Stock = 30, Category = "Electronics", ImageUrl = "/uploads/headphone.jpt" },
-            new() { Name = "Wireless Earbuds", Description = "Bluetooth wireless earbuds", Price = 49.99m, Stock = 50, Category = "Electronics", ImageUrl = "/uploads/headphone1.jpt" },
-            new() { Name = "VR Headset", Description = "Virtual reality headset", Price = 299.99m, Stock = 10, Category = "Electronics", ImageUrl = "/uploads/goggle.jpt" },
+            new() { Name = "Headphones", Description = "Over-ear headphones", Price = 79.99m, Stock = 30, Category = "Electronics", ImageUrl = "/uploads/headphone.jpg" },
+            new() { Name = "Wireless Earbuds", Description = "Bluetooth wireless earbuds", Price = 49.99m, Stock = 50, Category = "Electronics", ImageUrl = "/uploads/headphone1.jpg" },
+            new() { Name = "VR Headset", Description = "Virtual reality headset", Price = 299.99m, Stock = 10, Category = "Electronics", ImageUrl = "/uploads/goggle.jpg" },
 
             // Clothing
             new() { Name = "T-Shirt", Description = "Cotton casual t-shirt", Price = 19.99m, Stock = 100, Category = "Clothing", ImageUrl = "/uploads/tshirt.jpg" },
@@ -206,7 +245,7 @@ public static class DbSeeder
 
             // Grocery
             new() { Name = "Fresh Apples", Description = "Fresh red apples (1kg)", Price = 4.99m, Stock = 100, Category = "Grocery", ImageUrl = "/uploads/Apple.jpg" },
-            new() { Name = "Coca Cola", Description = "Coca Cola 500ml", Price = 1.99m, Stock = 200, Category = "Grocery", ImageUrl = "/uploads/Coke.jpt" },
+            new() { Name = "Coca Cola", Description = "Coca Cola 500ml", Price = 1.99m, Stock = 200, Category = "Grocery", ImageUrl = "/uploads/Coke.jpg" },
             new() { Name = "Orange Juice", Description = "Fresh orange juice 1L", Price = 3.99m, Stock = 80, Category = "Grocery", ImageUrl = "/uploads/OrangeDrink.jpg" },
             new() { Name = "Sprite", Description = "Sprite 500ml", Price = 1.99m, Stock = 200, Category = "Grocery", ImageUrl = "/uploads/Sprite.jpg" },
             new() { Name = "Atta", Description = "Whole wheat flour 5kg", Price = 8.99m, Stock = 60, Category = "Grocery", ImageUrl = "/uploads/atta.jpg" },
@@ -250,5 +289,63 @@ public static class DbSeeder
             }
             context.SaveChanges();
         }
+
+        // Fix broken image URLs (wrong extensions)
+        var imageUrlFixes = new Dictionary<string, string>
+        {
+            { "/uploads/headphone.jpt", "/uploads/headphone.jpg" },
+            { "/uploads/headphone1.jpt", "/uploads/headphone1.jpg" },
+            { "/uploads/goggle.jpt", "/uploads/goggle.jpg" },
+            { "/uploads/Coke.jpt", "/uploads/Coke.jpg" }
+        };
+
+        foreach (var (wrongUrl, correctUrl) in imageUrlFixes)
+        {
+            var productsToFix = context.Products.Where(p => p.ImageUrl == wrongUrl).ToList();
+            foreach (var product in productsToFix)
+            {
+                product.ImageUrl = correctUrl;
+            }
+        }
+        context.SaveChanges();
+    }
+
+    private static void SeedAddresses(ApplicationDbContext context)
+    {
+        if (context.Addresses.Any()) return;
+
+        var demoUser = context.Users.FirstOrDefault(u => u.Email == "demo@ecom.com");
+        if (demoUser == null) return;
+
+        var addresses = new List<Address>
+        {
+            new()
+            {
+                UserId = demoUser.Id,
+                Label = "Home",
+                Street = "123 Main Street, Apt 4B",
+                City = "New York",
+                State = "NY",
+                ZipCode = "10001",
+                Country = "United States",
+                IsDefault = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new()
+            {
+                UserId = demoUser.Id,
+                Label = "Work",
+                Street = "456 Business Ave, Suite 200",
+                City = "New York",
+                State = "NY",
+                ZipCode = "10018",
+                Country = "United States",
+                IsDefault = false,
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        context.Addresses.AddRange(addresses);
+        context.SaveChanges();
     }
 }

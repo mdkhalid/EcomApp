@@ -200,7 +200,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateProfileDto dto)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var user = await _userRepository.UpdateProfileAsync(userId, dto.FirstName, dto.LastName, dto.Phone);
+        var user = await _userRepository.UpdateProfileAsync(userId, dto.FirstName, dto.LastName, dto.Phone, dto.Gender, dto.DateOfBirth);
         _logger.LogInformation("User updated profile: {Email}", user.Email);
         return Ok(user.Adapt<UserDto>());
     }
@@ -292,6 +292,99 @@ public class AuthController : ControllerBase
     public ActionResult GetRoles()
     {
         return Ok(new { roles = UserRoles.AllRoles });
+    }
+
+    [HttpPost("profile/picture")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> UploadProfilePicture(IFormFile file)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+            return BadRequest(new { error = "Invalid file type. Allowed: jpg, jpeg, png, webp." });
+
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { error = "File size exceeds 5MB limit." });
+
+        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+        Directory.CreateDirectory(uploadsDir);
+
+        var fileName = $"{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var imageUrl = $"/uploads/profiles/{fileName}";
+        var user = await _userRepository.UpdateProfilePictureAsync(userId, imageUrl);
+        _logger.LogInformation("User uploaded profile picture: {Email}", user.Email);
+        return Ok(user.Adapt<UserDto>());
+    }
+
+    [HttpDelete("profile/picture")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> RemoveProfilePicture()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await _userRepository.UpdateProfilePictureAsync(userId, null);
+        _logger.LogInformation("User removed profile picture: {Email}", user.Email);
+        return Ok(user.Adapt<UserDto>());
+    }
+
+    [HttpGet("addresses")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<AddressDto>>> GetAddresses()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var addresses = await _userRepository.GetAddressesAsync(userId);
+        return Ok(addresses.Adapt<List<AddressDto>>());
+    }
+
+    [HttpPost("addresses")]
+    [Authorize]
+    public async Task<ActionResult<AddressDto>> AddAddress([FromBody] CreateAddressDto dto)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var address = dto.Adapt<Address>();
+        address.UserId = userId;
+        var created = await _userRepository.AddAddressAsync(address);
+        return CreatedAtAction(nameof(GetAddresses), new { id = created.Id }, created.Adapt<AddressDto>());
+    }
+
+    [HttpPut("addresses/{id}")]
+    [Authorize]
+    public async Task<ActionResult<AddressDto>> UpdateAddress(int id, [FromBody] UpdateAddressDto dto)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var address = await _userRepository.GetAddressByIdAsync(id, userId);
+        if (address == null)
+            return NotFound();
+
+        if (dto.Label != null) address.Label = dto.Label;
+        if (dto.Street != null) address.Street = dto.Street;
+        if (dto.City != null) address.City = dto.City;
+        if (dto.State != null) address.State = dto.State;
+        if (dto.ZipCode != null) address.ZipCode = dto.ZipCode;
+        if (dto.Country != null) address.Country = dto.Country;
+        if (dto.IsDefault.HasValue) address.IsDefault = dto.IsDefault.Value;
+
+        var updated = await _userRepository.UpdateAddressAsync(address);
+        return Ok(updated.Adapt<AddressDto>());
+    }
+
+    [HttpDelete("addresses/{id}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteAddress(int id)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _userRepository.DeleteAddressAsync(id, userId);
+        if (!result)
+            return NotFound();
+        return NoContent();
     }
 
     private async Task<ActionResult<TokenResponseDto>> GenerateTokenResponse(User user)

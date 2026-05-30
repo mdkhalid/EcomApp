@@ -20,6 +20,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Banner> Banners => Set<Banner>();
+    public DbSet<Address> Addresses => Set<Address>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +40,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.FirstName).HasMaxLength(100);
             entity.Property(e => e.LastName).HasMaxLength(100);
             entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
+            entity.Property(e => e.Gender).HasMaxLength(20);
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>
@@ -167,6 +170,23 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ImageUrl).HasMaxLength(500);
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.SortOrder);
+        });
+
+        modelBuilder.Entity<Address>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.UserId, e.IsDefault });
+            entity.Property(e => e.Label).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Street).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.City).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.State).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ZipCode).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Country).IsRequired().HasMaxLength(100);
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Addresses)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

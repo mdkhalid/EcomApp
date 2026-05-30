@@ -17,7 +17,14 @@ public interface IUserRepository
     Task<bool> UsernameExistsAsync(string username);
     Task<bool> DeactivateAsync(int id);
     Task<bool> ActivateAsync(int id);
-    Task<User> UpdateProfileAsync(int id, string? firstName, string? lastName, string? phone);
+    Task<User> UpdateProfileAsync(int id, string? firstName, string? lastName, string? phone, string? gender, DateTime? dateOfBirth);
+    Task<User> UpdateProfilePictureAsync(int userId, string? imageUrl);
     Task<bool> ChangePasswordAsync(int id, string newPasswordHash);
     Task<bool> CanCreateUsersAsync(string creatorRole, string targetRole);
+    Task<Address> AddAddressAsync(Address address);
+    Task<Address?> GetAddressByIdAsync(int addressId, int userId);
+    Task<IEnumerable<Address>> GetAddressesAsync(int userId);
+    Task<Address> UpdateAddressAsync(Address address);
+    Task<bool> DeleteAddressAsync(int addressId, int userId);
+    Task UnsetDefaultAddressesAsync(int userId);
 }

@@ -20,6 +20,7 @@ export class App implements OnInit {
   protected readonly categoryService = inject(CategoryService);
   protected searchQuery = signal('');
   protected categories = signal<Category[]>([]);
+  protected darkMode = signal(false);
 
   ngOnInit(): void {
     this.categoryService.getAll().subscribe(data => this.categories.set(data));
@@ -27,6 +28,25 @@ export class App implements OnInit {
     if (!this.authService.isAdmin()) {
       this.cartService.getCart().subscribe();
     }
+    // Load dark mode preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      this.darkMode.set(true);
+      document.body.classList.add('dark-mode');
+    }
+  }
+
+  protected toggleDarkMode(): void {
+    this.darkMode.set(!this.darkMode());
+    document.body.classList.add('theme-transition');
+    if (this.darkMode()) {
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('theme', 'light');
+    }
+    setTimeout(() => document.body.classList.remove('theme-transition'), 350);
   }
 
   protected onSearch(): void {

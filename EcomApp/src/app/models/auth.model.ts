@@ -6,10 +6,45 @@ export interface User {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  profilePictureUrl?: string;
+  gender?: string;
+  dateOfBirth?: string;
   isActive?: boolean;
   createdAt: string;
   lastLoginAt?: string;
   createdBy?: string;
+  addresses?: Address[];
+}
+
+export interface Address {
+  id: number;
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault: boolean;
+}
+
+export interface CreateAddressRequest {
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault: boolean;
+}
+
+export interface UpdateAddressRequest {
+  label?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  isDefault?: boolean;
 }
 
 export interface RegisterRequest {

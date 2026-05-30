@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { User, RegisterRequest, LoginRequest, TokenResponse, ChangePasswordRequest } from '../models/auth.model';
+import { User, RegisterRequest, LoginRequest, TokenResponse, ChangePasswordRequest, Address, CreateAddressRequest, UpdateAddressRequest } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
@@ -68,13 +68,49 @@ export class AuthService {
     );
   }
 
-  updateProfile(data: { firstName?: string; lastName?: string; phone?: string }): Observable<User> {
+  updateProfile(data: { firstName?: string; lastName?: string; phone?: string; gender?: string; dateOfBirth?: string }): Observable<User> {
     return this.http.put<User>(`${this.apiUrl}/profile`, data).pipe(
       tap(user => {
         this.currentUserSignal.set(user);
         localStorage.setItem('user', JSON.stringify(user));
       })
     );
+  }
+
+  uploadProfilePicture(file: File): Observable<User> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<User>(`${this.apiUrl}/profile/picture`, formData).pipe(
+      tap(user => {
+        this.currentUserSignal.set(user);
+        localStorage.setItem('user', JSON.stringify(user));
+      })
+    );
+  }
+
+  removeProfilePicture(): Observable<User> {
+    return this.http.delete<User>(`${this.apiUrl}/profile/picture`).pipe(
+      tap(user => {
+        this.currentUserSignal.set(user);
+        localStorage.setItem('user', JSON.stringify(user));
+      })
+    );
+  }
+
+  getAddresses(): Observable<Address[]> {
+    return this.http.get<Address[]>(`${this.apiUrl}/addresses`);
+  }
+
+  addAddress(data: CreateAddressRequest): Observable<Address> {
+    return this.http.post<Address>(`${this.apiUrl}/addresses`, data);
+  }
+
+  updateAddress(id: number, data: UpdateAddressRequest): Observable<Address> {
+    return this.http.put<Address>(`${this.apiUrl}/addresses/${id}`, data);
+  }
+
+  deleteAddress(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/addresses/${id}`);
   }
 
   isAdmin(): boolean {

@@ -28,6 +28,9 @@
 
     <!-- Right: Actions -->
     <div class="header-right">
+      <button class="header-btn theme-toggle" (click)="toggleDarkMode()" [title]="darkMode() ? 'Switch to light mode' : 'Switch to dark mode'">
+        <span class="material-icons">{{ darkMode() ? 'light_mode' : 'dark_mode' }}</span>
+      </button>
       @if (authService.isAuthenticated()) {
         <div class="header-user-dropdown">
           <a routerLink="/profile" class="header-btn header-user-btn">

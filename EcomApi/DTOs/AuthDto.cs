@@ -81,8 +81,12 @@ public class UserDto
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? Phone { get; set; }
+    public string? ProfilePictureUrl { get; set; }
+    public string? Gender { get; set; }
+    public DateTime? DateOfBirth { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
     public string? CreatedBy { get; set; }
+    public List<AddressDto> Addresses { get; set; } = new();
 }

@@ -10,6 +10,9 @@ public class User
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? Phone { get; set; }
+    public string? ProfilePictureUrl { get; set; }
+    public string? Gender { get; set; }
+    public DateTime? DateOfBirth { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
@@ -18,6 +21,7 @@ public class User
     public List<Cart> Carts { get; set; } = new();
     public List<Order> Orders { get; set; } = new();
     public List<RefreshToken> RefreshTokens { get; set; } = new();
+    public List<Address> Addresses { get; set; } = new();
 }
 
 public class RefreshToken

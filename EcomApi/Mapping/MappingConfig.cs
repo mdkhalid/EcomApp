@@ -50,5 +50,11 @@ public static class MappingConfig
             .Map(dest => dest.Id, _ => 0)
             .Compile();
         TypeAdapterConfig<UpdateBannerDto, Banner>.NewConfig().Compile();
+
+        TypeAdapterConfig<Address, AddressDto>.NewConfig().Compile();
+        TypeAdapterConfig<CreateAddressDto, Address>.NewConfig()
+            .Map(dest => dest.Id, _ => 0)
+            .Map(dest => dest.CreatedAt, _ => DateTime.UtcNow)
+            .Compile();
     }
 }

@@ -5,9 +5,9 @@
 }
 
 .wishlist-banner {
-  background: #fff;
+  background: var(--card-bg);
   padding: 20px 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   margin-bottom: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   display: flex;
@@ -27,11 +27,11 @@
   h2 {
     font-size: 20px;
     font-weight: 600;
-    color: #212121;
+    color: var(--text-primary);
   }
   p {
     font-size: 13px;
-    color: #878787;
+    color: var(--text-secondary);
     margin-top: 2px;
   }
 }
@@ -43,8 +43,8 @@
 }
 
 .wishlist-card {
-  background: #fff;
-  border-radius: 4px;
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   position: relative;
@@ -75,8 +75,8 @@
   .material-icons { font-size: 16px; color: #666; }
 
   &:hover {
-    background: #d32f2f;
-    .material-icons { color: #fff; }
+    background: var(--error);
+    .material-icons { color: var(--card-bg); }
   }
 }
 
@@ -105,8 +105,8 @@
 .card-img-placeholder {
   width: 80px;
   height: 80px;
-  background: #f0f0f0;
-  border-radius: 4px;
+  background: var(--border-light);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,11 +119,11 @@
   top: 8px;
   left: 8px;
   background: #ffe500;
-  color: #212121;
+  color: var(--text-primary);
   font-size: 11px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .toast-container {
@@ -141,21 +141,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  border-radius: 4px;
-  color: #fff;
+  border-radius: var(--radius-md);
+  color: var(--card-bg);
   min-width: 280px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   animation: slideIn 0.3s ease;
   font-size: 14px;
 }
 
-.toast-success { background: linear-gradient(135deg, #388e3c, #43a047); }
-.toast-error { background: linear-gradient(135deg, #d32f2f, #e53935); }
+.toast-success { background: linear-gradient(135deg, var(--success), #43a047); }
+.toast-error { background: linear-gradient(135deg, var(--error), #e53935); }
 
 .toast-close {
   background: none;
   border: none;
-  color: #fff;
+  color: var(--card-bg);
   font-size: 20px;
   cursor: pointer;
   margin-left: 12px;
@@ -178,22 +178,22 @@
 .card-title {
   font-size: 14px;
   font-weight: 500;
-  color: #212121;
+  color: var(--text-primary);
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 
-  &:hover { color: #2874f0; text-decoration: none; }
+  &:hover { color: var(--flipkart-blue); text-decoration: none; }
 }
 
 .card-category {
   font-size: 11px;
-  color: #2874f0;
+  color: var(--flipkart-blue);
   background: #e8f0fe;
   padding: 2px 8px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   align-self: flex-start;
 }
 
@@ -207,18 +207,18 @@
 .card-price {
   font-size: 16px;
   font-weight: 600;
-  color: #212121;
+  color: var(--text-primary);
 }
 
 .card-original-price {
   font-size: 13px;
-  color: #878787;
+  color: var(--text-secondary);
   text-decoration: line-through;
 }
 
 .card-discount {
   font-size: 12px;
-  color: #388e3c;
+  color: var(--success);
   font-weight: 500;
 }
 
@@ -230,5 +230,28 @@
 
   .card-image-link {
     height: 150px;
+  }
+}
+
+/* Dark Mode Overrides */
+.dark-mode {
+  .wishlist-card {
+    border-color: var(--border-color);
+  }
+
+  .btn-remove {
+    background: rgba(211, 47, 47, 0.1);
+    color: var(--error);
+
+    &:hover { background: rgba(211, 47, 47, 0.2); }
+  }
+
+  .btn-add-to-cart {
+    background: var(--flipkart-blue);
+    color: white;
+  }
+
+  .empty-state {
+    background: var(--page-bg);
   }
 }
