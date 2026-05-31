@@ -91,6 +91,10 @@
         </div>
         <div class="info-card-body">
           <p class="info-pay-method">Cash on Delivery</p>
+          @if (order()!.couponCode) {
+            <p class="info-coupon">Coupon: <strong>{{ order()!.couponCode }}</strong></p>
+            <p class="info-discount">Discount: <strong>-&#8377;{{ order()!.discountAmount.toLocaleString('en-IN') }}</strong></p>
+          }
           <p class="info-total">Total: <strong>&#8377;{{ order()!.totalAmount.toLocaleString('en-IN') }}</strong></p>
         </div>
       </div>
@@ -123,6 +127,12 @@
           </div>
         }
       </div>
+      @if (order()!.discountAmount > 0) {
+        <div class="items-discount-row">
+          <span class="total-label">Discount ({{ order()!.couponCode }})</span>
+          <span class="discount-value">-&#8377;{{ order()!.discountAmount.toLocaleString('en-IN') }}</span>
+        </div>
+      }
       <div class="items-total-row">
         <span class="total-label">Order Total</span>
         <span class="total-value">&#8377;{{ order()!.totalAmount.toLocaleString('en-IN') }}</span>

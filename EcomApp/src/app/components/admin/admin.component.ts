@@ -7,11 +7,13 @@ import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { CategoryService } from '../../services/category.service';
 import { BannerService } from '../../services/banner.service';
+import { CouponService } from '../../services/coupon.service';
 import { Product, CreateProduct, UpdateProduct } from '../../models/product.model';
 import { Order } from '../../models/order.model';
 import { User, CreateUserRequest, AdminChangePasswordRequest } from '../../models/auth.model';
 import { Category, CreateCategory } from '../../models/category.model';
 import { Banner, CreateBanner, UpdateBanner } from '../../models/banner.model';
+import { Coupon, CreateCoupon } from '../../models/coupon.model';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -33,9 +35,10 @@ export class AdminComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly categoryService = inject(CategoryService);
   private readonly bannerService = inject(BannerService);
+  private readonly couponService = inject(CouponService);
   private readonly apiUrl = 'http://localhost:5068/api';
 
-  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners'>('dashboard');
+  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons'>('dashboard');
 
   stats = signal({ totalProducts: 0, totalOrders: 0, totalUsers: 0, totalRevenue: 0 });
   products = signal<Product[]>([]);
@@ -82,6 +85,11 @@ export class AdminComponent implements OnInit {
   bannerSelectedFile: File | null = null;
   bannerImagePreview: string | null = null;
 
+  coupons = signal<Coupon[]>([]);
+  showCouponModal = signal(false);
+  editingCoupon: Coupon | null = null;
+  couponForm: CreateCoupon = { code: '', description: '', type: 'Percentage', value: 10, minCartValue: 0, maxUses: 0, expiresAt: '', isActive: true };
+
   ngOnInit(): void {
     if (!this.authService.isAdmin()) {
       this.notificationService.showError('Access denied. Admin only.');
@@ -91,13 +99,14 @@ export class AdminComponent implements OnInit {
     this.loadDashboard();
   }
 
-  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners'): void {
+  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons'): void {
     this.activeTab.set(tab);
     if (tab === 'orders') this.loadOrders();
     if (tab === 'users') { this.loadUsers(); this.loadRoles(); }
     if (tab === 'products') { this.loadProducts(); this.loadCategories(); }
     if (tab === 'categories') this.loadCategories();
     if (tab === 'banners') this.loadBanners();
+    if (tab === 'coupons') this.loadCoupons();
   }
 
   loadDashboard(): void {
@@ -687,5 +696,118 @@ export class AdminComponent implements OnInit {
     if (search) items = items.filter(p => p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search) || (p.brand && p.brand.toLowerCase().includes(search)));
     if (category) items = items.filter(p => p.category === category);
     return items;
+  }
+
+  // Coupon Management
+  loadCoupons(): void {
+    this.isLoading.set(true);
+    this.couponService.getAll().subscribe({
+      next: (data) => {
+        this.coupons.set(data);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
+    });
+  }
+
+  openAddCoupon(): void {
+    this.editingCoupon = null;
+    this.couponForm = { code: '', description: '', type: 'Percentage', value: 10, minCartValue: 0, maxUses: 0, expiresAt: '', isActive: true };
+    this.showCouponModal.set(true);
+  }
+
+  openEditCoupon(coupon: Coupon): void {
+    this.editingCoupon = coupon;
+    this.couponForm = {
+      code: coupon.code,
+      description: coupon.description,
+      type: coupon.type,
+      value: coupon.value,
+      minCartValue: coupon.minCartValue,
+      maxUses: coupon.maxUses,
+      expiresAt: coupon.expiresAt.split('T')[0],
+      isActive: coupon.isActive
+    };
+    this.showCouponModal.set(true);
+  }
+
+  closeCouponModal(): void {
+    this.showCouponModal.set(false);
+    this.editingCoupon = null;
+    this.couponForm = { code: '', description: '', type: 'Percentage', value: 10, minCartValue: 0, maxUses: 0, expiresAt: '', isActive: true };
+  }
+
+  saveCoupon(): void {
+    const f = this.couponForm;
+    if (!f.code || !f.value || !f.expiresAt) {
+      this.notificationService.showError('Code, value and expiry date are required');
+      return;
+    }
+    if (f.code.length < 2) {
+      this.notificationService.showError('Code must be at least 2 characters');
+      return;
+    }
+    if (f.type === 'Percentage' && f.value > 100) {
+      this.notificationService.showError('Percentage discount cannot exceed 100%');
+      return;
+    }
+    const payload: CreateCoupon = {
+      ...f,
+      expiresAt: new Date(f.expiresAt).toISOString()
+    };
+    if (this.editingCoupon) {
+      this.couponService.update(this.editingCoupon.id, payload).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Coupon updated');
+          this.closeCouponModal();
+          this.loadCoupons();
+        },
+        error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update coupon')
+      });
+    } else {
+      this.couponService.create(payload).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Coupon created');
+          this.closeCouponModal();
+          this.loadCoupons();
+        },
+        error: (err) => this.notificationService.showError(err.error?.error || 'Failed to create coupon')
+      });
+    }
+  }
+
+  deleteCoupon(id: number): void {
+    if (!confirm('Delete this coupon?')) return;
+    this.couponService.delete(id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Coupon deleted');
+        this.coupons.update(c => c.filter(x => x.id !== id));
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to delete coupon')
+    });
+  }
+
+  isCouponExpired(coupon: Coupon): boolean {
+    return new Date(coupon.expiresAt) < new Date();
+  }
+
+  toggleCouponStatus(coupon: Coupon): void {
+    const payload: CreateCoupon = {
+      code: coupon.code,
+      description: coupon.description,
+      type: coupon.type,
+      value: coupon.value,
+      minCartValue: coupon.minCartValue,
+      maxUses: coupon.maxUses,
+      expiresAt: coupon.expiresAt,
+      isActive: !coupon.isActive
+    };
+    this.couponService.update(coupon.id, payload).subscribe({
+      next: () => {
+        this.notificationService.showSuccess(`Coupon ${coupon.isActive ? 'deactivated' : 'activated'}`);
+        this.loadCoupons();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to toggle coupon')
+    });
   }
 }

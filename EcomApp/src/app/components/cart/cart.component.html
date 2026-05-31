@@ -86,22 +86,50 @@
           </div>
           <div class="cs-row">
             <span>Discount</span>
-            <span class="cs-free">—</span>
+            @if (couponResult()?.isValid) {
+              <span class="cs-discount">-₹{{ getDiscountAmount().toLocaleString('en-IN') }}</span>
+            } @else {
+              <span class="cs-free">—</span>
+            }
           </div>
           <div class="cs-divider"></div>
           <div class="cs-row cs-total">
             <span>Total Amount</span>
-            <span>₹{{ cart()!.totalAmount.toLocaleString('en-IN') }}</span>
+            <span>₹{{ getDiscountedTotal().toLocaleString('en-IN') }}</span>
           </div>
-          <p class="cs-savings">You will save ₹0 on this order</p>
+          @if (couponResult()?.isValid) {
+            <p class="cs-savings">You will save ₹{{ getDiscountAmount().toLocaleString('en-IN') }} on this order</p>
+          } @else {
+            <p class="cs-savings">You will save ₹0 on this order</p>
+          }
           <button class="btn-checkout" (click)="goToCheckout()">
             Place Order
           </button>
         </div>
 
         <div class="cs-help">
-          <span class="material-icons">help_outline</span>
-          <a href="#">Have a coupon? Click here to enter your code</a>
+          @if (!showCouponInput()) {
+            <a href="javascript:void(0)" (click)="toggleCouponInput()">
+              <span class="material-icons">local_offer</span> Have a coupon? Click here to enter your code
+            </a>
+          } @else {
+            <div class="coupon-input-section">
+              <div class="coupon-input-row">
+                <input type="text" [ngModel]="couponCode()" (ngModelChange)="couponCode.set($event)" placeholder="Enter coupon code" class="coupon-input" [disabled]="applyingCoupon()" />
+                <button class="btn-apply-coupon" (click)="applyCoupon()" [disabled]="applyingCoupon() || !couponCode()">
+                  {{ applyingCoupon() ? 'Applying...' : 'Apply' }}
+                </button>
+              </div>
+              @if (couponError()) {
+                <p class="coupon-error">{{ couponError() }}</p>
+              }
+              @if (couponResult()?.isValid) {
+                <p class="coupon-success">Coupon applied! You save ₹{{ getDiscountAmount().toLocaleString('en-IN') }}</p>
+                <button class="btn-remove-coupon" (click)="removeCoupon()">Remove Coupon</button>
+              }
+              <button class="btn-close-coupon" (click)="toggleCouponInput()">Cancel</button>
+            </div>
+          }
         </div>
       </div>
     }

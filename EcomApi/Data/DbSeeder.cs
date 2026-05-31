@@ -12,6 +12,7 @@ public static class DbSeeder
         SeedBanners(context);
         SeedProducts(context);
         SeedAddresses(context);
+        SeedCoupons(context);
     }
 
     private static void SeedUsers(ApplicationDbContext context)
@@ -346,6 +347,51 @@ public static class DbSeeder
         };
 
         context.Addresses.AddRange(addresses);
+        context.SaveChanges();
+    }
+
+    private static void SeedCoupons(ApplicationDbContext context)
+    {
+        if (context.Coupons.Any()) return;
+
+        var coupons = new List<Coupon>
+        {
+            new()
+            {
+                Code = "WELCOME10",
+                Description = "10% off your first order",
+                Type = CouponType.Percentage,
+                Value = 10,
+                MinCartValue = 50,
+                MaxUses = 100,
+                ExpiresAt = DateTime.UtcNow.AddMonths(6),
+                IsActive = true
+            },
+            new()
+            {
+                Code = "FLAT20",
+                Description = "Flat ₹20 off on orders above ₹100",
+                Type = CouponType.FixedAmount,
+                Value = 20,
+                MinCartValue = 100,
+                MaxUses = 50,
+                ExpiresAt = DateTime.UtcNow.AddMonths(3),
+                IsActive = true
+            },
+            new()
+            {
+                Code = "SUMMER25",
+                Description = "25% off summer sale",
+                Type = CouponType.Percentage,
+                Value = 25,
+                MinCartValue = 75,
+                MaxUses = 0,
+                ExpiresAt = DateTime.UtcNow.AddMonths(2),
+                IsActive = true
+            }
+        };
+
+        context.Coupons.AddRange(coupons);
         context.SaveChanges();
     }
 }

@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
+import { CouponService } from '../../services/coupon.service';
 import { NotificationService } from '../../services/notification.service';
 import { Cart, CartItem } from '../../models/cart.model';
+import { ValidateCouponResponse } from '../../models/coupon.model';
 
 @Component({
   selector: 'app-cart',
@@ -15,12 +17,19 @@ import { Cart, CartItem } from '../../models/cart.model';
 })
 export class CartComponent implements OnInit {
   private readonly cartService = inject(CartService);
+  private readonly couponService = inject(CouponService);
   private readonly router = inject(Router);
   readonly notification = inject(NotificationService);
   protected readonly notifications = this.notification.notifications;
 
   cart = signal<Cart | null>(null);
   loading = signal(true);
+
+  couponCode = signal('');
+  applyingCoupon = signal(false);
+  couponResult = signal<ValidateCouponResponse | null>(null);
+  couponError = signal('');
+  showCouponInput = signal(false);
 
   ngOnInit(): void {
     this.loadCart();
@@ -83,5 +92,54 @@ export class CartComponent implements OnInit {
 
   getFullImageUrl(path: string): string {
     return `http://localhost:5068${path}`;
+  }
+
+  applyCoupon(): void {
+    const code = this.couponCode().trim();
+    if (!code) return;
+    this.applyingCoupon.set(true);
+    this.couponError.set('');
+    this.couponResult.set(null);
+
+    const cartTotal = this.cart()!.totalAmount;
+    this.couponService.validate({ code, cartTotal }).subscribe({
+      next: (result) => {
+        this.applyingCoupon.set(false);
+        if (result.isValid) {
+          this.couponResult.set(result);
+          this.couponError.set('');
+        } else {
+          this.couponError.set(result.errorMessage || 'Invalid coupon');
+          this.couponResult.set(null);
+        }
+      },
+      error: () => {
+        this.applyingCoupon.set(false);
+        this.couponError.set('Failed to validate coupon');
+      }
+    });
+  }
+
+  removeCoupon(): void {
+    this.couponResult.set(null);
+    this.couponCode.set('');
+    this.couponError.set('');
+  }
+
+  toggleCouponInput(): void {
+    this.showCouponInput.set(!this.showCouponInput());
+    if (!this.showCouponInput()) {
+      this.removeCoupon();
+    }
+  }
+
+  getDiscountedTotal(): number {
+    const result = this.couponResult();
+    return result && result.isValid ? result.finalTotal : this.cart()!.totalAmount;
+  }
+
+  getDiscountAmount(): number {
+    const result = this.couponResult();
+    return result && result.isValid ? result.discountAmount : 0;
   }
 }

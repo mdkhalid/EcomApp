@@ -6,6 +6,8 @@ export interface Order {
   shippingCity: string;
   shippingZip: string;
   totalAmount: number;
+  couponCode?: string;
+  discountAmount: number;
   trackingNumber?: string;
   carrier?: string;
   estimatedDeliveryDate?: string;
@@ -43,6 +45,7 @@ export interface CreateOrder {
   shippingZip: string;
   customerEmail?: string;
   customerPhone?: string;
+  couponCode?: string;
 }
 
 export interface SavedAddress {

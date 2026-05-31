@@ -328,6 +328,18 @@
     margin-bottom: 4px;
   }
 
+  .info-coupon {
+    font-size: 13px;
+    color: #1565c0;
+    margin-bottom: 2px;
+  }
+
+  .info-discount {
+    font-size: 13px;
+    color: #388e3c;
+    margin-bottom: 4px;
+  }
+
   .info-total {
     font-size: 14px;
     color: #212121;
@@ -425,6 +437,20 @@
   font-size: 15px;
   font-weight: 600;
   color: #212121;
+}
+
+.items-discount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #f1f8e9;
+}
+
+.discount-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #388e3c;
 }
 
 .items-total-row {

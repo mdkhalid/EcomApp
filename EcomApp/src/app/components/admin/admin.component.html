@@ -31,6 +31,9 @@
     <button [class.active]="activeTab() === 'banners'" (click)="setTab('banners')">
       <span class="material-icons">slideshow</span> Banners
     </button>
+    <button [class.active]="activeTab() === 'coupons'" (click)="setTab('coupons')">
+      <span class="material-icons">local_offer</span> Coupons
+    </button>
   </div>
 
   @if (isLoading()) {
@@ -368,6 +371,57 @@
         </table>
       </div>
     }
+
+    @if (activeTab() === 'coupons') {
+      <div class="admin-card">
+        <div class="card-header-row">
+          <h3>Manage Coupons ({{ coupons().length }})</h3>
+          <button class="btn-add" (click)="openAddCoupon()">
+            <span class="material-icons">add_circle</span> Add Coupon
+          </button>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Code</th><th>Type</th><th>Value</th><th>Min Cart</th><th>Uses</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            @for (c of coupons(); track c.id) {
+              <tr>
+                <td>#{{ c.id }}</td>
+                <td><strong>{{ c.code }}</strong></td>
+                <td>{{ c.type === 'Percentage' ? 'Percent' : 'Fixed' }}</td>
+                <td>{{ c.type === 'Percentage' ? c.value + '%' : '₹' + c.value }}</td>
+                <td>₹{{ c.minCartValue }}</td>
+                <td>{{ c.currentUses }}{{ c.maxUses > 0 ? ' / ' + c.maxUses : ' / ∞' }}</td>
+                <td>{{ c.expiresAt | date:'dd MMM yyyy' }}</td>
+                <td>
+                  @if (!c.isActive) {
+                    <span class="status-badge status-pending">Inactive</span>
+                  } @else if (isCouponExpired(c)) {
+                    <span class="status-badge status-cancelled">Expired</span>
+                  } @else {
+                    <span class="status-badge status-delivered">Active</span>
+                  }
+                </td>
+                <td>
+                  <div class="action-btns">
+                    <button class="btn-edit" (click)="openEditCoupon(c)" title="Edit">
+                      <span class="material-icons">edit</span>
+                    </button>
+                    <button class="btn-toggle-status" (click)="toggleCouponStatus(c)" title="{{ c.isActive ? 'Deactivate' : 'Activate' }}">
+                      <span class="material-icons">{{ c.isActive ? 'visibility_off' : 'visibility' }}</span>
+                    </button>
+                    <button class="btn-delete" (click)="deleteCoupon(c.id)" title="Delete">
+                      <span class="material-icons">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   }
 </div>
 
@@ -604,6 +658,127 @@
       <div class="modal-footer">
         <button class="btn-save" (click)="saveChangePassword()">Change Password</button>
         <button class="btn-cancel" (click)="closeChangePassword()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCouponModal()) {
+  <div class="modal-overlay" (click)="closeCouponModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingCoupon ? 'Edit Coupon' : 'Add New Coupon' }}</h3>
+        <button class="modal-close" (click)="closeCouponModal()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group" style="flex:2">
+            <label>Coupon Code *</label>
+            <input type="text" [(ngModel)]="couponForm.code" name="cCode" placeholder="e.g. WELCOME10" style="text-transform:uppercase" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Type *</label>
+            <select [(ngModel)]="couponForm.type" name="cType">
+              <option value="Percentage">Percentage</option>
+              <option value="FixedAmount">Fixed Amount</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="couponForm.description" name="cDesc" placeholder="e.g. 10% off your first order" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ couponForm.type === 'Percentage' ? 'Discount %' : 'Discount Amount ($)' }} *</label>
+            <input type="number" [(ngModel)]="couponForm.value" name="cValue" [placeholder]="couponForm.type === 'Percentage' ? 'e.g. 10' : 'e.g. 20'" [max]="couponForm.type === 'Percentage' ? 100 : 99999" min="0.01" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Min Cart Value ($)</label>
+            <input type="number" [(ngModel)]="couponForm.minCartValue" name="cMinCart" placeholder="0" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Max Uses (0 = unlimited)</label>
+            <input type="number" [(ngModel)]="couponForm.maxUses" name="cMaxUses" placeholder="0" min="0" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Expiry Date *</label>
+            <input type="date" [value]="couponForm.expiresAt" (change)="couponForm.expiresAt = $any($event.target).value" name="cExpiry" />
+          </div>
+          <div class="form-group" style="flex:0 0 auto; align-self:end; padding-bottom:4px;">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="couponForm.isActive" name="cActive" />
+              Active
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="saveCoupon()">{{ editingCoupon ? 'Update' : 'Add Coupon' }}</button>
+        <button class="btn-cancel" (click)="closeCouponModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCouponModal()) {
+  <div class="modal-overlay" (click)="closeCouponModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingCoupon ? 'Edit Coupon' : 'Add New Coupon' }}</h3>
+        <button class="modal-close" (click)="closeCouponModal()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label>Coupon Code *</label>
+            <input type="text" [(ngModel)]="couponForm.code" name="cCode" placeholder="e.g. WELCOME10" style="text-transform:uppercase" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Type *</label>
+            <select [(ngModel)]="couponForm.type" name="cType">
+              <option value="Percentage">Percentage (%)</option>
+              <option value="FixedAmount">Fixed Amount ($)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="couponForm.description" name="cDesc" placeholder="e.g. 10% off your first order" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Value *</label>
+            <input type="number" [(ngModel)]="couponForm.value" name="cValue" placeholder="10" min="0.01" step="0.01" />
+            <small>{{ couponForm.type === 'Percentage' ? 'Enter percentage (1-100)' : 'Enter dollar amount' }}</small>
+          </div>
+          <div class="form-group">
+            <label>Min Cart Value ($)</label>
+            <input type="number" [(ngModel)]="couponForm.minCartValue" name="cMinCart" placeholder="0" min="0" step="0.01" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Max Uses (0 = unlimited)</label>
+            <input type="number" [(ngModel)]="couponForm.maxUses" name="cMaxUses" placeholder="0" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Expiry Date *</label>
+            <input type="date" [value]="couponForm.expiresAt" (change)="couponForm.expiresAt = $any($event.target).value" name="cExpiry" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="couponForm.isActive" name="cActive" />
+            Active
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="saveCoupon()">{{ editingCoupon ? 'Update' : 'Add Coupon' }}</button>
+        <button class="btn-cancel" (click)="closeCouponModal()">Cancel</button>
       </div>
     </div>
   </div>

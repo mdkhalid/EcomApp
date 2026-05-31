@@ -23,6 +23,8 @@ public class Order
     public string ShippingCity { get; set; } = string.Empty;
     public string ShippingZip { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
+    public string? CouponCode { get; set; }
+    public decimal DiscountAmount { get; set; }
     public string? TrackingNumber { get; set; }
     public string? Carrier { get; set; }
     public DateTime? EstimatedDeliveryDate { get; set; }

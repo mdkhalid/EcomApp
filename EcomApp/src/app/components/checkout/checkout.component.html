@@ -193,9 +193,50 @@
             <span class="price">&#8377;{{ item.totalPrice.toLocaleString('en-IN') }}</span>
           </div>
         }
+
+        <!-- Coupon Section -->
+        <div class="coupon-section">
+          @if (!couponResult()?.isValid) {
+            @if (!showCouponInput()) {
+              <a href="javascript:void(0)" (click)="toggleCouponInput()" class="coupon-toggle">
+                <span class="material-icons">local_offer</span> Apply Coupon
+              </a>
+            } @else {
+              <div class="coupon-input-row">
+                <input type="text" [ngModel]="couponCode()" (ngModelChange)="couponCode.set($event)" placeholder="Enter coupon code" class="coupon-input" [disabled]="applyingCoupon()" />
+                <button class="btn-apply-coupon" (click)="applyCoupon()" [disabled]="applyingCoupon() || !couponCode()">
+                  {{ applyingCoupon() ? '...' : 'Apply' }}
+                </button>
+              </div>
+              @if (couponError()) {
+                <p class="coupon-error">{{ couponError() }}</p>
+              }
+              <button class="btn-close-coupon" (click)="toggleCouponInput()">Cancel</button>
+            }
+          } @else {
+            <div class="coupon-applied">
+              <span class="material-icons">check_circle</span>
+              <span>{{ couponResult()!.code }} applied</span>
+              <button class="btn-remove-coupon" (click)="removeCoupon()">Remove</button>
+            </div>
+          }
+        </div>
+
         <div class="summary-total">
-          <span>Total</span>
-          <span>&#8377;{{ cart()!.totalAmount.toLocaleString('en-IN') }}</span>
+          @if (couponResult()?.isValid) {
+            <div class="summary-subtotal">
+              <span>Subtotal</span>
+              <span>&#8377;{{ cart()!.totalAmount.toLocaleString('en-IN') }}</span>
+            </div>
+            <div class="summary-discount">
+              <span>Discount</span>
+              <span class="discount-amount">-&#8377;{{ getDiscountAmount().toLocaleString('en-IN') }}</span>
+            </div>
+          }
+          <div class="summary-final">
+            <span>Total</span>
+            <span>&#8377;{{ getDiscountedTotal().toLocaleString('en-IN') }}</span>
+          </div>
         </div>
       </div>
     </div>

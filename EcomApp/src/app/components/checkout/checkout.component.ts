@@ -4,11 +4,13 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { OrderService } from '../../services/order.service';
+import { CouponService } from '../../services/coupon.service';
 import { NotificationService } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
 import { Cart } from '../../models/cart.model';
 import { CreateOrder, SavedAddress } from '../../models/order.model';
 import { Address, CreateAddressRequest } from '../../models/auth.model';
+import { ValidateCouponResponse } from '../../models/coupon.model';
 
 @Component({
   selector: 'app-checkout',
@@ -20,6 +22,7 @@ import { Address, CreateAddressRequest } from '../../models/auth.model';
 export class CheckoutComponent implements OnInit {
   private readonly cartService = inject(CartService);
   private readonly orderService = inject(OrderService);
+  private readonly couponService = inject(CouponService);
   readonly notification = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
@@ -32,6 +35,12 @@ export class CheckoutComponent implements OnInit {
   placing = signal(false);
   savedAddresses = signal<SavedAddress[]>([]);
   selectedSavedAddress = signal<number | null>(null);
+
+  couponCode = signal('');
+  applyingCoupon = signal(false);
+  couponResult = signal<ValidateCouponResponse | null>(null);
+  couponError = signal('');
+  showCouponInput = signal(false);
 
   // Address Book
   addressBookAddresses = signal<Address[]>([]);
@@ -204,7 +213,11 @@ export class CheckoutComponent implements OnInit {
     const c = this.cart();
     if (!c || c.items.length === 0) return;
     this.placing.set(true);
-    this.orderService.createOrder(this.orderForm).subscribe({
+    const orderData: CreateOrder = {
+      ...this.orderForm,
+      couponCode: this.couponResult()?.isValid ? this.couponCode() : undefined
+    };
+    this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
         this.cartService.resetCount();
         this.notification.showSuccess('Order placed successfully!');
@@ -215,6 +228,55 @@ export class CheckoutComponent implements OnInit {
         this.placing.set(false);
       }
     });
+  }
+
+  applyCoupon(): void {
+    const code = this.couponCode().trim();
+    if (!code) return;
+    this.applyingCoupon.set(true);
+    this.couponError.set('');
+    this.couponResult.set(null);
+
+    const cartTotal = this.cart()!.totalAmount;
+    this.couponService.validate({ code, cartTotal }).subscribe({
+      next: (result) => {
+        this.applyingCoupon.set(false);
+        if (result.isValid) {
+          this.couponResult.set(result);
+          this.couponError.set('');
+        } else {
+          this.couponError.set(result.errorMessage || 'Invalid coupon');
+          this.couponResult.set(null);
+        }
+      },
+      error: () => {
+        this.applyingCoupon.set(false);
+        this.couponError.set('Failed to validate coupon');
+      }
+    });
+  }
+
+  removeCoupon(): void {
+    this.couponResult.set(null);
+    this.couponCode.set('');
+    this.couponError.set('');
+  }
+
+  toggleCouponInput(): void {
+    this.showCouponInput.set(!this.showCouponInput());
+    if (!this.showCouponInput()) {
+      this.removeCoupon();
+    }
+  }
+
+  getDiscountedTotal(): number {
+    const result = this.couponResult();
+    return result && result.isValid ? result.finalTotal : this.cart()!.totalAmount;
+  }
+
+  getDiscountAmount(): number {
+    const result = this.couponResult();
+    return result && result.isValid ? result.discountAmount : 0;
   }
 
   getFullImageUrl(path: string): string {

@@ -64,7 +64,11 @@ public class OrdersController : ControllerBase
         var order = await _orderRepository.CreateFromCartAsync(identifier, createDto);
 
         if (order == null)
+        {
+            if (!string.IsNullOrEmpty(createDto.CouponCode))
+                return BadRequest(new { error = "Invalid or expired coupon code." });
             return BadRequest(new { error = "Cart is empty. Add items before placing an order." });
+        }
 
         // Send confirmation notification
         await _notificationService.SendOrderConfirmationAsync(order);
@@ -204,6 +208,8 @@ public class OrdersController : ControllerBase
             ShippingCity = order.ShippingCity,
             ShippingZip = order.ShippingZip,
             TotalAmount = order.TotalAmount,
+            CouponCode = order.CouponCode,
+            DiscountAmount = order.DiscountAmount,
             TrackingNumber = order.TrackingNumber,
             Carrier = order.Carrier,
             EstimatedDeliveryDate = order.EstimatedDeliveryDate,

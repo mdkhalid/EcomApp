@@ -8,10 +8,12 @@ namespace EcomApi.Repositories;
 public class OrderRepository : IOrderRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICouponRepository _couponRepository;
 
-    public OrderRepository(ApplicationDbContext context)
+    public OrderRepository(ApplicationDbContext context, ICouponRepository couponRepository)
     {
         _context = context;
+        _couponRepository = couponRepository;
     }
 
     public async Task<Order?> CreateFromCartAsync(string identifier, CreateOrderDto createDto)
@@ -78,6 +80,34 @@ public class OrderRepository : IOrderRepository
         };
 
         order.TotalAmount = order.Items.Sum(i => i.TotalPrice);
+
+        // Apply coupon if provided
+        if (!string.IsNullOrWhiteSpace(createDto.CouponCode))
+        {
+            var validation = await _couponRepository.ValidateAndCalculateAsync(
+                createDto.CouponCode, order.TotalAmount, cart.UserId);
+
+            if (!validation.IsValid)
+                return null;
+
+            order.CouponCode = validation.Code;
+            order.DiscountAmount = validation.DiscountAmount;
+            order.TotalAmount -= validation.DiscountAmount;
+
+            var coupon = await _couponRepository.GetByCodeAsync(createDto.CouponCode);
+            if (coupon != null)
+            {
+                coupon.CurrentUses++;
+                _context.CouponUsages.Add(new CouponUsage
+                {
+                    CouponId = coupon.Id,
+                    UserId = cart.UserId ?? 0,
+                    OrderId = order.Id,
+                    DiscountAmount = validation.DiscountAmount,
+                    UsedAt = DateTime.UtcNow
+                });
+            }
+        }
 
         foreach (var item in cart.Items)
         {

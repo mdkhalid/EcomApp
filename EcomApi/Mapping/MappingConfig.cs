@@ -56,5 +56,17 @@ public static class MappingConfig
             .Map(dest => dest.Id, _ => 0)
             .Map(dest => dest.CreatedAt, _ => DateTime.UtcNow)
             .Compile();
+
+        TypeAdapterConfig<Coupon, CouponDto>.NewConfig()
+            .Map(dest => dest.Type, src => src.Type.ToString())
+            .Compile();
+        TypeAdapterConfig<CreateCouponDto, Coupon>.NewConfig()
+            .Map(dest => dest.Id, _ => 0)
+            .Map(dest => dest.Type, src => Enum.Parse<CouponType>(src.Type))
+            .Map(dest => dest.CreatedAt, _ => DateTime.UtcNow)
+            .Compile();
+        TypeAdapterConfig<UpdateCouponDto, Coupon>.NewConfig()
+            .Map(dest => dest.Type, src => Enum.Parse<CouponType>(src.Type))
+            .Compile();
     }
 }

@@ -21,6 +21,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Banner> Banners => Set<Banner>();
     public DbSet<Address> Addresses => Set<Address>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<CouponUsage> CouponUsages => Set<CouponUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -105,6 +107,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ShippingCity).IsRequired().HasMaxLength(100);
             entity.Property(e => e.ShippingZip).IsRequired().HasMaxLength(20);
             entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+            entity.Property(e => e.CouponCode).HasMaxLength(50);
+            entity.Property(e => e.DiscountAmount).HasPrecision(18, 2);
             entity.Property(e => e.TrackingNumber).HasMaxLength(100);
             entity.Property(e => e.Carrier).HasMaxLength(100);
             entity.Property(e => e.CustomerEmail).HasMaxLength(255);
@@ -187,6 +191,39 @@ public class ApplicationDbContext : DbContext
                 .WithMany(u => u.Addresses)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Coupon>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Value).HasPrecision(18, 2);
+            entity.Property(e => e.MinCartValue).HasPrecision(18, 2);
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.ExpiresAt);
+        });
+
+        modelBuilder.Entity<CouponUsage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.CouponId, e.UserId });
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.OrderId);
+            entity.Property(e => e.DiscountAmount).HasPrecision(18, 2);
+            entity.HasOne(e => e.Coupon)
+                .WithMany()
+                .HasForeignKey(e => e.CouponId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Order)
+                .WithMany()
+                .HasForeignKey(e => e.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
