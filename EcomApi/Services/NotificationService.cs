@@ -1,4 +1,6 @@
+using EcomApi.Data;
 using EcomApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace EcomApi.Services;
 
@@ -7,21 +9,44 @@ public interface INotificationService
     Task SendOrderStatusUpdateAsync(Order order, OrderStatus previousStatus);
     Task SendOrderConfirmationAsync(Order order);
     Task SendTrackingUpdateAsync(Order order);
+    Task<int> GetUnreadNotificationCountAsync();
+    Task<List<AdminNotification>> GetNotificationsAsync(int page = 1, int pageSize = 20);
+    Task MarkNotificationReadAsync(int id);
+    Task MarkAllNotificationsReadAsync();
 }
 
 public class NotificationService : INotificationService
 {
     private readonly ILogger<NotificationService> _logger;
+    private readonly ApplicationDbContext _context;
 
-    public NotificationService(ILogger<NotificationService> logger)
+    public NotificationService(ILogger<NotificationService> logger, ApplicationDbContext context)
     {
         _logger = logger;
+        _context = context;
+    }
+
+    private async Task CreateAdminNotification(string message, string type, int? orderId = null)
+    {
+        _context.AdminNotifications.Add(new AdminNotification
+        {
+            Message = message,
+            Type = type,
+            OrderId = orderId,
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
     }
 
     public async Task SendOrderStatusUpdateAsync(Order order, OrderStatus previousStatus)
     {
         _logger.LogInformation("Order {OrderId} status changed from {Previous} to {Current}",
             order.Id, previousStatus, order.Status);
+
+        await CreateAdminNotification(
+            $"Order #{order.Id} status updated from {previousStatus} to {order.Status}",
+            "status_update", order.Id);
 
         // ============================================
         // SMS Notification ( uncomment when ready )
@@ -50,6 +75,10 @@ public class NotificationService : INotificationService
         _logger.LogInformation("Order {OrderId} confirmation sent to {Email}",
             order.Id, order.CustomerEmail);
 
+        await CreateAdminNotification(
+            $"New order #{order.Id} placed — ₹{order.TotalAmount:N2} by {order.ShippingName}",
+            "new_order", order.Id);
+
         // ============================================
         // Email Confirmation ( uncomment when ready )
         // ============================================
@@ -67,6 +96,10 @@ public class NotificationService : INotificationService
     {
         _logger.LogInformation("Tracking update for Order {OrderId}: {TrackingNumber} via {Carrier}",
             order.Id, order.TrackingNumber, order.Carrier);
+
+        await CreateAdminNotification(
+            $"Order #{order.Id} tracking updated — {order.Carrier}: {order.TrackingNumber}",
+            "tracking_update", order.Id);
 
         // ============================================
         // SMS with Tracking ( uncomment when ready )
@@ -124,6 +157,37 @@ public class NotificationService : INotificationService
     //         {($"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>" if order.EstimatedDeliveryDate.HasValue else "")}
     //     """;
     // }
+
+    public async Task<int> GetUnreadNotificationCountAsync()
+    {
+        return await _context.AdminNotifications.CountAsync(n => !n.IsRead);
+    }
+
+    public async Task<List<AdminNotification>> GetNotificationsAsync(int page = 1, int pageSize = 20)
+    {
+        return await _context.AdminNotifications
+            .OrderByDescending(n => n.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task MarkNotificationReadAsync(int id)
+    {
+        var notification = await _context.AdminNotifications.FindAsync(id);
+        if (notification != null)
+        {
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task MarkAllNotificationsReadAsync()
+    {
+        await _context.AdminNotifications
+            .Where(n => !n.IsRead)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(n => n.IsRead, true));
+    }
 
     // private string GetStatusSmsMessage(Order order, OrderStatus previousStatus)
     // {

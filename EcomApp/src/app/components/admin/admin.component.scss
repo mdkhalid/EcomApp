@@ -12,6 +12,12 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .admin-header h2 {
   font-size: 18px;
   font-weight: 600;
@@ -19,8 +25,156 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
 
   .material-icons { color: var(--flipkart-blue); }
+}
+
+.admin-header-right {
+  position: relative;
+}
+
+/* Notification Bell & Dropdown */
+.notif-dropdown-container {
+  position: relative;
+}
+
+.notif-bell {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+
+  &:hover { background: #f0f0f0; }
+
+  .material-icons { font-size: 22px; color: #555; }
+}
+
+.notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: #d32f2f;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  width: 360px;
+  max-height: 480px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.notif-mark-all {
+  background: none;
+  border: none;
+  color: #2874f0;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.notif-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:hover { background: #f9f9f9; }
+
+  &.unread { background: #f0f6ff; }
+}
+
+.notif-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .material-icons { font-size: 16px; color: #fff; }
+
+  &.notif-icon-new_order { background: #388e3c; }
+  &.notif-icon-status_update { background: #2874f0; }
+  &.notif-icon-tracking_update { background: #f57c00; }
+}
+
+.notif-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-msg {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.notif-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.notif-empty {
+  padding: 24px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.notif-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
 }
 
 .admin-tabs {

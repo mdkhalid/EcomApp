@@ -16,6 +16,7 @@ import { Banner, CreateBanner, UpdateBanner } from '../../models/banner.model';
 import { Coupon, CreateCoupon } from '../../models/coupon.model';
 import { ReturnRequest } from '../../models/return.model';
 import { ReturnService } from '../../services/return.service';
+import { AdminNotificationService } from '../../services/admin-notification.service';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -39,6 +40,7 @@ export class AdminComponent implements OnInit {
   private readonly bannerService = inject(BannerService);
   private readonly couponService = inject(CouponService);
   private readonly returnService = inject(ReturnService);
+  readonly notifService = inject(AdminNotificationService);
   private readonly apiUrl = 'http://localhost:5068/api';
 
   activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns'>('dashboard');
@@ -115,6 +117,8 @@ export class AdminComponent implements OnInit {
       return;
     }
     this.loadDashboard();
+    this.notifService.loadCount();
+    setInterval(() => this.notifService.loadCount(), 30000);
   }
 
   setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns'): void {
