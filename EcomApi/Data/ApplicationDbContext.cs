@@ -26,6 +26,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ReturnRequest> ReturnRequests => Set<ReturnRequest>();
     public DbSet<UserActivity> UserActivities => Set<UserActivity>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+    public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -223,6 +224,20 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ImageUrl).IsRequired().HasMaxLength(500);
             entity.HasOne(e => e.Product)
                 .WithMany(p => p.ProductImages)
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProductVariant>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ProductId);
+            entity.HasIndex(e => e.SortOrder);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Price).HasPrecision(18, 2);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.HasOne(e => e.Product)
+                .WithMany(p => p.Variants)
                 .HasForeignKey(e => e.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

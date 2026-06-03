@@ -586,10 +586,77 @@
             </label>
           </div>
         </div>
+        @if (editingProduct) {
+          <div class="form-group">
+            <div class="card-header-row">
+              <label>Variants (Size/Color)</label>
+              <button type="button" class="btn-add small" (click)="openAddVariant()">
+                <span class="material-icons">add_circle</span> Add Variant
+              </button>
+            </div>
+            @if (productVariants().length === 0) {
+              <p class="text-muted">No variants defined. Product uses default price/stock.</p>
+            }
+            <div class="variant-list">
+              @for (v of productVariants(); track v.id) {
+                <div class="variant-item">
+                  <div class="variant-info">
+                    <span class="variant-name">{{ v.name }}</span>
+                    <span class="variant-detail">₹{{ v.price.toLocaleString('en-IN') }}</span>
+                    <span class="variant-detail stock-badge" [class.low]="v.stock < 10">Stock: {{ v.stock }}</span>
+                  </div>
+                  <div class="variant-actions">
+                    <button type="button" class="btn-edit" (click)="openEditVariant(v)" title="Edit">
+                      <span class="material-icons">edit</span>
+                    </button>
+                    <button type="button" class="btn-delete" (click)="deleteVariant(v)" title="Delete">
+                      <span class="material-icons">delete</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn-save" (click)="saveProduct()">{{ editingProduct ? 'Update' : 'Add Product' }}</button>
         <button class="btn-cancel" (click)="closeProductModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showVariantModal()) {
+  <div class="modal-overlay" (click)="closeVariantModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingVariant ? 'Edit Variant' : 'Add Variant' }}</h3>
+        <button class="modal-close" (click)="closeVariantModal()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Variant Name</label>
+          <input type="text" [(ngModel)]="variantForm.name" name="vName" placeholder="e.g. Small Blue, Large Red" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Price (&#8377;)</label>
+            <input type="number" [(ngModel)]="variantForm.price" name="vPrice" placeholder="0.00" min="0.01" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Stock</label>
+            <input type="number" [(ngModel)]="variantForm.stock" name="vStock" placeholder="0" min="0" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Sort Order</label>
+          <input type="number" [(ngModel)]="variantForm.sortOrder" name="vSort" placeholder="0" min="0" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="saveVariant()">{{ editingVariant ? 'Update' : 'Add Variant' }}</button>
+        <button class="btn-cancel" (click)="closeVariantModal()">Cancel</button>
       </div>
     </div>
   </div>

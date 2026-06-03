@@ -340,6 +340,12 @@
   text-overflow: ellipsis;
 }
 
+.summary-item-info .variant-badge {
+  font-size: 11px;
+  color: #2874f0;
+  font-weight: 400;
+}
+
 .summary-item-info .qty {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);

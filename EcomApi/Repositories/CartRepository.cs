@@ -57,22 +57,39 @@ public class CartRepository : ICartRepository
         return cart;
     }
 
-    public async Task<Cart?> AddItemAsync(string sessionId, int productId, int quantity)
+    public async Task<Cart?> AddItemAsync(string sessionId, int productId, int quantity, int? productVariantId = null)
     {
         var cart = await GetByIdentifierAsync(sessionId) ?? await CreateAsync(sessionId);
         var product = await _context.Products.FindAsync(productId);
 
-        if (product == null || product.Stock < quantity)
+        if (product == null)
             return null;
 
-        var existingItem = cart.Items.FirstOrDefault(ci => ci.ProductId == productId);
+        ProductVariant? variant = null;
+        if (productVariantId.HasValue)
+        {
+            variant = await _context.ProductVariants
+                .FirstOrDefaultAsync(v => v.Id == productVariantId && v.ProductId == productId);
+            if (variant == null || variant.Stock < quantity)
+                return null;
+        }
+        else if (product.Stock < quantity)
+        {
+            return null;
+        }
+
+        var effectiveStock = variant?.Stock ?? product.Stock;
+        var effectivePrice = variant?.Price ?? product.Price;
+
+        var existingItem = cart.Items.FirstOrDefault(ci =>
+            ci.ProductId == productId && ci.ProductVariantId == productVariantId);
         if (existingItem != null)
         {
-            if (existingItem.Quantity + quantity > product.Stock)
+            if (existingItem.Quantity + quantity > effectiveStock)
                 return null;
 
             existingItem.Quantity += quantity;
-            existingItem.UnitPrice = product.Price;
+            existingItem.UnitPrice = effectivePrice;
             existingItem.TotalPrice = existingItem.Quantity * existingItem.UnitPrice;
         }
         else
@@ -81,9 +98,11 @@ public class CartRepository : ICartRepository
             {
                 CartId = cart.Id,
                 ProductId = productId,
+                ProductVariantId = productVariantId,
+                VariantName = variant?.Name,
                 Quantity = quantity,
-                UnitPrice = product.Price,
-                TotalPrice = quantity * product.Price
+                UnitPrice = effectivePrice,
+                TotalPrice = quantity * effectivePrice
             };
             cart.Items.Add(newItem);
         }
@@ -102,12 +121,29 @@ public class CartRepository : ICartRepository
 
         if (cartItem == null) return null;
 
-        var product = await _context.Products.FindAsync(cartItem.ProductId);
-        if (product == null || product.Stock < quantity)
-            return null;
+        decimal effectivePrice;
+        int effectiveStock;
+
+        if (cartItem.ProductVariantId.HasValue)
+        {
+            var variant = await _context.ProductVariants
+                .FirstOrDefaultAsync(v => v.Id == cartItem.ProductVariantId);
+            if (variant == null || variant.Stock < quantity)
+                return null;
+            effectivePrice = variant.Price;
+            effectiveStock = variant.Stock;
+        }
+        else
+        {
+            var product = await _context.Products.FindAsync(cartItem.ProductId);
+            if (product == null || product.Stock < quantity)
+                return null;
+            effectivePrice = product.Price;
+            effectiveStock = product.Stock;
+        }
 
         cartItem.Quantity = quantity;
-        cartItem.UnitPrice = product.Price;
+        cartItem.UnitPrice = effectivePrice;
         cartItem.TotalPrice = quantity * cartItem.UnitPrice;
         cartItem.Cart.UpdatedAt = DateTime.UtcNow;
 
@@ -165,7 +201,8 @@ public class CartRepository : ICartRepository
 
         foreach (var sourceItem in sourceCart.Items.ToList())
         {
-            var existingItem = targetCart.Items.FirstOrDefault(ti => ti.ProductId == sourceItem.ProductId);
+            var existingItem = targetCart.Items.FirstOrDefault(ti =>
+                ti.ProductId == sourceItem.ProductId && ti.ProductVariantId == sourceItem.ProductVariantId);
             if (existingItem != null)
             {
                 existingItem.Quantity += sourceItem.Quantity;

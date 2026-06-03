@@ -98,7 +98,8 @@ public class InvoiceService : IInvoiceService
 
                 foreach (var item in order.Items)
                 {
-                    table.Cell().Padding(6).BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Text(item.ProductName).FontSize(10);
+                    var productLabel = item.VariantName != null ? $"{item.ProductName} ({item.VariantName})" : item.ProductName;
+                    table.Cell().Padding(6).BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Text(productLabel).FontSize(10);
                     table.Cell().Padding(6).BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Text(item.Quantity.ToString()).FontSize(10).AlignCenter();
                     table.Cell().Padding(6).BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Text($"${item.UnitPrice:F2}").FontSize(10).AlignRight();
                     table.Cell().Padding(6).BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Text($"${item.TotalPrice:F2}").FontSize(10).AlignRight();

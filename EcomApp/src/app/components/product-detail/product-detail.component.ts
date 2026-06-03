@@ -9,7 +9,7 @@ import { WishlistService } from '../../services/wishlist.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { ActivityService } from '../../services/activity.service';
-import { Product } from '../../models/product.model';
+import { Product, ProductVariant } from '../../models/product.model';
 import { Review, CreateReview } from '../../models/review.model';
 import { RecentlyViewedProduct } from '../../models/activity.model';
 
@@ -56,6 +56,21 @@ export class ProductDetailComponent implements OnInit {
     return this.getFullImageUrl(imgs[this.selectedImageIndex()].url);
   }
 
+  selectedVariant = signal<ProductVariant | null>(null);
+
+  get effectivePrice(): number {
+    return this.selectedVariant()?.price ?? this.product()?.price ?? 0;
+  }
+  get effectiveStock(): number {
+    return this.selectedVariant()?.stock ?? this.product()?.stock ?? 0;
+  }
+  get hasVariants(): boolean {
+    return (this.product()?.variants?.length ?? 0) > 0;
+  }
+  get effectiveOriginalPrice(): number | undefined {
+    return this.product()?.originalPrice;
+  }
+
   recommended = signal<RecentlyViewedProduct[]>([]);
 
   newReview = signal<CreateReview>({ rating: 5, comment: '' });
@@ -83,6 +98,7 @@ export class ProductDetailComponent implements OnInit {
         this.product.set(product);
         this.avgRating.set(product.averageRating);
         this.reviewCount.set(product.totalReviews);
+        this.selectedVariant.set(product.variants?.length > 0 ? product.variants[0] : null);
         this.loading.set(false);
         if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
           this.wishlistService.check(id).subscribe();
@@ -127,7 +143,8 @@ export class ProductDetailComponent implements OnInit {
       this.router.navigate(['/login'], { queryParams: { returnUrl: `/products/${p.id}` } });
       return;
     }
-    this.cartService.addItem({ productId: p.id, quantity: this.quantity() }).subscribe({
+    const variantId = this.selectedVariant()?.id;
+    this.cartService.addItem({ productId: p.id, quantity: this.quantity(), productVariantId: variantId }).subscribe({
       next: () => this.notification.showSuccess('Added to cart'),
       error: (err) => this.notification.showError(err.error?.error || 'Failed to add to cart')
     });
@@ -164,6 +181,11 @@ export class ProductDetailComponent implements OnInit {
         this.notification.showError(err.error?.error || 'Failed to submit review');
       }
     });
+  }
+
+  selectVariant(v: ProductVariant): void {
+    this.selectedVariant.set(v);
+    this.quantity.set(1);
   }
 
   setRating(n: number): void {

@@ -109,6 +109,21 @@ public class ProductsController : ControllerBase
             .ToListAsync();
         dto.Images = images;
 
+        var variants = await _context.ProductVariants
+            .Where(v => v.ProductId == id)
+            .OrderBy(v => v.SortOrder)
+            .Select(v => new ProductVariantDto
+            {
+                Id = v.Id,
+                Name = v.Name,
+                Price = v.Price,
+                Stock = v.Stock,
+                ImageUrl = v.ImageUrl,
+                SortOrder = v.SortOrder
+            })
+            .ToListAsync();
+        dto.Variants = variants;
+
         return Ok(dto);
     }
 
@@ -143,6 +158,65 @@ public class ProductsController : ControllerBase
         var deleted = await _repository.DeleteAsync(id);
         if (!deleted)
             return NotFound();
+        return NoContent();
+    }
+
+    [HttpGet("{id}/variants")]
+    public async Task<ActionResult<List<ProductVariantDto>>> GetVariants(int id)
+    {
+        if (!await _context.Products.AnyAsync(p => p.Id == id))
+            return NotFound();
+        var variants = await _context.ProductVariants
+            .Where(v => v.ProductId == id)
+            .OrderBy(v => v.SortOrder)
+            .Select(v => new ProductVariantDto
+            {
+                Id = v.Id,
+                Name = v.Name,
+                Price = v.Price,
+                Stock = v.Stock,
+                ImageUrl = v.ImageUrl,
+                SortOrder = v.SortOrder
+            })
+            .ToListAsync();
+        return Ok(variants);
+    }
+
+    [HttpPost("{id}/variants")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ProductVariantDto>> CreateVariant(int id, [FromBody] CreateProductVariantDto dto)
+    {
+        if (!await _context.Products.AnyAsync(p => p.Id == id))
+            return NotFound();
+        var variant = dto.Adapt<ProductVariant>();
+        variant.ProductId = id;
+        variant.CreatedAt = DateTime.UtcNow;
+        _context.ProductVariants.Add(variant);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetVariants), new { id }, variant.Adapt<ProductVariantDto>());
+    }
+
+    [HttpPut("{id}/variants/{variantId}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ProductVariantDto>> UpdateVariant(int id, int variantId, [FromBody] CreateProductVariantDto dto)
+    {
+        var variant = await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == id);
+        if (variant == null)
+            return NotFound();
+        dto.Adapt(variant);
+        await _context.SaveChangesAsync();
+        return Ok(variant.Adapt<ProductVariantDto>());
+    }
+
+    [HttpDelete("{id}/variants/{variantId}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> DeleteVariant(int id, int variantId)
+    {
+        var variant = await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == id);
+        if (variant == null)
+            return NotFound();
+        _context.ProductVariants.Remove(variant);
+        await _context.SaveChangesAsync();
         return NoContent();
     }
 

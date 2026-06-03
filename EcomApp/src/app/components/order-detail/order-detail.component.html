@@ -162,7 +162,7 @@
               }
             </div>
             <div class="item-info">
-              <span class="item-name">{{ item.productName }}</span>
+              <span class="item-name">{{ item.productName }}@if (item.variantName) {<span class="variant-badge"> ({{ item.variantName }})</span>}</span>
               <span class="item-meta">Qty: {{ item.quantity }} &times; &#8377;{{ item.unitPrice.toLocaleString('en-IN') }}</span>
             </div>
             <div class="item-total">

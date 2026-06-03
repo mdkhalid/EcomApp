@@ -13,11 +13,29 @@ export interface Product {
   totalReviews: number;
   discountPercent: number;
   images: ProductImage[];
+  variants: ProductVariant[];
 }
 
 export interface ProductImage {
   id: number;
   imageUrl: string;
+  sortOrder: number;
+}
+
+export interface ProductVariant {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  imageUrl?: string;
+  sortOrder: number;
+}
+
+export interface CreateProductVariant {
+  name: string;
+  price: number;
+  stock: number;
+  imageUrl?: string;
   sortOrder: number;
 }
 

@@ -61,6 +61,7 @@ public class OrderRepository : IOrderRepository
                 ProductId = ci.ProductId,
                 ProductName = ci.Product.Name,
                 ProductImage = ci.Product.ImageUrl,
+                VariantName = ci.VariantName,
                 Quantity = ci.Quantity,
                 UnitPrice = ci.UnitPrice,
                 TotalPrice = ci.TotalPrice

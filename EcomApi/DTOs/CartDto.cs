@@ -17,6 +17,8 @@ public class CartItemDto
     public int ProductId { get; set; }
     public string ProductName { get; set; } = string.Empty;
     public string ProductImage { get; set; } = string.Empty;
+    public int? ProductVariantId { get; set; }
+    public string? VariantName { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice { get; set; }
@@ -26,6 +28,7 @@ public class AddCartItemDto
 {
     public int ProductId { get; set; }
     public int Quantity { get; set; }
+    public int? ProductVariantId { get; set; }
 }
 
 public class UpdateCartItemDto

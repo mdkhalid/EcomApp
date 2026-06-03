@@ -17,6 +17,7 @@ public class Product
 
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
+    public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
 
     public int DiscountPercent => OriginalPrice.HasValue && OriginalPrice > 0
         ? (int)Math.Round((1 - Price / OriginalPrice.Value) * 100)

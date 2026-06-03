@@ -8,7 +8,7 @@ import { NotificationService } from '../../services/notification.service';
 import { CategoryService } from '../../services/category.service';
 import { BannerService } from '../../services/banner.service';
 import { CouponService } from '../../services/coupon.service';
-import { Product, CreateProduct, UpdateProduct, ProductImage } from '../../models/product.model';
+import { Product, CreateProduct, UpdateProduct, ProductImage, ProductVariant, CreateProductVariant } from '../../models/product.model';
 import { Order } from '../../models/order.model';
 import { User, CreateUserRequest, AdminChangePasswordRequest } from '../../models/auth.model';
 import { Category, CreateCategory } from '../../models/category.model';
@@ -66,6 +66,11 @@ export class AdminComponent implements OnInit {
   productImages = signal<ProductImage[]>([]);
   selectedFiles: File[] = [];
   imagePreviews = signal<string[]>([]);
+
+  productVariants = signal<ProductVariant[]>([]);
+  showVariantModal = signal(false);
+  editingVariant: ProductVariant | null = null;
+  variantForm: CreateProductVariant = { name: '', price: 0, stock: 0, sortOrder: 0 };
 
   categories = signal<Category[]>([]);
   showCategoryModal = signal(false);
@@ -347,6 +352,7 @@ export class AdminComponent implements OnInit {
     this.productImages.set(product.images || []);
     this.selectedFiles = [];
     this.imagePreviews.set([]);
+    this.productVariants.set(product.variants || []);
     this.showProductModal.set(true);
   }
 
@@ -356,6 +362,7 @@ export class AdminComponent implements OnInit {
     this.productImages.set([]);
     this.selectedFiles = [];
     this.imagePreviews.set([]);
+    this.productVariants.set([]);
   }
 
   onFilesSelected(event: Event): void {
@@ -507,6 +514,68 @@ export class AdminComponent implements OnInit {
   }
 
   private uploadImage(productId: number): void {
+  }
+
+  // Variant management
+  openAddVariant(): void {
+    this.editingVariant = null;
+    this.variantForm = { name: '', price: 0, stock: 0, sortOrder: this.productVariants().length };
+    this.showVariantModal.set(true);
+  }
+
+  openEditVariant(v: ProductVariant): void {
+    this.editingVariant = v;
+    this.variantForm = { name: v.name, price: v.price, stock: v.stock, sortOrder: v.sortOrder };
+    this.showVariantModal.set(true);
+  }
+
+  closeVariantModal(): void {
+    this.showVariantModal.set(false);
+    this.editingVariant = null;
+  }
+
+  saveVariant(): void {
+    const product = this.editingProduct;
+    if (!product || !this.variantForm.name || this.variantForm.price <= 0) return;
+
+    if (this.editingVariant) {
+      this.http.put<ProductVariant>(`${this.apiUrl}/products/${product.id}/variants/${this.editingVariant.id}`, this.variantForm).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Variant updated');
+          this.closeVariantModal();
+          this.loadProductVariants(product.id);
+        },
+        error: () => this.notificationService.showError('Failed to update variant')
+      });
+    } else {
+      this.http.post<ProductVariant>(`${this.apiUrl}/products/${product.id}/variants`, this.variantForm).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Variant added');
+          this.closeVariantModal();
+          this.loadProductVariants(product.id);
+        },
+        error: () => this.notificationService.showError('Failed to add variant')
+      });
+    }
+  }
+
+  deleteVariant(v: ProductVariant): void {
+    const product = this.editingProduct;
+    if (!product || !confirm('Delete this variant?')) return;
+    this.http.delete(`${this.apiUrl}/products/${product.id}/variants/${v.id}`).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Variant deleted');
+        this.productVariants.update(list => list.filter(x => x.id !== v.id));
+      },
+      error: () => this.notificationService.showError('Failed to delete variant')
+    });
+  }
+
+  private loadProductVariants(productId: number): void {
+    this.http.get<ProductVariant[]>(`${this.apiUrl}/products/${productId}/variants`).subscribe({
+      next: (variants) => this.productVariants.set(variants),
+      error: () => this.notificationService.showError('Failed to load variants')
+    });
   }
 
   getFullImageUrl(path: string): string {

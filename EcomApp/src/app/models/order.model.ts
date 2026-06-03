@@ -25,6 +25,7 @@ export interface OrderItem {
   productId: number;
   productName: string;
   productImage: string;
+  variantName?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;

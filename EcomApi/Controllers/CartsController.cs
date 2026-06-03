@@ -63,7 +63,7 @@ public class CartsController : ControllerBase
     public async Task<ActionResult<CartDto>> AddItem([FromBody] AddCartItemDto dto)
     {
         var identifier = GetUserIdOrSession();
-        var cart = await _repository.AddItemAsync(identifier, dto.ProductId, dto.Quantity);
+        var cart = await _repository.AddItemAsync(identifier, dto.ProductId, dto.Quantity, dto.ProductVariantId);
 
         if (cart == null)
         {

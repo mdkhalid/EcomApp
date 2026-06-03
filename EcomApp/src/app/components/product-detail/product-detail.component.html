@@ -133,19 +133,38 @@
       <div class="pd-buy-section">
         <div class="pd-buy-box">
           <div class="pd-buy-price">
-            <span class="pd-buy-current">₹{{ p.price.toLocaleString('en-IN') }}</span>
-            @if (p.averageRating > 0) {
-              <span class="pd-buy-original">₹{{ (p.price * 1.3).toLocaleString('en-IN', {maximumFractionDigits: 0}) }}</span>
-              <span class="pd-buy-discount">{{ 30 }}% off</span>
+            <span class="pd-buy-current">₹{{ effectivePrice.toLocaleString('en-IN') }}</span>
+            @if (effectiveOriginalPrice && effectiveOriginalPrice > effectivePrice) {
+              <span class="pd-buy-original">₹{{ effectiveOriginalPrice.toLocaleString('en-IN') }}</span>
+              <span class="pd-buy-discount">{{ p.discountPercent }}% off</span>
             }
           </div>
 
+          <!-- Variant Selector -->
+          @if (hasVariants) {
+            <div class="pd-variant-section">
+              <label class="pd-variant-label">Variants:</label>
+              <div class="pd-variant-options">
+                @for (v of p.variants; track v.id) {
+                  <button class="pd-variant-btn" [class.active]="selectedVariant()?.id === v.id"
+                    (click)="selectVariant(v)" [disabled]="v.stock === 0">
+                    <span class="variant-name">{{ v.name }}</span>
+                    <span class="variant-price">₹{{ v.price.toLocaleString('en-IN') }}</span>
+                    @if (v.stock === 0) {
+                      <span class="variant-out">Out</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
           <!-- Stock Status -->
           <div class="pd-stock">
-            @if (p.stock > 0) {
+            @if (effectiveStock > 0) {
               <span class="in-stock">
                 <span class="material-icons">check_circle</span>
-                {{ p.stock > 5 ? 'In Stock' : 'Only ' + p.stock + ' left in stock' }}
+                {{ effectiveStock > 5 ? 'In Stock' : 'Only ' + effectiveStock + ' left in stock' }}
               </span>
             } @else {
               <span class="out-of-stock">
@@ -156,7 +175,7 @@
           </div>
 
           <!-- Quantity -->
-          @if (p.stock > 0) {
+          @if (effectiveStock > 0) {
             <div class="pd-quantity">
               <label>Quantity:</label>
               <div class="qty-control">
@@ -164,7 +183,7 @@
                   <span class="material-icons">remove</span>
                 </button>
                 <span>{{ quantity() }}</span>
-                <button (click)="quantity.update(q => Math.min(p.stock, q + 1))" [disabled]="quantity() >= p.stock">
+                <button (click)="quantity.update(q => Math.min(effectiveStock, q + 1))" [disabled]="quantity() >= effectiveStock">
                   <span class="material-icons">add</span>
                 </button>
               </div>
@@ -172,7 +191,7 @@
           }
 
           <!-- Action Buttons -->
-          <button class="pd-add-cart-btn" (click)="addToCart()" [disabled]="p.stock === 0">
+          <button class="pd-add-cart-btn" (click)="addToCart()" [disabled]="effectiveStock === 0">
             <span class="material-icons">shopping_cart</span>
             Add to Cart
           </button>

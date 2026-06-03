@@ -11,6 +11,8 @@ export interface CartItem {
   productId: number;
   productName: string;
   productImage: string;
+  productVariantId?: number;
+  variantName?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -19,6 +21,7 @@ export interface CartItem {
 export interface AddCartItem {
   productId: number;
   quantity: number;
+  productVariantId?: number;
 }
 
 export interface UpdateCartItem {

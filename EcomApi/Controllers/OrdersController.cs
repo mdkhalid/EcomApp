@@ -244,6 +244,7 @@ public class OrdersController : ControllerBase
                 ProductId = i.ProductId,
                 ProductName = i.ProductName,
                 ProductImage = i.ProductImage,
+                VariantName = i.VariantName,
                 Quantity = i.Quantity,
                 UnitPrice = i.UnitPrice,
                 TotalPrice = i.TotalPrice

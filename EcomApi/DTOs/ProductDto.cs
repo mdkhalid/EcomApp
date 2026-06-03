@@ -18,6 +18,32 @@ public class ProductDto
     public int TotalReviews { get; set; }
     public int DiscountPercent { get; set; }
     public List<ProductImageDto> Images { get; set; } = new();
+    public List<ProductVariantDto> Variants { get; set; } = new();
+}
+
+public class ProductVariantDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public int Stock { get; set; }
+    public string? ImageUrl { get; set; }
+    public int SortOrder { get; set; }
+}
+
+public class CreateProductVariantDto
+{
+    [Required]
+    [StringLength(100, MinimumLength = 1)]
+    public string Name { get; set; } = string.Empty;
+    [Required]
+    [Range(0.01, 999999.99)]
+    public decimal Price { get; set; }
+    [Range(0, int.MaxValue)]
+    public int Stock { get; set; }
+    [StringLength(500)]
+    public string? ImageUrl { get; set; }
+    public int SortOrder { get; set; }
 }
 
 public class ProductImageDto
