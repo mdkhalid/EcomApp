@@ -14,6 +14,8 @@ import { User, CreateUserRequest, AdminChangePasswordRequest } from '../../model
 import { Category, CreateCategory } from '../../models/category.model';
 import { Banner, CreateBanner, UpdateBanner } from '../../models/banner.model';
 import { Coupon, CreateCoupon } from '../../models/coupon.model';
+import { ReturnRequest } from '../../models/return.model';
+import { ReturnService } from '../../services/return.service';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -36,9 +38,10 @@ export class AdminComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   private readonly bannerService = inject(BannerService);
   private readonly couponService = inject(CouponService);
+  private readonly returnService = inject(ReturnService);
   private readonly apiUrl = 'http://localhost:5068/api';
 
-  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons'>('dashboard');
+  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns'>('dashboard');
 
   stats = signal({ totalProducts: 0, totalOrders: 0, totalUsers: 0, totalRevenue: 0 });
   products = signal<Product[]>([]);
@@ -90,6 +93,15 @@ export class AdminComponent implements OnInit {
   editingCoupon: Coupon | null = null;
   couponForm: CreateCoupon = { code: '', description: '', type: 'Percentage', value: 10, minCartValue: 0, maxUses: 0, expiresAt: '', isActive: true };
 
+  returns = signal<ReturnRequest[]>([]);
+  totalReturns = signal(0);
+  returnStatusFilter = '';
+  returnPage = signal(1);
+  showReturnDetailModal = signal(false);
+  selectedReturn = signal<ReturnRequest | null>(null);
+  returnAdminNote = signal('');
+  returnDetailAction = signal('');
+
   ngOnInit(): void {
     if (!this.authService.isAdmin()) {
       this.notificationService.showError('Access denied. Admin only.');
@@ -99,7 +111,7 @@ export class AdminComponent implements OnInit {
     this.loadDashboard();
   }
 
-  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons'): void {
+  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns'): void {
     this.activeTab.set(tab);
     if (tab === 'orders') this.loadOrders();
     if (tab === 'users') { this.loadUsers(); this.loadRoles(); }
@@ -107,6 +119,7 @@ export class AdminComponent implements OnInit {
     if (tab === 'categories') this.loadCategories();
     if (tab === 'banners') this.loadBanners();
     if (tab === 'coupons') this.loadCoupons();
+    if (tab === 'returns') this.loadReturns();
   }
 
   loadDashboard(): void {
@@ -687,6 +700,95 @@ export class AdminComponent implements OnInit {
     if (now < start) return 'inactive';
     if (now > end) return 'expired';
     return 'active';
+  }
+
+  // Return Management
+  loadReturns(): void {
+    this.isLoading.set(true);
+    this.returnService.getAll(this.returnPage(), 20, this.returnStatusFilter || undefined).subscribe({
+      next: (res) => {
+        this.returns.set(res.items);
+        this.totalReturns.set(res.totalCount);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
+    });
+  }
+
+  getReturnStatusClass(status: string): string {
+    const map: Record<string, string> = {
+      Requested: 'status-pending',
+      Approved: 'status-processing',
+      Rejected: 'status-cancelled',
+      RefundInitiated: 'status-shipped',
+      Refunded: 'status-delivered'
+    };
+    return map[status] || '';
+  }
+
+  openReturnDetail(r: ReturnRequest): void {
+    this.selectedReturn.set(r);
+    this.returnAdminNote.set(r.adminNote || '');
+    this.returnDetailAction.set('');
+    this.showReturnDetailModal.set(true);
+  }
+
+  closeReturnDetail(): void {
+    this.showReturnDetailModal.set(false);
+    this.selectedReturn.set(null);
+    this.returnAdminNote.set('');
+  }
+
+  approveReturn(): void {
+    const r = this.selectedReturn();
+    if (!r) return;
+    this.returnService.updateStatus(r.id, 'Approved', this.returnAdminNote() || undefined).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Return request approved');
+        this.closeReturnDetail();
+        this.loadReturns();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to approve return')
+    });
+  }
+
+  rejectReturn(): void {
+    const r = this.selectedReturn();
+    if (!r) return;
+    this.returnService.updateStatus(r.id, 'Rejected', this.returnAdminNote() || undefined).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Return request rejected');
+        this.closeReturnDetail();
+        this.loadReturns();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to reject return')
+    });
+  }
+
+  initiateRefund(): void {
+    const r = this.selectedReturn();
+    if (!r) return;
+    this.returnService.updateStatus(r.id, 'RefundInitiated', this.returnAdminNote() || undefined).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Refund initiated');
+        this.closeReturnDetail();
+        this.loadReturns();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to initiate refund')
+    });
+  }
+
+  markRefunded(): void {
+    const r = this.selectedReturn();
+    if (!r) return;
+    this.returnService.updateStatus(r.id, 'Refunded', this.returnAdminNote() || undefined).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Refund completed');
+        this.closeReturnDetail();
+        this.loadReturns();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to mark refunded')
+    });
   }
 
   getFilteredProducts(): Product[] {

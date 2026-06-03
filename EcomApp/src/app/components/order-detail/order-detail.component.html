@@ -100,6 +100,45 @@
       </div>
     </div>
 
+    <!-- Return Section -->
+    @if (order()!.status === 'Delivered' || order()!.status === 'Returned') {
+      <div class="tracking-card return-section">
+        <h2 class="section-title">
+          <span class="material-icons">assignment_return</span>
+          Returns
+        </h2>
+        @if (returnRequest()) {
+          @let rr = returnRequest()!;
+          <div class="return-status-info">
+            <div class="return-status-header">
+              <span class="order-status-badge" [class]="getReturnStatusClass(rr.status)">
+                {{ getReturnStatusLabel(rr.status) }}
+              </span>
+              <span class="return-reason-label">Reason: {{ rr.reason }}</span>
+            </div>
+            @if (rr.comment) {
+              <p class="return-comment">"{{ rr.comment }}"</p>
+            }
+            @if (rr.adminNote) {
+              <div class="return-admin-note">
+                <span class="material-icons">support_agent</span>
+                <span>{{ rr.adminNote }}</span>
+              </div>
+            }
+            <p class="return-date">Requested on {{ formatDate(rr.createdAt) }}</p>
+          </div>
+        } @else {
+          <div class="return-eligible">
+            <p>This order is eligible for return.</p>
+            <button class="btn btn-primary" (click)="openReturnModal()">
+              <span class="material-icons">assignment_return</span>
+              Request Return
+            </button>
+          </div>
+        }
+      </div>
+    }
+
     <!-- Order Items -->
     <div class="items-card">
       <div class="items-card-header">
@@ -114,7 +153,39 @@
               } @else {
                 <div class="item-img-placeholder">
                   <span class="material-icons">image</span>
-                </div>
+</div>
+
+@if (showReturnModal()) {
+  <div class="modal-overlay" (click)="closeReturnModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Request Return</h3>
+        <button class="modal-close" (click)="closeReturnModal()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Reason for Return *</label>
+          <select [value]="returnReason()" (change)="returnReason.set($any($event.target).value)" class="filter-select">
+            <option value="" disabled>Select reason</option>
+            @for (reason of returnReasons; track reason) {
+              <option [value]="reason">{{ reason }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Additional Comments (optional)</label>
+          <textarea [value]="returnComment()" (input)="returnComment.set($any($event.target).value)" placeholder="Describe the issue..." rows="4"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="submitReturnRequest()" [disabled]="submittingReturn()">
+          {{ submittingReturn() ? 'Submitting...' : 'Submit Return Request' }}
+        </button>
+        <button class="btn-cancel" (click)="closeReturnModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
               }
             </div>
             <div class="item-info">

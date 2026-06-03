@@ -34,6 +34,9 @@
     <button [class.active]="activeTab() === 'coupons'" (click)="setTab('coupons')">
       <span class="material-icons">local_offer</span> Coupons
     </button>
+    <button [class.active]="activeTab() === 'returns'" (click)="setTab('returns')">
+      <span class="material-icons">assignment_return</span> Returns
+    </button>
   </div>
 
   @if (isLoading()) {
@@ -663,61 +666,106 @@
   </div>
 }
 
-@if (showCouponModal()) {
-  <div class="modal-overlay" (click)="closeCouponModal()">
-    <div class="modal" (click)="$event.stopPropagation()">
+    @if (activeTab() === 'returns') {
+      <div class="admin-card">
+        <h3>Return Requests ({{ totalReturns() }} total)</h3>
+        <div class="filter-bar">
+          <select [value]="returnStatusFilter" (change)="returnStatusFilter = $any($event.target).value; returnPage.set(1); loadReturns()" class="filter-select">
+            <option value="">All Statuses</option>
+            <option value="Requested">Requested</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+            <option value="RefundInitiated">Refund Initiated</option>
+            <option value="Refunded">Refunded</option>
+          </select>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Order</th><th>Customer</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            @for (r of returns(); track r.id) {
+              <tr>
+                <td>#{{ r.id }}</td>
+                <td>#{{ r.orderId }}</td>
+                <td>{{ r.userName }}</td>
+                <td>{{ r.reason }}</td>
+                <td><span class="status-badge" [class]="getReturnStatusClass(r.status)">{{ r.status }}</span></td>
+                <td>{{ r.createdAt | date:'dd MMM yyyy, h:mm a' }}</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="btn-edit" (click)="openReturnDetail(r)" title="View / Process">
+                      <span class="material-icons">visibility</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+@if (showReturnDetailModal()) {
+  @let sr = selectedReturn()!;
+  <div class="modal-overlay" (click)="closeReturnDetail()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>{{ editingCoupon ? 'Edit Coupon' : 'Add New Coupon' }}</h3>
-        <button class="modal-close" (click)="closeCouponModal()"><span class="material-icons">close</span></button>
+        <h3>Return Request #{{ sr.id }}</h3>
+        <button class="modal-close" (click)="closeReturnDetail()"><span class="material-icons">close</span></button>
       </div>
       <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group" style="flex:2">
-            <label>Coupon Code *</label>
-            <input type="text" [(ngModel)]="couponForm.code" name="cCode" placeholder="e.g. WELCOME10" style="text-transform:uppercase" />
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Order</span>
+            <span class="detail-value">#{{ sr.orderId }}</span>
           </div>
-          <div class="form-group" style="flex:1">
-            <label>Type *</label>
-            <select [(ngModel)]="couponForm.type" name="cType">
-              <option value="Percentage">Percentage</option>
-              <option value="FixedAmount">Fixed Amount</option>
-            </select>
+          <div class="detail-item">
+            <span class="detail-label">Customer</span>
+            <span class="detail-value">{{ sr.userName }}</span>
           </div>
+          <div class="detail-item">
+            <span class="detail-label">Reason</span>
+            <span class="detail-value">{{ sr.reason }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="status-badge" [class]="getReturnStatusClass(sr.status)">{{ sr.status }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date</span>
+            <span class="detail-value">{{ sr.createdAt | date:'dd MMM yyyy, h:mm a' }}</span>
+          </div>
+          @if (sr.updatedAt !== sr.createdAt) {
+            <div class="detail-item">
+              <span class="detail-label">Updated</span>
+              <span class="detail-value">{{ sr.updatedAt | date:'dd MMM yyyy, h:mm a' }}</span>
+            </div>
+          }
         </div>
+        @if (sr.comment) {
+          <div class="detail-block">
+            <span class="detail-label">Customer Comment</span>
+            <p class="detail-text">{{ sr.comment }}</p>
+          </div>
+        }
         <div class="form-group">
-          <label>Description</label>
-          <input type="text" [(ngModel)]="couponForm.description" name="cDesc" placeholder="e.g. 10% off your first order" />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ couponForm.type === 'Percentage' ? 'Discount %' : 'Discount Amount ($)' }} *</label>
-            <input type="number" [(ngModel)]="couponForm.value" name="cValue" [placeholder]="couponForm.type === 'Percentage' ? 'e.g. 10' : 'e.g. 20'" [max]="couponForm.type === 'Percentage' ? 100 : 99999" min="0.01" step="0.01" />
-          </div>
-          <div class="form-group">
-            <label>Min Cart Value ($)</label>
-            <input type="number" [(ngModel)]="couponForm.minCartValue" name="cMinCart" placeholder="0" min="0" step="0.01" />
-          </div>
-          <div class="form-group">
-            <label>Max Uses (0 = unlimited)</label>
-            <input type="number" [(ngModel)]="couponForm.maxUses" name="cMaxUses" placeholder="0" min="0" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Expiry Date *</label>
-            <input type="date" [value]="couponForm.expiresAt" (change)="couponForm.expiresAt = $any($event.target).value" name="cExpiry" />
-          </div>
-          <div class="form-group" style="flex:0 0 auto; align-self:end; padding-bottom:4px;">
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-              <input type="checkbox" [(ngModel)]="couponForm.isActive" name="cActive" />
-              Active
-            </label>
-          </div>
+          <label>Admin Note</label>
+          <textarea [value]="returnAdminNote()" (input)="returnAdminNote.set($any($event.target).value)" placeholder="Add a note for the customer..." rows="3"></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-save" (click)="saveCoupon()">{{ editingCoupon ? 'Update' : 'Add Coupon' }}</button>
-        <button class="btn-cancel" (click)="closeCouponModal()">Cancel</button>
+        @if (sr.status === 'Requested') {
+          <button class="btn-save" (click)="approveReturn()">Approve</button>
+          <button class="btn btn-reject" (click)="rejectReturn()">Reject</button>
+        }
+        @if (sr.status === 'Approved') {
+          <button class="btn-save" (click)="initiateRefund()">Initiate Refund</button>
+        }
+        @if (sr.status === 'RefundInitiated') {
+          <button class="btn-save" (click)="markRefunded()">Mark Refunded</button>
+        }
+        <button class="btn-cancel" (click)="closeReturnDetail()">Close</button>
       </div>
     </div>
   </div>

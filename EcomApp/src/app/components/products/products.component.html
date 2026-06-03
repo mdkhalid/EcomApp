@@ -42,6 +42,36 @@
   </div>
   }
 
+  <!-- Trending Products (shown when no active search) -->
+  @if (!searchTerm() && !categoryFilter() && trending().length > 0 && products().length > 0) {
+    <div class="rec-section">
+      <h2 class="rec-title">
+        <span class="material-icons">trending_up</span>
+        Trending Products
+      </h2>
+      <div class="rec-horizontal">
+        @for (item of trending(); track item.productId) {
+          <a routerLink="/products/{{ item.productId }}" class="rec-card">
+            <div class="rec-img">
+              @if (item.imageUrl) {
+                <img [src]="getFullImageUrl(item.imageUrl)" [alt]="item.name" />
+              } @else {
+                <div class="rec-img-placeholder"><span class="material-icons">image</span></div>
+              }
+            </div>
+            <div class="rec-info">
+              <span class="rec-name">{{ item.name }}</span>
+              <span class="rec-price">&#8377;{{ item.price.toLocaleString('en-IN') }}</span>
+              @if (item.averageRating > 0) {
+                <span class="rec-rating">{{ item.averageRating.toFixed(1) }} ★</span>
+              }
+            </div>
+          </a>
+        }
+      </div>
+    </div>
+  }
+
   <!-- Search Bar Section -->
   <div class="search-section">
     <app-search-bar
@@ -260,6 +290,66 @@
             Next
             <span class="material-icons">chevron_right</span>
           </button>
+        </div>
+      }
+
+      <!-- Recently Viewed -->
+      @if (recentlyViewed().length > 0) {
+        <div class="rec-section">
+          <h2 class="rec-title">
+            <span class="material-icons">history</span>
+            Recently Viewed
+          </h2>
+          <div class="rec-horizontal">
+            @for (item of recentlyViewed(); track item.productId) {
+              <a routerLink="/products/{{ item.productId }}" class="rec-card">
+                <div class="rec-img">
+                  @if (item.imageUrl) {
+                    <img [src]="getFullImageUrl(item.imageUrl)" [alt]="item.name" />
+                  } @else {
+                    <div class="rec-img-placeholder"><span class="material-icons">image</span></div>
+                  }
+                </div>
+                <div class="rec-info">
+                  <span class="rec-name">{{ item.name }}</span>
+                  <span class="rec-price">&#8377;{{ item.price.toLocaleString('en-IN') }}</span>
+                  @if (item.originalPrice && item.originalPrice > item.price) {
+                    <span class="rec-original">&#8377;{{ item.originalPrice.toLocaleString('en-IN') }}</span>
+                  }
+                </div>
+              </a>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Recommended for You -->
+      @if (forYou().length > 0) {
+        <div class="rec-section">
+          <h2 class="rec-title">
+            <span class="material-icons">recommend</span>
+            Recommended for You
+          </h2>
+          <div class="rec-horizontal">
+            @for (item of forYou(); track item.productId) {
+              <a routerLink="/products/{{ item.productId }}" class="rec-card">
+                <div class="rec-img">
+                  @if (item.imageUrl) {
+                    <img [src]="getFullImageUrl(item.imageUrl)" [alt]="item.name" />
+                  } @else {
+                    <div class="rec-img-placeholder"><span class="material-icons">image</span></div>
+                  }
+                </div>
+                <div class="rec-info">
+                  <span class="rec-name">{{ item.name }}</span>
+                  <span class="rec-price">&#8377;{{ item.price.toLocaleString('en-IN') }}</span>
+                  @if (item.averageRating > 0) {
+                    <span class="rec-rating">{{ item.averageRating.toFixed(1) }} ★</span>
+                  }
+                </div>
+              </a>
+            }
+          </div>
         </div>
       }
     </div>

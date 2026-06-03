@@ -353,7 +353,9 @@
   font-weight: 600;
 }
 
-.status-pending { background: var(--card-bg)3cd; color: #856404; }
+.status-pending { background: #fff3cd; color: #856404; }
+.status-out-for-delivery { background: #cce5ff; color: #004085; }
+.status-returned { background: #e2d5f1; color: #563d7c; }
 .status-processing { background: #d1ecf1; color: #0c5460; }
 .status-shipped { background: #d4edda; color: #155724; }
 .status-delivered { background: #c3e6cb; color: #155724; }
@@ -563,6 +565,71 @@
   display: flex;
   justify-content: center;
   padding: 60px;
+}
+
+.modal-wide {
+  width: 640px;
+}
+
+/* Return Detail */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detail-value {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.detail-block {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: var(--radius-sm);
+
+  .detail-label {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .detail-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    margin: 0;
+    font-style: italic;
+  }
+}
+
+.btn-reject {
+  background: var(--error);
+  color: var(--card-bg);
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover { background: #b71c1c; }
 }
 
 /* Toast */

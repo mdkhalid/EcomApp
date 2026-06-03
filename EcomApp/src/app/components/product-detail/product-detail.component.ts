@@ -8,8 +8,10 @@ import { CartService } from '../../services/cart.service';
 import { WishlistService } from '../../services/wishlist.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { ActivityService } from '../../services/activity.service';
 import { Product } from '../../models/product.model';
 import { Review, CreateReview } from '../../models/review.model';
+import { RecentlyViewedProduct } from '../../models/activity.model';
 
 @Component({
   selector: 'app-product-detail',
@@ -27,6 +29,7 @@ export class ProductDetailComponent implements OnInit {
   readonly notification = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly activityService = inject(ActivityService);
   protected readonly notifications = this.notification.notifications;
   protected readonly Math = Math;
 
@@ -36,6 +39,8 @@ export class ProductDetailComponent implements OnInit {
   avgRating = signal(0);
   loading = signal(true);
   quantity = signal(1);
+
+  recommended = signal<RecentlyViewedProduct[]>([]);
 
   newReview = signal<CreateReview>({ rating: 5, comment: '' });
   submittingReview = signal(false);
@@ -48,6 +53,11 @@ export class ProductDetailComponent implements OnInit {
     if (id) {
       this.loadProduct(id);
       this.loadReviews(id);
+    }
+    if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
+      this.activityService.getForYou().subscribe({
+        next: (items) => this.recommended.set(items)
+      });
     }
   }
 
@@ -62,6 +72,7 @@ export class ProductDetailComponent implements OnInit {
           this.wishlistService.check(id).subscribe();
           this.checkCanReview(id);
         }
+        this.activityService.logActivity('ProductView', String(id)).subscribe();
       },
       error: () => {
         this.notification.showError('Failed to load product');

@@ -9,11 +9,13 @@ import { AuthService } from '../../services/auth.service';
 import { WishlistService } from '../../services/wishlist.service';
 import { CategoryService } from '../../services/category.service';
 import { BannerService } from '../../services/banner.service';
+import { ActivityService } from '../../services/activity.service';
 import { Product, SearchFilter, SearchResult, FilterMetadata } from '../../models/product.model';
 import { Category } from '../../models/category.model';
 import { Banner } from '../../models/banner.model';
 import { SearchBarComponent } from '../search/search-bar.component';
 import { FilterSidebarComponent, FilterState } from '../filter-sidebar/filter-sidebar.component';
+import { RecentlyViewedProduct } from '../../models/activity.model';
 
 @Component({
   selector: 'app-products',
@@ -32,6 +34,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   readonly notification = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly activityService = inject(ActivityService);
   protected readonly Math = Math;
   protected readonly notifications = this.notification.notifications;
 
@@ -46,6 +49,10 @@ export class ProductsComponent implements OnInit, OnDestroy {
   showMobileFilters = signal(false);
   minPrice: number | null = null;
   maxPrice: number | null = null;
+
+  recentlyViewed = signal<RecentlyViewedProduct[]>([]);
+  forYou = signal<RecentlyViewedProduct[]>([]);
+  trending = signal<RecentlyViewedProduct[]>([]);
 
   categories = signal<Category[]>([]);
   banners = signal<Banner[]>([]);
@@ -67,6 +74,17 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.bannerService.getActive().subscribe(data => {
       this.banners.set(data);
       if (data.length > 0) this.startBannerRotation();
+    });
+    if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
+      this.activityService.getRecentlyViewed().subscribe({
+        next: (items) => this.recentlyViewed.set(items)
+      });
+      this.activityService.getForYou().subscribe({
+        next: (items) => this.forYou.set(items)
+      });
+    }
+    this.activityService.getTrending().subscribe({
+      next: (items) => this.trending.set(items)
     });
     this.route.queryParams.subscribe(params => {
       if (params['search']) {
@@ -164,6 +182,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.pageNumber.set(1);
     this.updateUrl();
     this.loadProducts();
+    if (searchTerm) {
+      this.activityService.logActivity('Search', searchTerm).subscribe();
+    }
   }
 
   onFilterChanged(filterState: FilterState): void {
