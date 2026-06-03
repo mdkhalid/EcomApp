@@ -16,6 +16,7 @@ public class Product
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
 
     public int DiscountPercent => OriginalPrice.HasValue && OriginalPrice > 0
         ? (int)Math.Round((1 - Price / OriginalPrice.Value) * 100)

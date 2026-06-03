@@ -16,12 +16,14 @@ public class OrdersController : ControllerBase
     private readonly IOrderRepository _orderRepository;
     private readonly ICartRepository _cartRepository;
     private readonly INotificationService _notificationService;
+    private readonly IInvoiceService _invoiceService;
 
-    public OrdersController(IOrderRepository orderRepository, ICartRepository cartRepository, INotificationService notificationService)
+    public OrdersController(IOrderRepository orderRepository, ICartRepository cartRepository, INotificationService notificationService, IInvoiceService invoiceService)
     {
         _orderRepository = orderRepository;
         _cartRepository = cartRepository;
         _notificationService = notificationService;
+        _invoiceService = invoiceService;
     }
 
     private string GetUserIdOrSession()
@@ -133,6 +135,24 @@ public class OrdersController : ControllerBase
                 CreatedAt = h.CreatedAt
             }).ToList()
         });
+    }
+
+    [HttpGet("{id}/invoice")]
+    [Authorize]
+    public async Task<ActionResult> DownloadInvoice(int id)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var role = User.FindFirstValue(ClaimTypes.Role);
+
+        var order = await _orderRepository.GetWithHistoryAsync(id);
+        if (order == null)
+            return NotFound();
+
+        if (role != "Admin" && order.UserId != userId)
+            return NotFound();
+
+        var pdf = await _invoiceService.GenerateInvoicePdfAsync(order);
+        return File(pdf, "application/pdf", $"invoice-{id}.pdf");
     }
 
     [HttpGet("previous-addresses")]

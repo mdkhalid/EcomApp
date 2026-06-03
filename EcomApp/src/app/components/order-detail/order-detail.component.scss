@@ -79,6 +79,32 @@
     color: #212121;
     margin: 0;
   }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+}
+
+.invoice-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #2874f0;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #1a5dc8; }
+
+  .material-icons { font-size: 16px; }
 }
 
 .order-date {
@@ -469,9 +495,31 @@
 }
 
 .total-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: #212121;
+}
+
+.invoice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(100% - 40px);
+  margin: 16px 20px;
+  padding: 10px 16px;
+  background: #2874f0;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #1a5dc8; }
+
+  .material-icons { font-size: 18px; }
 }
 
 /* Return Section */

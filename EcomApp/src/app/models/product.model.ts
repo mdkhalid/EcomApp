@@ -12,6 +12,13 @@ export interface Product {
   averageRating: number;
   totalReviews: number;
   discountPercent: number;
+  images: ProductImage[];
+}
+
+export interface ProductImage {
+  id: number;
+  imageUrl: string;
+  sortOrder: number;
 }
 
 export interface CreateProduct {

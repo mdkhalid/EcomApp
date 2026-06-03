@@ -17,6 +17,14 @@ public class ProductDto
     public double AverageRating { get; set; }
     public int TotalReviews { get; set; }
     public int DiscountPercent { get; set; }
+    public List<ProductImageDto> Images { get; set; } = new();
+}
+
+public class ProductImageDto
+{
+    public int Id { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
 }
 
 public class CreateProductDto

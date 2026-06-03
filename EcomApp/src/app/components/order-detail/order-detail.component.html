@@ -24,9 +24,14 @@
       </a>
       <div class="header-row">
         <h1>Order #{{ order()!.id }}</h1>
-        <span class="order-status-badge" [class]="getStatusClass(order()!.status)">
-          {{ getStatusLabel(order()!.status) }}
-        </span>
+        <div class="header-actions">
+          <button class="invoice-header-btn" (click)="downloadInvoice()" title="Download Invoice">
+            <span class="material-icons">description</span> Invoice
+          </button>
+          <span class="order-status-badge" [class]="getStatusClass(order()!.status)">
+            {{ getStatusLabel(order()!.status) }}
+          </span>
+        </div>
       </div>
       <p class="order-date">Placed on {{ order()!.createdAt | date:'fullDate' }}</p>
     </div>
@@ -153,6 +158,34 @@
               } @else {
                 <div class="item-img-placeholder">
                   <span class="material-icons">image</span>
+                </div>
+              }
+            </div>
+            <div class="item-info">
+              <span class="item-name">{{ item.productName }}</span>
+              <span class="item-meta">Qty: {{ item.quantity }} &times; &#8377;{{ item.unitPrice.toLocaleString('en-IN') }}</span>
+            </div>
+            <div class="item-total">
+              <span>&#8377;{{ item.totalPrice.toLocaleString('en-IN') }}</span>
+            </div>
+          </div>
+        }
+      </div>
+      @if (order()!.discountAmount > 0) {
+        <div class="items-discount-row">
+          <span class="total-label">Discount ({{ order()!.couponCode }})</span>
+          <span class="discount-value">-&#8377;{{ order()!.discountAmount.toLocaleString('en-IN') }}</span>
+        </div>
+      }
+      <div class="items-total-row">
+        <span class="total-label">Order Total</span>
+        <span class="total-value">&#8377;{{ order()!.totalAmount.toLocaleString('en-IN') }}</span>
+      </div>
+      <button class="btn btn-secondary invoice-btn" (click)="downloadInvoice()">
+        <span class="material-icons">description</span> Download Invoice (PDF)
+      </button>
+    </div>
+  }
 </div>
 
 @if (showReturnModal()) {
@@ -186,28 +219,3 @@
     </div>
   </div>
 }
-              }
-            </div>
-            <div class="item-info">
-              <span class="item-name">{{ item.productName }}</span>
-              <span class="item-meta">Qty: {{ item.quantity }} &times; &#8377;{{ item.unitPrice.toLocaleString('en-IN') }}</span>
-            </div>
-            <div class="item-total">
-              <span>&#8377;{{ item.totalPrice.toLocaleString('en-IN') }}</span>
-            </div>
-          </div>
-        }
-      </div>
-      @if (order()!.discountAmount > 0) {
-        <div class="items-discount-row">
-          <span class="total-label">Discount ({{ order()!.couponCode }})</span>
-          <span class="discount-value">-&#8377;{{ order()!.discountAmount.toLocaleString('en-IN') }}</span>
-        </div>
-      }
-      <div class="items-total-row">
-        <span class="total-label">Order Total</span>
-        <span class="total-value">&#8377;{{ order()!.totalAmount.toLocaleString('en-IN') }}</span>
-      </div>
-    </div>
-  }
-</div>

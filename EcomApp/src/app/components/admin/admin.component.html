@@ -561,11 +561,30 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Product Image</label>
-          @if (imagePreview) {
-            <img [src]="imagePreview" class="image-preview" />
-          }
-          <input type="file" accept="image/*" (change)="onFileSelected($event)" />
+          <label>Product Images</label>
+          <div class="image-gallery-upload">
+            @for (img of productImages(); track img.id) {
+              <div class="uploaded-image">
+                <img [src]="getFullImageUrl(img.imageUrl)" />
+                <button type="button" class="remove-image-btn" (click)="deleteProductImage(img.id)">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+            }
+            @for (preview of imagePreviews(); track $index) {
+              <div class="uploaded-image">
+                <img [src]="preview" />
+                <button type="button" class="remove-image-btn" (click)="removeImagePreview($index)">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+            }
+            <label class="image-upload-box">
+              <span class="material-icons">add_photo_alternate</span>
+              <span>Add Image</span>
+              <input type="file" accept="image/*" (change)="onFilesSelected($event)" hidden multiple />
+            </label>
+          </div>
         </div>
       </div>
       <div class="modal-footer">

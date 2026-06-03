@@ -89,22 +89,56 @@
   }
 }
 
-.pd-badge {
+/* Gallery Navigation */
+.pd-gallery-nav {
   position: absolute;
-  top: 0;
-  left: 0;
-  background: linear-gradient(135deg, #E65100, #FF6F00);
-  color: white;
-  padding: 4px 12px;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  &:hover { background: #fff; }
+
+  .material-icons { font-size: 20px; color: #333; }
+}
+
+.pd-image-main:hover .pd-gallery-nav {
+  opacity: 1;
+}
+
+.pd-gallery-prev { left: 8px; }
+.pd-gallery-next { right: 8px; }
+
+.pd-image-counter {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  z-index: 2;
 }
 
 .pd-thumbnails {
   display: flex;
   gap: var(--space-sm);
-  justify-content: center;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  justify-content: flex-start;
 }
 
 .pd-thumb {
@@ -119,6 +153,11 @@
   align-items: center;
   justify-content: center;
   transition: border-color 0.15s;
+  flex-shrink: 0;
+
+  &.active {
+    border-color: #2874f0;
+  }
 
   img {
     max-width: 100%;

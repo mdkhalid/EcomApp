@@ -134,6 +134,12 @@ export class OrderDetailComponent implements OnInit {
     });
   }
 
+  downloadInvoice(): void {
+    const order = this.order();
+    if (!order) return;
+    window.open(`http://localhost:5068/api/orders/${order.id}/invoice`, '_blank');
+  }
+
   getFullImageUrl(path: string): string {
     return `http://localhost:5068${path}`;
   }

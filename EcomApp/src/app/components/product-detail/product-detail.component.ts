@@ -40,6 +40,22 @@ export class ProductDetailComponent implements OnInit {
   loading = signal(true);
   quantity = signal(1);
 
+  selectedImageIndex = signal(0);
+  get images(): { url: string; id: number }[] {
+    const p = this.product();
+    if (!p) return [];
+    const images: { url: string; id: number }[] = p.images.map(i => ({ url: i.imageUrl, id: i.id }));
+    if (p.imageUrl && !images.some(i => i.url === p.imageUrl)) {
+      images.unshift({ url: p.imageUrl, id: 0 });
+    }
+    return images;
+  }
+  get currentImage(): string {
+    const imgs = this.images;
+    if (imgs.length === 0) return '';
+    return this.getFullImageUrl(imgs[this.selectedImageIndex()].url);
+  }
+
   recommended = signal<RecentlyViewedProduct[]>([]);
 
   newReview = signal<CreateReview>({ rating: 5, comment: '' });

@@ -8,7 +8,7 @@ import { NotificationService } from '../../services/notification.service';
 import { CategoryService } from '../../services/category.service';
 import { BannerService } from '../../services/banner.service';
 import { CouponService } from '../../services/coupon.service';
-import { Product, CreateProduct, UpdateProduct } from '../../models/product.model';
+import { Product, CreateProduct, UpdateProduct, ProductImage } from '../../models/product.model';
 import { Order } from '../../models/order.model';
 import { User, CreateUserRequest, AdminChangePasswordRequest } from '../../models/auth.model';
 import { Category, CreateCategory } from '../../models/category.model';
@@ -63,8 +63,9 @@ export class AdminComponent implements OnInit {
   showProductModal = signal(false);
   editingProduct: Product | null = null;
   productForm = { name: '', description: '', price: 0, originalPrice: 0, stock: 0, category: '', brand: '' };
-  selectedFile: File | null = null;
-  imagePreview: string | null = null;
+  productImages = signal<ProductImage[]>([]);
+  selectedFiles: File[] = [];
+  imagePreviews = signal<string[]>([]);
 
   categories = signal<Category[]>([]);
   showCategoryModal = signal(false);
@@ -334,34 +335,57 @@ export class AdminComponent implements OnInit {
   openAddProduct(): void {
     this.editingProduct = null;
     this.productForm = { name: '', description: '', price: 0, originalPrice: 0, stock: 0, category: '', brand: '' };
-    this.selectedFile = null;
-    this.imagePreview = null;
+    this.productImages.set([]);
+    this.selectedFiles = [];
+    this.imagePreviews.set([]);
     this.showProductModal.set(true);
   }
 
   openEditProduct(product: Product): void {
     this.editingProduct = product;
     this.productForm = { name: product.name, description: product.description, price: product.price, originalPrice: product.originalPrice || 0, stock: product.stock, category: product.category, brand: product.brand || '' };
-    this.selectedFile = null;
-    this.imagePreview = product.imageUrl ? this.getFullImageUrl(product.imageUrl) : null;
+    this.productImages.set(product.images || []);
+    this.selectedFiles = [];
+    this.imagePreviews.set([]);
     this.showProductModal.set(true);
   }
 
   closeProductModal(): void {
     this.showProductModal.set(false);
     this.editingProduct = null;
-    this.selectedFile = null;
-    this.imagePreview = null;
+    this.productImages.set([]);
+    this.selectedFiles = [];
+    this.imagePreviews.set([]);
   }
 
-  onFileSelected(event: Event): void {
+  onFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.selectedFile = input.files[0];
-      const reader = new FileReader();
-      reader.onload = () => this.imagePreview = reader.result as string;
-      reader.readAsDataURL(this.selectedFile);
+    if (input.files) {
+      for (let i = 0; i < input.files.length; i++) {
+        this.selectedFiles.push(input.files[i]);
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.imagePreviews.update(p => [...p, reader.result as string]);
+        };
+        reader.readAsDataURL(input.files[i]);
+      }
+      input.value = '';
     }
+  }
+
+  removeImagePreview(index: number): void {
+    this.selectedFiles.splice(index, 1);
+    this.imagePreviews.update(p => p.filter((_, i) => i !== index));
+  }
+
+  deleteProductImage(imageId: number): void {
+    this.http.delete(`${this.apiUrl}/products/images/${imageId}`).subscribe({
+      next: () => {
+        this.productImages.update(imgs => imgs.filter(img => img.id !== imageId));
+        this.notificationService.showSuccess('Image deleted');
+      },
+      error: () => this.notificationService.showError('Failed to delete image')
+    });
   }
 
   saveProduct(): void {
@@ -369,6 +393,19 @@ export class AdminComponent implements OnInit {
       this.notificationService.showError('Name and valid price required');
       return;
     }
+
+    const finish = () => {
+      if (this.selectedFiles.length > 0 && this.editingProduct) {
+        this.uploadMultipleImages(this.editingProduct.id);
+      } else if (this.selectedFiles.length > 0 && this.createdProductId) {
+        this.uploadMultipleImages(this.createdProductId);
+      } else {
+        this.notificationService.showSuccess(this.editingProduct ? 'Product updated' : 'Product added');
+        this.closeProductModal();
+        this.loadProducts();
+        this.loadDashboard();
+      }
+    };
 
     if (this.editingProduct) {
       const updateDto: UpdateProduct = {
@@ -381,16 +418,7 @@ export class AdminComponent implements OnInit {
         brand: this.productForm.brand || undefined
       };
       this.http.put<Product>(`${this.apiUrl}/products/${this.editingProduct.id}`, updateDto).subscribe({
-        next: (updated) => {
-          if (this.selectedFile) {
-            this.uploadImage(updated.id);
-          } else {
-            this.notificationService.showSuccess('Product updated');
-            this.closeProductModal();
-            this.loadProducts();
-            this.loadDashboard();
-          }
-        },
+        next: (updated) => finish(),
         error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update product')
       });
     } else {
@@ -405,16 +433,41 @@ export class AdminComponent implements OnInit {
       };
       this.http.post<Product>(`${this.apiUrl}/products`, createDto).subscribe({
         next: (created) => {
-          if (this.selectedFile) {
-            this.uploadImage(created.id);
-          } else {
-            this.notificationService.showSuccess('Product added');
+          this.createdProductId = created.id;
+          finish();
+        },
+        error: (err) => this.notificationService.showError(err.error?.error || 'Failed to add product')
+      });
+    }
+  }
+
+  private createdProductId: number | null = null;
+
+  private uploadMultipleImages(productId: number): void {
+    const total = this.selectedFiles.length;
+    let completed = 0;
+    for (const file of this.selectedFiles) {
+      const formData = new FormData();
+      formData.append('file', file);
+      this.http.post(`${this.apiUrl}/products/${productId}/images`, formData).subscribe({
+        next: () => {
+          completed++;
+          if (completed === total) {
+            this.notificationService.showSuccess(this.editingProduct ? 'Product updated' : 'Product added');
             this.closeProductModal();
             this.loadProducts();
             this.loadDashboard();
           }
         },
-        error: (err) => this.notificationService.showError(err.error?.error || 'Failed to add product')
+        error: () => {
+          completed++;
+          this.notificationService.showError('Failed to upload some images');
+          if (completed === total) {
+            this.closeProductModal();
+            this.loadProducts();
+            this.loadDashboard();
+          }
+        }
       });
     }
   }
@@ -454,22 +507,6 @@ export class AdminComponent implements OnInit {
   }
 
   private uploadImage(productId: number): void {
-    const formData = new FormData();
-    formData.append('file', this.selectedFile!);
-    this.http.post<Product>(`${this.apiUrl}/products/${productId}/image`, formData).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Product saved with image');
-        this.closeProductModal();
-        this.loadProducts();
-        this.loadDashboard();
-      },
-      error: () => {
-        this.notificationService.showSuccess('Product saved, image upload failed');
-        this.closeProductModal();
-        this.loadProducts();
-        this.loadDashboard();
-      }
-    });
   }
 
   getFullImageUrl(path: string): string {

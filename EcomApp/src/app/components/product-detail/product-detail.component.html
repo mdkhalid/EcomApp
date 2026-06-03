@@ -27,8 +27,8 @@
       <!-- Left: Image Section -->
       <div class="pd-image-section">
         <div class="pd-image-main">
-          @if (p.imageUrl) {
-            <img [src]="getFullImageUrl(p.imageUrl)" [alt]="p.name" class="pd-main-img" />
+          @if (images.length > 0) {
+            <img [src]="currentImage" [alt]="p.name" class="pd-main-img" />
           } @else {
             <div class="pd-img-placeholder">
               <span class="material-icons">image</span>
@@ -37,14 +37,25 @@
           @if (p.averageRating > 3) {
             <span class="pd-badge">Best Seller</span>
           }
-        </div>
-        <div class="pd-thumbnails">
-          @if (p.imageUrl) {
-            <div class="pd-thumb active">
-              <img [src]="getFullImageUrl(p.imageUrl)" alt="" />
-            </div>
+          @if (images.length > 1) {
+            <button class="pd-gallery-nav pd-gallery-prev" (click)="selectedImageIndex.set(selectedImageIndex() === 0 ? images.length - 1 : selectedImageIndex() - 1)">
+              <span class="material-icons">chevron_left</span>
+            </button>
+            <button class="pd-gallery-nav pd-gallery-next" (click)="selectedImageIndex.set(selectedImageIndex() === images.length - 1 ? 0 : selectedImageIndex() + 1)">
+              <span class="material-icons">chevron_right</span>
+            </button>
+            <div class="pd-image-counter">{{ selectedImageIndex() + 1 }} / {{ images.length }}</div>
           }
         </div>
+        @if (images.length > 1) {
+          <div class="pd-thumbnails">
+            @for (img of images; track img.id; let i = $index) {
+              <div class="pd-thumb" [class.active]="i === selectedImageIndex()" (click)="selectedImageIndex.set(i)">
+                <img [src]="getFullImageUrl(img.url)" alt="" />
+              </div>
+            }
+          </div>
+        }
       </div>
 
       <!-- Center: Product Info -->
