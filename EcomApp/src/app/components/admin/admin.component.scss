@@ -824,6 +824,30 @@
   }
 }
 
+.form-group.has-error label {
+  color: #C62828;
+}
+
+.form-group input.input-error,
+.form-group select.input-error,
+.form-group textarea.input-error {
+  border-color: #C62828;
+  background: #FFF5F5;
+
+  &:focus {
+    border-color: #C62828;
+    box-shadow: 0 0 0 1px #C62828;
+  }
+}
+
+.field-error {
+  display: block;
+  margin-top: 4px;
+  color: #C62828;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .form-row {
   display: flex;
   gap: 16px;

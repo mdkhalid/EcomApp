@@ -110,6 +110,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   // Create User
   showCreateUserModal = signal(false);
   createUserForm: CreateUserRequest = { email: '', username: '', password: '', confirmPassword: '', role: 'Customer', firstName: '', lastName: '', phone: '' };
+  createUserErrors: { [key: string]: string } = {};
   availableRoles = signal<string[]>(['Customer', 'SubAdmin', 'Admin']);
 
   // Change Password
@@ -536,36 +537,53 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   // Create User
   openCreateUser(): void {
     this.createUserForm = { email: '', username: '', password: '', confirmPassword: '', role: 'Customer', firstName: '', lastName: '', phone: '' };
+    this.createUserErrors = {};
     this.showCreateUserModal.set(true);
   }
 
   closeCreateUser(): void {
     this.showCreateUserModal.set(false);
+    this.createUserErrors = {};
   }
 
   saveCreateUser(): void {
     const f = this.createUserForm;
-    if (!f.email || !f.username || !f.password) {
-      this.notificationService.showError('Email, username and password are required');
+    const errors: { [key: string]: string } = {};
+
+    if (!f.email?.trim()) {
+      errors['email'] = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) {
+      errors['email'] = 'Please enter a valid email address';
+    }
+
+    if (!f.username?.trim()) {
+      errors['username'] = 'Username is required';
+    } else if (f.username.length < 3) {
+      errors['username'] = 'Username must be at least 3 characters';
+    }
+
+    if (!f.password) {
+      errors['password'] = 'Password is required';
+    } else if (f.password.length < 8) {
+      errors['password'] = 'Password must be at least 8 characters';
+    }
+
+    if (!f.confirmPassword) {
+      errors['confirmPassword'] = 'Please confirm the password';
+    } else if (f.password !== f.confirmPassword) {
+      errors['confirmPassword'] = 'Passwords do not match';
+    }
+
+    if (!f.role) {
+      errors['role'] = 'Role is required';
+    }
+
+    this.createUserErrors = errors;
+    if (Object.keys(errors).length > 0) {
+      this.notificationService.showError('Please fix the highlighted fields');
       return;
     }
-    if (f.username.length < 3) {
-      this.notificationService.showError('Username must be at least 3 characters');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(f.email)) {
-      this.notificationService.showError('Please enter a valid email address');
-      return;
-    }
-    if (f.password.length < 8) {
-      this.notificationService.showError('Password must be at least 8 characters');
-      return;
-    }
-    if (f.password !== f.confirmPassword) {
-      this.notificationService.showError('Passwords do not match');
-      return;
-    }
+
     const payload = { ...f };
     if (!payload.phone) delete payload.phone;
     if (!payload.firstName) delete payload.firstName;
@@ -578,6 +596,13 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => this.notificationService.showError(err.error?.error || 'Failed to create user')
     });
+  }
+
+  clearCreateUserError(field: string): void {
+    if (this.createUserErrors[field]) {
+      delete this.createUserErrors[field];
+      this.createUserErrors = { ...this.createUserErrors };
+    }
   }
 
   // Change Password
