@@ -825,18 +825,19 @@
 }
 
 .form-group.has-error label {
-  color: #C62828;
+  color: #C62828 !important;
 }
 
 .form-group input.input-error,
 .form-group select.input-error,
 .form-group textarea.input-error {
-  border-color: #C62828;
-  background: #FFF5F5;
+  border: 1px solid #C62828 !important;
+  background: #FFF5F5 !important;
+  box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.15) !important;
 
   &:focus {
-    border-color: #C62828;
-    box-shadow: 0 0 0 1px #C62828;
+    border-color: #C62828 !important;
+    box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.3) !important;
   }
 }
 
