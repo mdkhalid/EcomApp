@@ -27,31 +27,44 @@ export class RegisterComponent {
     lastName: '',
     phone: ''
   };
+  registerErrors: { [key: string]: string } = {};
   isLoading = false;
 
   onSubmit(): void {
-    if (!this.registerData.email || !this.registerData.username || !this.registerData.password) {
-      this.notificationService.showError('Please fill in all required fields');
+    const d = this.registerData;
+    const errors: { [key: string]: string } = {};
+
+    if (!d.email?.trim()) {
+      errors['email'] = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) {
+      errors['email'] = 'Please enter a valid email address';
+    }
+
+    if (!d.username?.trim()) {
+      errors['username'] = 'Username is required';
+    } else if (d.username.length < 3) {
+      errors['username'] = 'Username must be at least 3 characters';
+    }
+
+    if (!d.password) {
+      errors['password'] = 'Password is required';
+    } else if (d.password.length < 8) {
+      errors['password'] = 'Password must be at least 8 characters';
+    }
+
+    if (!d.confirmPassword) {
+      errors['confirmPassword'] = 'Please confirm the password';
+    } else if (d.password !== d.confirmPassword) {
+      errors['confirmPassword'] = 'Passwords do not match';
+    }
+
+    this.registerErrors = errors;
+    if (Object.keys(errors).length > 0) {
+      this.notificationService.showError('Please fix the highlighted fields');
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(this.registerData.email)) {
-      this.notificationService.showError('Please enter a valid email address');
-      return;
-    }
-
-    if (this.registerData.password !== this.registerData.confirmPassword) {
-      this.notificationService.showError('Passwords do not match');
-      return;
-    }
-
-    if (this.registerData.password.length < 8) {
-      this.notificationService.showError('Password must be at least 8 characters');
-      return;
-    }
-
-    const payload = { ...this.registerData };
+    const payload = { ...d };
     if (!payload.phone) delete payload.phone;
     if (!payload.firstName) delete payload.firstName;
     if (!payload.lastName) delete payload.lastName;
@@ -70,5 +83,12 @@ export class RegisterComponent {
         this.notificationService.showError(message);
       }
     });
+  }
+
+  clearRegisterError(field: string): void {
+    if (this.registerErrors[field]) {
+      delete this.registerErrors[field];
+      this.registerErrors = { ...this.registerErrors };
+    }
   }
 }

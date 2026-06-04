@@ -134,6 +134,25 @@
   color: var(--text-tertiary);
 }
 
+.form-group input.input-error {
+  border: 1px solid #C62828 !important;
+  background: #FFF5F5 !important;
+  box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.15) !important;
+
+  &:focus {
+    border-color: #C62828 !important;
+    box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.3) !important;
+  }
+}
+
+.field-error {
+  display: block;
+  margin-top: 4px;
+  color: #C62828;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .terms-note {
   font-size: var(--font-size-xs);
   color: var(--text-secondary);

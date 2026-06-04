@@ -38,11 +38,27 @@
           </div>
 
           <div class="form-group">
-            <input type="email" [(ngModel)]="registerData.email" name="email" placeholder="Enter Email" required />
+            <input type="email" [(ngModel)]="registerData.email" name="email" placeholder="Enter Email" required
+              [class.input-error]="registerErrors['email']"
+              [style.borderColor]="registerErrors['email'] ? '#C62828' : null"
+              [style.background]="registerErrors['email'] ? '#FFF5F5' : null"
+              [style.boxShadow]="registerErrors['email'] ? '0 0 0 2px rgba(198,40,40,0.25)' : null"
+              (input)="clearRegisterError('email')" />
+            @if (registerErrors['email']) {
+              <span class="field-error">{{ registerErrors['email'] }}</span>
+            }
           </div>
 
           <div class="form-group">
-            <input type="text" [(ngModel)]="registerData.username" name="username" placeholder="Choose Username" required />
+            <input type="text" [(ngModel)]="registerData.username" name="username" placeholder="Choose Username" required
+              [class.input-error]="registerErrors['username']"
+              [style.borderColor]="registerErrors['username'] ? '#C62828' : null"
+              [style.background]="registerErrors['username'] ? '#FFF5F5' : null"
+              [style.boxShadow]="registerErrors['username'] ? '0 0 0 2px rgba(198,40,40,0.25)' : null"
+              (input)="clearRegisterError('username')" />
+            @if (registerErrors['username']) {
+              <span class="field-error">{{ registerErrors['username'] }}</span>
+            }
           </div>
 
           <div class="form-group">
@@ -50,11 +66,27 @@
           </div>
 
           <div class="form-group">
-            <input type="password" [(ngModel)]="registerData.password" name="password" placeholder="Enter Password" required />
+            <input type="password" [(ngModel)]="registerData.password" name="password" placeholder="Enter Password" required
+              [class.input-error]="registerErrors['password']"
+              [style.borderColor]="registerErrors['password'] ? '#C62828' : null"
+              [style.background]="registerErrors['password'] ? '#FFF5F5' : null"
+              [style.boxShadow]="registerErrors['password'] ? '0 0 0 2px rgba(198,40,40,0.25)' : null"
+              (input)="clearRegisterError('password')" />
+            @if (registerErrors['password']) {
+              <span class="field-error">{{ registerErrors['password'] }}</span>
+            }
           </div>
 
           <div class="form-group">
-            <input type="password" [(ngModel)]="registerData.confirmPassword" name="confirmPassword" placeholder="Confirm Password" required />
+            <input type="password" [(ngModel)]="registerData.confirmPassword" name="confirmPassword" placeholder="Confirm Password" required
+              [class.input-error]="registerErrors['confirmPassword']"
+              [style.borderColor]="registerErrors['confirmPassword'] ? '#C62828' : null"
+              [style.background]="registerErrors['confirmPassword'] ? '#FFF5F5' : null"
+              [style.boxShadow]="registerErrors['confirmPassword'] ? '0 0 0 2px rgba(198,40,40,0.25)' : null"
+              (input)="clearRegisterError('confirmPassword')" />
+            @if (registerErrors['confirmPassword']) {
+              <span class="field-error">{{ registerErrors['confirmPassword'] }}</span>
+            }
           </div>
 
           <p class="terms-note">By continuing, you agree to ShopKart's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a></p>
