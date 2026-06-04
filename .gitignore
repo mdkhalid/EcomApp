@@ -15,19 +15,39 @@ EcomApp/.vscode/
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # IDE
 .idea/
+.vscode/
 *.swp
 *.swo
+*.tmp
 
-# Images
+# User uploads (runtime data)
+EcomApi/wwwroot/uploads/
+EcomApi/wwwroot/images/
+EcomApi/wwwroot/banners/
+EcomApi/wwwroot/products/
+
+# Logs
+*.log
+*.err.log
+frontend.log
+backend.log
+frontend.err.log
+backend.err.log
+EcomApp/frontend.log
+EcomApp/backend.log
+
+# Sensitive / Personal
+login_details.jpg
 Images/
 
-# Misc
-suggestion.md
-
-# AI Tools
+# AI / Tooling configs
 .commandcode/
 .deepseek/
 .openclaude/
+
+# Local
+suggestion.md

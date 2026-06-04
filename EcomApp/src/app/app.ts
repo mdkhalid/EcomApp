@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, HostListener } from '@angular/core';
 import { RouterLink, RouterOutlet, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from './services/auth.service';
@@ -21,6 +21,7 @@ export class App implements OnInit {
   protected searchQuery = signal('');
   protected categories = signal<Category[]>([]);
   protected darkMode = signal(false);
+  protected readonly userMenuOpen = signal(false);
 
   ngOnInit(): void {
     this.categoryService.getAll().subscribe(data => this.categories.set(data));
@@ -56,7 +57,29 @@ export class App implements OnInit {
     }
   }
 
+  protected toggleUserMenu(): void {
+    this.userMenuOpen.set(!this.userMenuOpen());
+  }
+
+  protected closeUserMenu(): void {
+    this.userMenuOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  protected onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.header-user-dropdown')) {
+      this.userMenuOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    this.userMenuOpen.set(false);
+  }
+
   protected logout(): void {
+    this.userMenuOpen.set(false);
     this.cartService.resetCount();
     this.authService.logout();
     this.router.navigate(['/login']);

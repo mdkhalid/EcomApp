@@ -1,13 +1,14 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, signal, viewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { CategoryService } from '../../services/category.service';
 import { BannerService } from '../../services/banner.service';
 import { CouponService } from '../../services/coupon.service';
+import { AnalyticsService } from '../../services/analytics.service';
 import { Product, CreateProduct, UpdateProduct, ProductImage, ProductVariant, CreateProductVariant } from '../../models/product.model';
 import { Order } from '../../models/order.model';
 import { User, CreateUserRequest, AdminChangePasswordRequest } from '../../models/auth.model';
@@ -17,6 +18,8 @@ import { Coupon, CreateCoupon } from '../../models/coupon.model';
 import { ReturnRequest } from '../../models/return.model';
 import { ReturnService } from '../../services/return.service';
 import { AdminNotificationService } from '../../services/admin-notification.service';
+import { AnalyticsOverview, CategoryBreakdown, OrderStatusBreakdown, RevenuePoint, RevenueSummary, TopProduct } from '../../models/analytics.model';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -25,13 +28,15 @@ interface PaginatedResponse<T> {
   pageSize: number;
 }
 
+Chart.register(...registerables);
+
 @Component({
   selector: 'app-admin',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, DecimalPipe],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss'
 })
-export class AdminComponent implements OnInit {
+export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
   readonly notificationService = inject(NotificationService);
@@ -40,10 +45,33 @@ export class AdminComponent implements OnInit {
   private readonly bannerService = inject(BannerService);
   private readonly couponService = inject(CouponService);
   private readonly returnService = inject(ReturnService);
+  private readonly analyticsService = inject(AnalyticsService);
   readonly notifService = inject(AdminNotificationService);
   private readonly apiUrl = 'http://localhost:5068/api';
 
-  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns'>('dashboard');
+  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics'>('dashboard');
+
+  get isSuperAdmin(): boolean {
+    return this.authService.isSuperAdmin();
+  }
+
+  revenueCanvas = viewChild<ElementRef<HTMLCanvasElement>>('revenueChart');
+  topProductsCanvas = viewChild<ElementRef<HTMLCanvasElement>>('topProductsChart');
+  categoryCanvas = viewChild<ElementRef<HTMLCanvasElement>>('categoryChart');
+  orderStatusCanvas = viewChild<ElementRef<HTMLCanvasElement>>('orderStatusChart');
+
+  analyticsOverview = signal<AnalyticsOverview | null>(null);
+  revenue = signal<RevenueSummary | null>(null);
+  topProducts = signal<TopProduct[]>([]);
+  categoryBreakdown = signal<CategoryBreakdown[]>([]);
+  orderStatusBreakdown = signal<OrderStatusBreakdown[]>([]);
+  revenuePeriod = signal<'daily' | 'weekly' | 'monthly'>('monthly');
+  analyticsLoading = signal(false);
+
+  private revenueChart?: Chart;
+  private topProductsChart?: Chart;
+  private categoryChart?: Chart;
+  private orderStatusChart?: Chart;
 
   stats = signal({ totalProducts: 0, totalOrders: 0, totalUsers: 0, totalRevenue: 0 });
   products = signal<Product[]>([]);
@@ -121,7 +149,7 @@ export class AdminComponent implements OnInit {
     setInterval(() => this.notifService.loadCount(), 30000);
   }
 
-  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns'): void {
+  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics'): void {
     this.activeTab.set(tab);
     if (tab === 'orders') this.loadOrders();
     if (tab === 'users') { this.loadUsers(); this.loadRoles(); }
@@ -130,6 +158,7 @@ export class AdminComponent implements OnInit {
     if (tab === 'banners') this.loadBanners();
     if (tab === 'coupons') this.loadCoupons();
     if (tab === 'returns') this.loadReturns();
+    if (tab === 'analytics') this.loadAnalytics();
   }
 
   loadDashboard(): void {
@@ -158,6 +187,275 @@ export class AdminComponent implements OnInit {
         });
       }
     });
+  }
+
+  loadAnalytics(): void {
+    this.analyticsLoading.set(true);
+    this.analyticsService.getOverview().subscribe({
+      next: (data) => {
+        this.analyticsOverview.set(data);
+        this.orderStatusBreakdown.set(data.orderStatusBreakdown);
+        if (data.topProducts?.length) {
+          this.topProducts.set(data.topProducts);
+        }
+        this.analyticsLoading.set(false);
+        queueMicrotask(() => this.renderAllCharts());
+        if (this.isSuperAdmin) {
+          this.loadRevenue();
+        }
+      },
+      error: () => {
+        this.analyticsLoading.set(false);
+        this.notificationService.showError('Failed to load analytics');
+      }
+    });
+  }
+
+  loadRevenue(): void {
+    this.analyticsService.getRevenue(this.revenuePeriod()).subscribe({
+      next: (data) => {
+        this.revenue.set(data);
+        queueMicrotask(() => this.renderRevenueChart());
+      },
+      error: () => this.notificationService.showError('Failed to load revenue')
+    });
+  }
+
+  loadTopProductsAndCategory(): void {
+    this.analyticsService.getTopProducts(10).subscribe({
+      next: (data) => {
+        this.topProducts.set(data);
+        queueMicrotask(() => this.renderTopProductsChart());
+      },
+      error: () => this.notificationService.showError('Failed to load top products')
+    });
+    this.analyticsService.getCategoryBreakdown().subscribe({
+      next: (data) => {
+        this.categoryBreakdown.set(data);
+        queueMicrotask(() => this.renderCategoryChart());
+      },
+      error: () => this.notificationService.showError('Failed to load category breakdown')
+    });
+  }
+
+  private renderAllCharts(): void {
+    this.renderOrderStatusChart();
+    this.renderTopProductsChart();
+    this.renderCategoryChart();
+  }
+
+  onRevenuePeriodChange(period: 'daily' | 'weekly' | 'monthly'): void {
+    this.revenuePeriod.set(period);
+    this.loadRevenue();
+  }
+
+  ngAfterViewInit(): void {
+    if (this.activeTab() === 'analytics') {
+      this.loadAnalytics();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.revenueChart?.destroy();
+    this.topProductsChart?.destroy();
+    this.categoryChart?.destroy();
+    this.orderStatusChart?.destroy();
+  }
+
+  private renderRevenueChart(): void {
+    const canvas = this.revenueCanvas()?.nativeElement;
+    if (!canvas) return;
+    const data = this.revenue();
+    if (!data) return;
+
+    this.revenueChart?.destroy();
+    const config: ChartConfiguration<'line'> = {
+      type: 'line',
+      data: {
+        labels: data.points.map(p => p.label),
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: data.points.map(p => p.revenue),
+          borderColor: '#2874F0',
+          backgroundColor: 'rgba(40, 116, 240, 0.12)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          borderWidth: 2
+        }, {
+          label: 'Orders',
+          data: data.points.map(p => p.orderCount),
+          borderColor: '#fb641b',
+          backgroundColor: 'transparent',
+          tension: 0.35,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const v = ctx.parsed.y ?? 0;
+                if (ctx.dataset.label?.startsWith('Revenue')) {
+                  return `Revenue: ₹${v.toLocaleString('en-IN')}`;
+                }
+                return `Orders: ${v}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (v) => '₹' + Number(v).toLocaleString('en-IN')
+            }
+          },
+          y1: {
+            beginAtZero: true,
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    };
+    this.revenueChart = new Chart(canvas, config);
+  }
+
+  private renderTopProductsChart(): void {
+    const canvas = this.topProductsCanvas()?.nativeElement;
+    if (!canvas) return;
+    const items = this.topProducts();
+    if (!items.length) return;
+
+    this.topProductsChart?.destroy();
+    const config: ChartConfiguration<'bar'> = {
+      type: 'bar',
+      data: {
+        labels: items.map(p => this.truncate(p.productName, 22)),
+        datasets: [{
+          label: 'Units Sold',
+          data: items.map(p => p.unitsSold),
+          backgroundColor: 'rgba(56, 142, 60, 0.8)',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const item = items[ctx.dataIndex];
+                return ` ${item.unitsSold} units • ₹${item.revenue.toLocaleString('en-IN')}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    };
+    this.topProductsChart = new Chart(canvas, config);
+  }
+
+  private renderCategoryChart(): void {
+    const canvas = this.categoryCanvas()?.nativeElement;
+    if (!canvas) return;
+    const items = this.categoryBreakdown();
+    if (!items.length) return;
+
+    this.categoryChart?.destroy();
+    const palette = ['#2874F0', '#fb641b', '#388e3c', '#7c4dff', '#e91e63', '#009688', '#FFB300', '#5d4037', '#455a64', '#c62828'];
+    const config: ChartConfiguration<'doughnut'> = {
+      type: 'doughnut',
+      data: {
+        labels: items.map(c => c.category),
+        datasets: [{
+          data: items.map(c => c.revenue),
+          backgroundColor: items.map((_, i) => palette[i % palette.length]),
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const item = items[ctx.dataIndex];
+                return ` ${item.category}: ₹${item.revenue.toLocaleString('en-IN')} (${item.unitsSold} units)`;
+              }
+            }
+          }
+        }
+      }
+    };
+    this.categoryChart = new Chart(canvas, config);
+  }
+
+  private renderOrderStatusChart(): void {
+    const canvas = this.orderStatusCanvas()?.nativeElement;
+    if (!canvas) return;
+    const items = this.orderStatusBreakdown();
+    if (!items.length) return;
+
+    this.orderStatusChart?.destroy();
+    const colorMap: Record<string, string> = {
+      Pending: '#FFB300',
+      Processing: '#2874F0',
+      Shipped: '#7c4dff',
+      OutForDelivery: '#fb641b',
+      Delivered: '#388e3c',
+      Cancelled: '#c62828',
+      Returned: '#5d4037'
+    };
+    const config: ChartConfiguration<'pie'> = {
+      type: 'pie',
+      data: {
+        labels: items.map(s => s.status),
+        datasets: [{
+          data: items.map(s => s.count),
+          backgroundColor: items.map(s => colorMap[s.status] ?? '#999'),
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.label}: ${ctx.parsed}`
+            }
+          }
+        }
+      }
+    };
+    this.orderStatusChart = new Chart(canvas, config);
+  }
+
+  private truncate(s: string, n: number): string {
+    return s.length > n ? s.substring(0, n - 1) + '…' : s;
   }
 
   loadProducts(): void {

@@ -117,6 +117,14 @@ export class AuthService {
     return this.currentUserSignal()?.role === 'Admin';
   }
 
+  isSuperAdmin(): boolean {
+    return this.currentUserSignal()?.role === 'Admin';
+  }
+
+  isSubAdmin(): boolean {
+    return this.currentUserSignal()?.role === 'SubAdmin';
+  }
+
   private handleLoginSuccess(response: TokenResponse): void {
     localStorage.setItem('accessToken', response.accessToken);
     localStorage.setItem('refreshToken', response.refreshToken);

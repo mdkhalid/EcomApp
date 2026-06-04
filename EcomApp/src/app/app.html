@@ -32,41 +32,67 @@
         <span class="material-icons">{{ darkMode() ? 'light_mode' : 'dark_mode' }}</span>
       </button>
       @if (authService.isAuthenticated()) {
-        <div class="header-user-dropdown">
-          <a routerLink="/profile" class="header-btn header-user-btn">
-            <span class="material-icons">person_outline</span>
-            <span class="user-name">{{ authService.currentUser()?.username || 'My Account' }}</span>
-            <span class="material-icons arrow-down">arrow_drop_down</span>
-          </a>
-        </div>
-
-        <a routerLink="/orders" class="header-btn hide-mobile">
-          <span class="material-icons">receipt_long</span>
-          Orders
-        </a>
-
-        <a routerLink="/wishlist" class="header-btn hide-mobile">
-          <span class="material-icons">favorite_border</span>
-          Wishlist
-        </a>
-
-        <a routerLink="/cart" class="header-btn cart-btn">
-          <span class="material-icons">shopping_cart</span>
-          <span class="cart-label">Cart</span>
-          @if (cartService.cartItemCount() > 0) {
-            <span class="cart-badge">{{ cartService.cartItemCount() }}</span>
-          }
-        </a>
-
-        @if (authService.isAdmin()) {
-          <a routerLink="/admin" class="header-btn admin-btn hide-mobile">
-            <span class="material-icons">dashboard</span>
+        <!-- Cart only for non-admin shoppers -->
+        @if (!authService.isAdmin()) {
+          <a routerLink="/cart" class="header-btn cart-btn">
+            <span class="material-icons">shopping_cart</span>
+            <span class="cart-label">Cart</span>
+            @if (cartService.cartItemCount() > 0) {
+              <span class="cart-badge">{{ cartService.cartItemCount() }}</span>
+            }
           </a>
         }
 
-        <button class="header-btn logout-btn hide-mobile" (click)="logout()" title="Logout">
-          <span class="material-icons">logout</span>
-        </button>
+        <!-- User Dropdown -->
+        <div class="header-user-dropdown" [class.push-right]="authService.isAdmin()">
+          <button class="header-btn header-user-btn" (click)="toggleUserMenu()" aria-haspopup="true" [attr.aria-expanded]="userMenuOpen()">
+            <span class="material-icons">person_outline</span>
+            <span class="user-name">{{ authService.currentUser()?.username || 'My Account' }}</span>
+            <span class="material-icons arrow-down" [class.open]="userMenuOpen()">arrow_drop_down</span>
+          </button>
+
+          @if (userMenuOpen()) {
+            <div class="user-dropdown-panel">
+              <div class="user-dropdown-header">
+                <span class="material-icons user-dropdown-avatar">account_circle</span>
+                <div class="user-dropdown-info">
+                  <span class="user-dropdown-name">{{ authService.currentUser()?.username || 'User' }}</span>
+                  <span class="user-dropdown-email">{{ authService.currentUser()?.email || '' }}</span>
+                </div>
+              </div>
+
+              <div class="user-dropdown-links">
+                <a routerLink="/profile" class="user-dropdown-item" (click)="closeUserMenu()">
+                  <span class="material-icons">person</span>
+                  My Profile
+                </a>
+                @if (!authService.isAdmin()) {
+                  <a routerLink="/orders" class="user-dropdown-item" (click)="closeUserMenu()">
+                    <span class="material-icons">receipt_long</span>
+                    Orders
+                  </a>
+                  <a routerLink="/wishlist" class="user-dropdown-item" (click)="closeUserMenu()">
+                    <span class="material-icons">favorite_border</span>
+                    Wishlist
+                  </a>
+                }
+                @if (authService.isAdmin()) {
+                  <a routerLink="/admin" class="user-dropdown-item user-dropdown-item-admin" (click)="closeUserMenu()">
+                    <span class="material-icons">dashboard</span>
+                    Admin Dashboard
+                  </a>
+                }
+              </div>
+
+              <div class="user-dropdown-divider"></div>
+
+              <button class="user-dropdown-item user-dropdown-logout" (click)="logout()">
+                <span class="material-icons">logout</span>
+                Logout
+              </button>
+            </div>
+          }
+        </div>
       } @else {
         <a routerLink="/login" class="login-btn">Login</a>
         <a routerLink="/register" class="header-btn hide-mobile">

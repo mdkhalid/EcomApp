@@ -64,6 +64,9 @@
     <button [class.active]="activeTab() === 'dashboard'" (click)="setTab('dashboard')">
       <span class="material-icons">bar_chart</span> Dashboard
     </button>
+    <button [class.active]="activeTab() === 'analytics'" (click)="setTab('analytics')">
+      <span class="material-icons">insights</span> Analytics
+    </button>
     <button [class.active]="activeTab() === 'products'" (click)="setTab('products')">
       <span class="material-icons">inventory_2</span> Products
     </button>
@@ -91,7 +94,7 @@
     <div class="loading-state"><div class="spinner"></div></div>
   } @else {
     @if (activeTab() === 'dashboard') {
-      <div class="stats-grid">
+      <div class="stats-grid" [class.three-cols]="!isSuperAdmin">
         <div class="stat-card blue">
           <span class="material-icons stat-icon">inventory_2</span>
           <div class="stat-info">
@@ -106,13 +109,15 @@
             <span class="stat-value">{{ stats().totalOrders }}</span>
           </div>
         </div>
-        <div class="stat-card orange">
-          <span class="material-icons stat-icon">payments</span>
-          <div class="stat-info">
-            <span class="stat-label">Revenue</span>
-            <span class="stat-value">&#8377;{{ stats().totalRevenue.toLocaleString('en-IN') }}</span>
+        @if (isSuperAdmin) {
+          <div class="stat-card orange">
+            <span class="material-icons stat-icon">payments</span>
+            <div class="stat-info">
+              <span class="stat-label">Revenue</span>
+              <span class="stat-value">&#8377;{{ stats().totalRevenue.toLocaleString('en-IN') }}</span>
+            </div>
           </div>
-        </div>
+        }
         <div class="stat-card purple">
           <span class="material-icons stat-icon">people</span>
           <div class="stat-info">
@@ -133,10 +138,171 @@
               <tr>
                 <td>#{{ order.id }}</td>
                 <td>{{ order.shippingName }}</td>
-                <td>&#8377;{{ order.totalAmount.toLocaleString('en-IN') }}</td>
+                <td>
+                  @if (isSuperAdmin) {
+                    &#8377;{{ order.totalAmount.toLocaleString('en-IN') }}
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
                 <td><span class="status-badge" [class]="getStatusClass(order.status)">{{ order.status }}</span></td>
                 <td>{{ order.createdAt | date:'dd MMM yyyy' }}</td>
               </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (activeTab() === 'analytics') {
+      @if (isSuperAdmin) {
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-revenue">
+            <span class="material-icons kpi-icon">payments</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Total Revenue</span>
+              <span class="kpi-value">&#8377;{{ (revenue()?.totalRevenue ?? 0) | number:'1.0-0' }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-orders">
+            <span class="material-icons kpi-icon">shopping_bag</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Orders ({{ revenuePeriod() }})</span>
+              <span class="kpi-value">{{ revenue()?.totalOrders ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-aov">
+            <span class="material-icons kpi-icon">receipt</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Avg Order Value</span>
+              <span class="kpi-value">&#8377;{{ (revenue()?.averageOrderValue ?? 0) | number:'1.0-2' }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-pending">
+            <span class="material-icons kpi-icon">pending_actions</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Pending Orders</span>
+              <span class="kpi-value">{{ analyticsOverview()?.pendingOrders ?? 0 }}</span>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-orders">
+            <span class="material-icons kpi-icon">shopping_bag</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Total Orders</span>
+              <span class="kpi-value">{{ analyticsOverview()?.totalOrders ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-pending">
+            <span class="material-icons kpi-icon">pending_actions</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Pending Orders</span>
+              <span class="kpi-value">{{ analyticsOverview()?.pendingOrders ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-products">
+            <span class="material-icons kpi-icon">inventory_2</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Products</span>
+              <span class="kpi-value">{{ analyticsOverview()?.totalProducts ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-users">
+            <span class="material-icons kpi-icon">people</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Users</span>
+              <span class="kpi-value">{{ analyticsOverview()?.totalUsers ?? 0 }}</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (isSuperAdmin) {
+        <div class="admin-card">
+          <div class="card-header-row">
+            <h3>Revenue Trend</h3>
+            <div class="period-toggle">
+              <button [class.active]="revenuePeriod() === 'daily'" (click)="onRevenuePeriodChange('daily')">Daily</button>
+              <button [class.active]="revenuePeriod() === 'weekly'" (click)="onRevenuePeriodChange('weekly')">Weekly</button>
+              <button [class.active]="revenuePeriod() === 'monthly'" (click)="onRevenuePeriodChange('monthly')">Monthly</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas #revenueChart></canvas>
+          </div>
+        </div>
+      }
+
+      <div class="charts-row">
+        @if (isSuperAdmin) {
+          <div class="admin-card">
+            <h3>Top Selling Products</h3>
+            <div class="chart-container">
+              <canvas #topProductsChart></canvas>
+            </div>
+          </div>
+        }
+        <div class="admin-card">
+          <h3>Order Status</h3>
+          <div class="chart-container">
+            <canvas #orderStatusChart></canvas>
+          </div>
+        </div>
+      </div>
+
+      @if (isSuperAdmin) {
+        <div class="admin-card">
+          <h3>Sales by Category</h3>
+          <div class="chart-container chart-tall">
+            <canvas #categoryChart></canvas>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h3>Top Products Detail</h3>
+          <table class="admin-table">
+            <thead>
+              <tr><th>#</th><th>Product</th><th>Category</th><th>Units Sold</th><th>Revenue</th></tr>
+            </thead>
+            <tbody>
+              @for (p of topProducts(); track p.productId; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td class="product-name-cell">{{ p.productName }}</td>
+                  <td><span class="category-tag">{{ p.category || '—' }}</span></td>
+                  <td>{{ p.unitsSold }}</td>
+                  <td class="price-cell">&#8377;{{ p.revenue | number:'1.0-0' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="text-muted">No sales data yet</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <div class="admin-card">
+        <h3>Low Stock Alert</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Product</th><th>Category</th><th>Stock</th></tr>
+          </thead>
+          <tbody>
+            @for (p of analyticsOverview()?.lowStockProducts ?? []; track p.productId) {
+              <tr>
+                <td>#{{ p.productId }}</td>
+                <td class="product-name-cell">{{ p.productName }}</td>
+                <td><span class="category-tag">{{ p.category || '—' }}</span></td>
+                <td>
+                  <span class="stock-value" [class.low-stock]="p.stock > 0 && p.stock < 10" [class.out-of-stock]="p.stock === 0">
+                    {{ p.stock }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="text-muted">All products are well-stocked</td></tr>
             }
           </tbody>
         </table>
