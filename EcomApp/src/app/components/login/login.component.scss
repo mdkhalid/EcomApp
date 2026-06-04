@@ -74,6 +74,53 @@
   }
 }
 
+.lockout-banner {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: #FFF3CD;
+  border-left: 4px solid #FF9800;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-lg);
+
+  > .material-icons {
+    color: #B26A00;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .lockout-banner-content {
+    flex: 1;
+
+    strong {
+      display: block;
+      color: #721C24;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    p {
+      color: #856404;
+      font-size: 13px;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .lockout-countdown {
+      margin-top: 4px;
+      font-size: 14px;
+      color: #721C24;
+
+      strong {
+        display: inline;
+        font-size: 14px;
+        font-family: monospace;
+        color: #721C24;
+      }
+    }
+  }
+}
+
 .form-group {
   position: relative;
   margin-bottom: var(--space-2xl);

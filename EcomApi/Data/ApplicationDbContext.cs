@@ -40,6 +40,7 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Username).IsUnique();
             entity.HasIndex(e => e.Role);
             entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.LockoutEnd);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Username).IsRequired().HasMaxLength(50);
             entity.Property(e => e.PasswordHash).IsRequired();
@@ -49,6 +50,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
             entity.Property(e => e.Gender).HasMaxLength(20);
+            entity.Property(e => e.LockoutReason).HasMaxLength(200);
+            entity.Ignore(e => e.IsLockedOut);
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>

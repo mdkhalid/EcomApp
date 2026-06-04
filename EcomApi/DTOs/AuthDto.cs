@@ -88,5 +88,9 @@ public class UserDto
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
     public string? CreatedBy { get; set; }
+    public int FailedLoginAttempts { get; set; }
+    public DateTime? LockoutEnd { get; set; }
+    public string? LockoutReason { get; set; }
+    public bool IsLockedOut { get; set; }
     public List<AddressDto> Addresses { get; set; } = new();
 }

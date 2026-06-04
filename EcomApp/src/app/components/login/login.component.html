@@ -12,6 +12,17 @@
         <div class="notification" [class.success]="n.type === 'success'" [class.error]="n.type === 'error'">{{ n.message }}</div>
       }
 
+      @if (lockoutMessage()) {
+        <div class="lockout-banner">
+          <span class="material-icons">lock</span>
+          <div class="lockout-banner-content">
+            <strong>Account locked</strong>
+            <p>{{ lockoutMessage() }}</p>
+            <p class="lockout-countdown">Try again in <strong>{{ formatCountdown(lockoutCountdown()) }}</strong></p>
+          </div>
+        </div>
+      }
+
       <form (ngSubmit)="onSubmit()">
         <div class="form-group">
           <span class="material-icons form-icon">person</span>

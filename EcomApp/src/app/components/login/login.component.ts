@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -21,6 +21,9 @@ export class LoginComponent {
 
   loginData: LoginRequest = { emailOrUsername: '', password: '' };
   isLoading = false;
+  lockoutMessage = signal<string | null>(null);
+  lockoutCountdown = signal<number>(0);
+  private lockoutTimer: ReturnType<typeof setInterval> | null = null;
 
   onSubmit(): void {
     if (!this.loginData.emailOrUsername || !this.loginData.password) {
@@ -28,12 +31,12 @@ export class LoginComponent {
       return;
     }
 
+    this.clearLockout();
     this.isLoading = true;
     this.authService.login(this.loginData).subscribe({
       next: () => {
         this.isLoading = false;
         this.notificationService.showSuccess('Login successful!');
-        // Skip cart operations for admin users (admin carts throw 401 on backend)
         if (!this.authService.isAdmin()) {
           this.cartService.mergeCart().subscribe({
             next: () => this.cartService.getCart().subscribe()
@@ -50,10 +53,48 @@ export class LoginComponent {
       },
       error: (err) => {
         this.isLoading = false;
-        console.error('Login error:', err);
-        const message = err.error?.error || 'Login failed. Please try again.';
-        this.notificationService.showError(message);
+        if (err.status === 423 && err.error?.lockoutEnd) {
+          this.startLockoutCountdown(err.error.remainingSeconds ?? 0, err.error.error);
+        } else {
+          const message = err.error?.error || 'Login failed. Please try again.';
+          this.notificationService.showError(message);
+        }
       }
     });
+  }
+
+  private startLockoutCountdown(remainingSeconds: number, message: string): void {
+    this.lockoutMessage.set(message);
+    this.lockoutCountdown.set(remainingSeconds);
+    this.loginData.password = '';
+
+    if (this.lockoutTimer) clearInterval(this.lockoutTimer);
+    this.lockoutTimer = setInterval(() => {
+      const next = this.lockoutCountdown() - 1;
+      if (next <= 0) {
+        this.clearLockout();
+      } else {
+        this.lockoutCountdown.set(next);
+      }
+    }, 1000);
+  }
+
+  private clearLockout(): void {
+    if (this.lockoutTimer) {
+      clearInterval(this.lockoutTimer);
+      this.lockoutTimer = null;
+    }
+    this.lockoutMessage.set(null);
+    this.lockoutCountdown.set(0);
+  }
+
+  formatCountdown(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  ngOnDestroy(): void {
+    this.clearLockout();
   }
 }

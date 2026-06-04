@@ -17,6 +17,11 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
     public string? CreatedBy { get; set; }
+    public int FailedLoginAttempts { get; set; } = 0;
+    public DateTime? LockoutEnd { get; set; }
+    public string? LockoutReason { get; set; }
+
+    public bool IsLockedOut => LockoutEnd.HasValue && LockoutEnd.Value > DateTime.UtcNow;
 
     public List<Cart> Carts { get; set; } = new();
     public List<Order> Orders { get; set; } = new();

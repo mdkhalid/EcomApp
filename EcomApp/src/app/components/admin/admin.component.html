@@ -461,12 +461,28 @@
                 <td><span class="role-badge" [class.admin-role]="user.role === 'Admin'" [class.subadmin-role]="user.role === 'SubAdmin'">{{ user.role }}</span></td>
                 <td><span class="created-by">{{ user.createdBy || '—' }}</span></td>
                 <td><span class="last-login">{{ user.lastLoginAt ? (user.lastLoginAt | date:'dd MMM yyyy, h:mm a') : '—' }}</span></td>
-                <td><span [class]="user.isActive ? 'text-green' : 'text-red'">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td>
+                <td>
+                  <div class="status-cell">
+                    <span [class]="user.isActive ? 'text-green' : 'text-red'">{{ user.isActive ? 'Active' : 'Inactive' }}</span>
+                    @if (user.isLockedOut) {
+                      <span class="lockout-pill" title="Account locked">
+                        <span class="material-icons">lock</span>
+                        Locked
+                      </span>
+                    }
+                  </div>
+                </td>
                 <td>
                   <div class="action-btns">
                     @if (user.role !== 'Admin') {
                       <button class="btn-toggle" (click)="toggleUserStatus(user)">
                         {{ user.isActive ? 'Deactivate' : 'Activate' }}
+                      </button>
+                    }
+                    @if (user.isLockedOut && user.role !== 'Admin') {
+                      <button class="btn-unlock" (click)="unlockUser(user)" title="Unlock account">
+                        <span class="material-icons">lock_open</span>
+                        Unlock
                       </button>
                     }
                     @if (!isCurrentUser(user)) {

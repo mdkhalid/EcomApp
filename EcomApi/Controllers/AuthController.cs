@@ -64,12 +64,64 @@ public class AuthController : ControllerBase
     {
         var user = await _userRepository.GetByEmailOrUsernameAsync(dto.EmailOrUsername);
         if (user == null)
+        {
             return Unauthorized(new { error = "Invalid credentials." });
+        }
+
+        if (user.IsLockedOut)
+        {
+            var remaining = (int)Math.Ceiling((user.LockoutEnd!.Value - DateTime.UtcNow).TotalSeconds);
+            _logger.LogWarning("Locked-out login attempt: {Email}, {RemainingSeconds}s remaining", user.Email, remaining);
+            return StatusCode(StatusCodes.Status423Locked, new
+            {
+                error = "Account is temporarily locked due to too many failed login attempts.",
+                lockoutEnd = user.LockoutEnd,
+                remainingSeconds = remaining,
+                failedAttempts = user.FailedLoginAttempts
+            });
+        }
 
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
         if (result == PasswordVerificationResult.Failed)
-            return Unauthorized(new { error = "Invalid credentials." });
+        {
+            user.FailedLoginAttempts += 1;
 
+            if (user.FailedLoginAttempts >= LockoutPolicy.MaxFailedAttempts)
+            {
+                user.LockoutEnd = DateTime.UtcNow.AddMinutes(LockoutPolicy.LockoutMinutes);
+                user.LockoutReason = $"Locked after {LockoutPolicy.MaxFailedAttempts} failed login attempts.";
+                _logger.LogWarning("User {Email} locked out for {Minutes}min after {Count} failed attempts",
+                    user.Email, LockoutPolicy.LockoutMinutes, user.FailedLoginAttempts);
+
+                await _userRepository.UpdateAsync(user);
+
+                return StatusCode(StatusCodes.Status423Locked, new
+                {
+                    error = $"Account locked due to {LockoutPolicy.MaxFailedAttempts} failed login attempts. Try again in {LockoutPolicy.LockoutMinutes} minutes.",
+                    lockoutEnd = user.LockoutEnd,
+                    remainingSeconds = LockoutPolicy.LockoutMinutes * 60,
+                    failedAttempts = user.FailedLoginAttempts
+                });
+            }
+
+            await _userRepository.UpdateAsync(user);
+
+            var remaining = LockoutPolicy.MaxFailedAttempts - user.FailedLoginAttempts;
+            return Unauthorized(new
+            {
+                error = $"Invalid credentials. {remaining} attempt{(remaining == 1 ? "" : "s")} remaining before lockout.",
+                failedAttempts = user.FailedLoginAttempts
+            });
+        }
+
+        if (!user.IsActive)
+        {
+            return Unauthorized(new { error = "Account is deactivated. Contact an administrator." });
+        }
+
+        user.FailedLoginAttempts = 0;
+        user.LockoutEnd = null;
+        user.LockoutReason = null;
         user.LastLoginAt = DateTime.UtcNow;
         await _userRepository.UpdateAsync(user);
         _logger.LogInformation("User logged in: {Email}", user.Email);
@@ -125,6 +177,9 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = "Current password is incorrect." });
 
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
+        user.FailedLoginAttempts = 0;
+        user.LockoutEnd = null;
+        user.LockoutReason = null;
         await _userRepository.UpdateAsync(user);
 
         var activeTokens = user.RefreshTokens.Where(rt => rt.IsActive).ToList();
@@ -193,6 +248,24 @@ public class AuthController : ControllerBase
             return NotFound();
 
         return Ok(new { message = "User activated." });
+    }
+
+    [HttpPost("users/{id}/unlock")]
+    [Authorize(Roles = "Admin,SubAdmin")]
+    public async Task<IActionResult> UnlockUser(int id)
+    {
+        var user = await _userRepository.GetByIdAsync(id);
+        if (user == null)
+            return NotFound(new { error = "User not found." });
+
+        user.FailedLoginAttempts = 0;
+        user.LockoutEnd = null;
+        user.LockoutReason = null;
+        await _userRepository.UpdateAsync(user);
+
+        var currentUserEmail = User.FindFirstValue(ClaimTypes.Email)!;
+        _logger.LogInformation("User {Email} unlocked by {AdminEmail}", user.Email, currentUserEmail);
+        return Ok(new { message = "User account unlocked." });
     }
 
     [HttpPut("profile")]
@@ -275,6 +348,11 @@ public class AuthController : ControllerBase
         {
             return NotFound();
         }
+
+        user.FailedLoginAttempts = 0;
+        user.LockoutEnd = null;
+        user.LockoutReason = null;
+        await _userRepository.UpdateAsync(user);
 
         var activeTokens = user.RefreshTokens.Where(rt => rt.IsActive).ToList();
         foreach (var token in activeTokens)

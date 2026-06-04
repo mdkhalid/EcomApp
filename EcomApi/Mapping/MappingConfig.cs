@@ -74,5 +74,9 @@ public static class MappingConfig
         TypeAdapterConfig<CreateProductVariantDto, ProductVariant>.NewConfig()
             .Map(dest => dest.Id, _ => 0)
             .Compile();
+
+        TypeAdapterConfig<User, UserDto>.NewConfig()
+            .Map(dest => dest.IsLockedOut, src => src.LockoutEnd.HasValue && src.LockoutEnd.Value > DateTime.UtcNow)
+            .Compile();
     }
 }

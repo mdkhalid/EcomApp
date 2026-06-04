@@ -13,6 +13,10 @@ export interface User {
   createdAt: string;
   lastLoginAt?: string;
   createdBy?: string;
+  failedLoginAttempts?: number;
+  lockoutEnd?: string;
+  lockoutReason?: string;
+  isLockedOut?: boolean;
   addresses?: Address[];
 }
 

@@ -639,6 +639,16 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  unlockUser(user: User): void {
+    this.http.post(`${this.apiUrl}/auth/users/${user.id}/unlock`, {}).subscribe({
+      next: () => {
+        this.notificationService.showSuccess(`User ${user.username} unlocked`);
+        this.loadUsers();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to unlock user')
+    });
+  }
+
   openAddProduct(): void {
     this.editingProduct = null;
     this.productForm = { name: '', description: '', price: 0, originalPrice: 0, stock: 0, category: '', brand: '' };
