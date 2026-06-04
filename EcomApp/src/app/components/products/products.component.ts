@@ -13,14 +13,13 @@ import { ActivityService } from '../../services/activity.service';
 import { Product, SearchFilter, SearchResult, FilterMetadata } from '../../models/product.model';
 import { Category } from '../../models/category.model';
 import { Banner } from '../../models/banner.model';
-import { SearchBarComponent } from '../search/search-bar.component';
 import { FilterSidebarComponent, FilterState } from '../filter-sidebar/filter-sidebar.component';
 import { RecentlyViewedProduct } from '../../models/activity.model';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SearchBarComponent, FilterSidebarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, FilterSidebarComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
 })
@@ -175,16 +174,6 @@ export class ProductsComponent implements OnInit, OnDestroy {
         this.isLoading.set(false);
       }
     });
-  }
-
-  onSearchSubmitted(searchTerm: string): void {
-    this.searchTerm.set(searchTerm);
-    this.pageNumber.set(1);
-    this.updateUrl();
-    this.loadProducts();
-    if (searchTerm) {
-      this.activityService.logActivity('Search', searchTerm).subscribe();
-    }
   }
 
   onFilterChanged(filterState: FilterState): void {

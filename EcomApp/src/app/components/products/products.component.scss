@@ -2,13 +2,6 @@
    Products Page - Flipkart Inspired
    ============================================ */
 
-/* --- Search Section --- */
-.search-section {
-  display: flex;
-  justify-content: center;
-  margin-bottom: var(--space-lg);
-}
-
 /* --- Banner Carousel --- */
 .banner-carousel {
   position: relative;
@@ -1125,10 +1118,6 @@
 
   .products-page {
     padding: var(--space-md);
-  }
-
-  .search-section {
-    margin-bottom: var(--space-md);
   }
 
   .mobile-filter-btn {
