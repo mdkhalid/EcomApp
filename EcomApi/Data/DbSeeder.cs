@@ -11,6 +11,7 @@ public static class DbSeeder
         SeedCategories(context);
         SeedBanners(context);
         SeedProducts(context);
+        SeedEthnicWear(context);
         SeedAddresses(context);
         SeedCoupons(context);
     }
@@ -309,6 +310,80 @@ public static class DbSeeder
             }
         }
         context.SaveChanges();
+    }
+
+    private static void SeedEthnicWear(ApplicationDbContext context)
+    {
+        var brands = new[] { "Biba", "Aurelia", "W", "Libas", "Global Desi", "Ethnix", "Anouk", "Sangria", "Varanga", "Janasya" };
+
+        var items = new (string Name, string Img1, string Img2, string Description)[]
+        {
+            ("Amber Cotton Kurta Set", "amber-cotton-kurta-set", "amber-cotton-kurta-set-2", "Elegant amber-colored cotton kurta set with traditional design and soft breathable fabric."),
+            ("Aqua Skirt Suit Set", "aqua-skirt-suit-set", "aqua-skirt-suit-set-2", "Refreshing aqua skirt suit set with intricate embroidery and matching dupatta."),
+            ("Beige Floral Kurta Set", "beige-floral-kurta-set", "beige-floral-kurta-set-2", "Charming beige floral kurta set perfect for festive and casual occasions."),
+            ("Beige Mul Cotton Kurta Set", "beige-mul-cotton-kurta-set", "beige-mul-cotton-kurta-set-2", "Comfortable beige mul cotton kurta set with subtle ethnic prints and a graceful drape."),
+            ("Black Anarkali Kurta Set", "black-anarkali-kurta-set", "black-anarkali-kurta-set-2", "Graceful black anarkali kurta set with detailed embellishments and a flowy silhouette."),
+            ("Bronze Floral Kurta Set", "bronze-floral-kurta-set", "bronze-floral-kurta-set-2", "Stunning bronze floral kurta set with delicate floral motifs and a soft drape."),
+            ("Dola Silk Anarkali Suit Set", "dola-silk-anarkali-suit-set", "dola-silk-anarkali-suit-set-2", "Luxurious dola silk anarkali suit set with rich texture and elegant finish."),
+            ("Floral Anarkali Suit Set", "floral-anarkali-suit-set", "floral-anarkali-suit-set-2", "Beautiful floral anarkali suit set with vibrant patterns and a graceful flow."),
+            ("Forest Paisley Kurta Set", "forest-paisley-kurta-set", "forest-paisley-kurta-set-2", "Trendy forest green paisley kurta set with traditional motifs and a modern cut."),
+            ("Fuchsia Anarkali Suit Set", "fuchsia-anarkali-suit-set", "fuchsia-anarkali-suit-set-2", "Vibrant fuchsia anarkali suit set with elegant embroidery and matching dupatta."),
+            ("Handwork Mul Chanderi Kurta Set", "handwork-mul-chanderi-kurta-set", "handwork-mul-chanderi-kurta-set-2", "Exquisite handwork mul chanderi kurta set with intricate handcrafted details."),
+            ("Hot Pink Sharara Set", "hot-pink-sharara-set", "hot-pink-sharara-set-2", "Bold hot pink sharara set with flared bottoms and a beautifully embroidered kurta."),
+            ("Ivory Cotton Kurta Set", "ivory-cotton-kurta-set", "ivory-cotton-kurta-set-2", "Classic ivory cotton kurta set with subtle prints and breathable fabric."),
+            ("Mauve Sequin Kurta Set", "mauve-sequin-kurta-set", "mauve-sequin-kurta-set-2", "Glamorous mauve sequin kurta set with shimmering details and a modern design."),
+            ("Mint Green Kurta Set", "mint-green-kurta-set", "mint-green-kurta-set-2", "Fresh mint green kurta set with delicate embroidery and a comfortable fit."),
+            ("Mocha Motif Kurta Set", "mocha-motif-kurta-set", "mocha-motif-kurta-set-2", "Sophisticated mocha motif kurta set with traditional patterns and an elegant drape."),
+            ("Monochrome Mirror Coord Set", "monochrome-mirror-coord-set", "monochrome-mirror-coord-set-2", "Trendy monochrome mirror coord set with mirror work and contemporary styling."),
+            ("Mustard Crepe Kurta Set Yellow Crepe", "mustard-crepe-kurta-set-yellow-crepe", "mustard-crepe-kurta-set-yellow-crepe-2", "Bright mustard crepe kurta set with crepe texture and ethnic detailing."),
+            ("Mustard Crepe Kurta Set Yellow Floral", "mustard-crepe-kurta-set-yellow-floral", "mustard-crepe-kurta-set-yellow-floral-2", "Vibrant mustard crepe kurta set with yellow floral prints and flowing design."),
+            ("Orange Crepe Sharara Set", "orange-crepe-sharara-set", "orange-crepe-sharara-set-2", "Cheerful orange crepe sharara set with bold color and comfortable flared bottoms."),
+            ("Pink Floral Kurta Set", "pink-floral-kurta-set", "pink-floral-kurta-set-2", "Lovely pink floral kurta set with soft pastel florals and a graceful silhouette."),
+            ("Purple Chanderi Kurta Set", "purple-chanderi-kurta-set", "purple-chanderi-kurta-set-2", "Rich purple chanderi kurta set with traditional handwoven texture."),
+            ("Red Crepe Sharara Set", "red-crepe-sharara-set", "red-crepe-sharara-set-2", "Classic red crepe sharara set with elegant embroidery and festive appeal."),
+            ("Royal Blue Kurta Set", "royal-blue-kurta-set", "royal-blue-kurta-set-2", "Majestic royal blue kurta set with intricate detailing and a regal finish."),
+            ("Rust Cotton Kurta Set", "rust-cotton-kurta-set", "rust-cotton-kurta-set-2", "Warm rust cotton kurta set with earthy tones ideal for everyday wear."),
+            ("Sky Mul Cotton Kurta Set", "sky-mul-cotton-kurta-set", "sky-mul-cotton-kurta-set-2", "Soft sky blue mul cotton kurta set with breezy fabric and subtle prints."),
+            ("Soft Blue Coord Set", "soft-blue-coord-set", "soft-blue-coord-set-2", "Chic soft blue coord set with a modern tailored fit and ethnic touches."),
+            ("Soft Pink Coord Set", "soft-pink-coord-set", "soft-pink-coord-set-2", "Pretty soft pink coord set with delicate embroidery and contemporary styling."),
+            ("White Block Print Kurta Set", "white-block-print-kurta-set", "white-block-print-kurta-set-2", "Traditional white block print kurta set with hand-blocked patterns."),
+            ("White Floral Kurta Set", "white-floral-kurta-set", "white-floral-kurta-set-2", "Elegant white floral kurta set with dainty floral prints and a graceful drape.")
+        };
+
+        var existingNames = context.Products.Select(p => p.Name).ToHashSet();
+
+        for (int i = 0; i < items.Length; i++)
+        {
+            var (name, img1, img2, description) = items[i];
+            if (existingNames.Contains(name)) continue;
+
+            var product = new Product
+            {
+                Name = name,
+                Description = description,
+                Price = 1499m,
+                OriginalPrice = 2499m,
+                Stock = 20,
+                Category = "Clothing",
+                Brand = brands[i % brands.Length],
+                ImageUrl = $"/uploads/{img1}.jpg",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            context.Products.Add(product);
+            context.SaveChanges();
+
+            var galleryImage = new ProductImage
+            {
+                ProductId = product.Id,
+                ImageUrl = $"/uploads/{img2}.jpg",
+                SortOrder = 2,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.ProductImages.Add(galleryImage);
+            context.SaveChanges();
+        }
     }
 
     private static void SeedAddresses(ApplicationDbContext context)
