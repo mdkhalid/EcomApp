@@ -1019,7 +1019,23 @@
 
 /* Recommendation Sections */
 .rec-section {
-  margin: 24px 0;
+  position: relative;
+  margin: 32px 0;
+  padding: 0;
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--flipkart-blue), var(--flipkart-orange));
+  }
 
   &:first-of-type {
     margin-top: 0;
@@ -1029,23 +1045,26 @@
 .rec-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #212121;
-  margin: 0 0 12px;
+  gap: var(--space-sm);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  letter-spacing: -0.2px;
 
   .material-icons {
-    color: #2874f0;
-    font-size: 22px;
+    color: var(--flipkart-blue);
+    font-size: 24px;
   }
 }
 
 .rec-horizontal {
   display: flex;
-  gap: 12px;
+  gap: var(--space-md);
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding: var(--space-md) var(--space-lg) var(--space-md);
   -webkit-overflow-scrolling: touch;
 
   &::-webkit-scrollbar {

@@ -943,30 +943,48 @@
 
 /* Recommended Section */
 .pd-recommended {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #f0f0f0;
+  position: relative;
+  margin-top: var(--space-3xl);
+  padding: 0;
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--flipkart-blue), var(--flipkart-orange));
+  }
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #212121;
-  margin: 0 0 16px;
+  gap: var(--space-sm);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  letter-spacing: -0.2px;
 
   .material-icons {
-    color: #2874f0;
-    font-size: 22px;
+    color: var(--flipkart-blue);
+    font-size: 24px;
   }
 }
 
 .pd-rec-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
 }
 
 .pd-rec-card {
