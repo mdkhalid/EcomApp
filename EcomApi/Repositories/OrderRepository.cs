@@ -103,7 +103,7 @@ public class OrderRepository : IOrderRepository
                 {
                     CouponId = coupon.Id,
                     UserId = cart.UserId ?? 0,
-                    OrderId = order.Id,
+                    Order = order,
                     DiscountAmount = validation.DiscountAmount,
                     UsedAt = DateTime.UtcNow
                 });
