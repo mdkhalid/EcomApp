@@ -194,7 +194,7 @@
   gap: 6px;
   padding: 10px 20px;
   border: none;
-  background: #f0f0f0;
+  background: var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
@@ -204,11 +204,11 @@
   transition: all 0.15s;
   font-family: inherit;
 
-  &:hover { background: #e0e0e0; }
+  &:hover { background: #d5d5d5; }
 
   &.active {
     background: var(--flipkart-blue);
-    color: var(--card-bg);
+    color: #fff;
   }
 
   .material-icons { font-size: 18px; }
@@ -1086,13 +1086,13 @@
 }
 
 /* Dark Mode Overrides */
-.dark-mode {
+:host-context(.dark-mode) {
   .admin-tabs button {
     background: var(--border-color);
     color: var(--text-primary);
 
-    &:hover { background: var(--text-secondary); color: white; }
-    &.active { background: var(--flipkart-blue); color: white; }
+    &:hover { background: var(--text-secondary); color: #fff; }
+    &.active { background: var(--flipkart-blue); color: #fff; }
   }
 
   .stock-btn {
@@ -1116,7 +1116,7 @@
   .btn-toggle {
     background: var(--border-color);
 
-    &:hover { background: var(--text-secondary); color: white; }
+    &:hover { background: var(--text-secondary); color: #fff; }
   }
 
   .btn-change-pwd {
@@ -1128,13 +1128,13 @@
   .btn-cancel {
     background: var(--border-color);
 
-    &:hover { background: var(--text-secondary); color: white; }
+    &:hover { background: var(--text-secondary); color: #fff; }
   }
 
   .page-btn {
     border-color: var(--border-color);
 
-    &:hover:not(:disabled) { background: var(--flipkart-blue); color: white; }
+    &:hover:not(:disabled) { background: var(--flipkart-blue); color: #fff; }
   }
 
   .stat-card {
