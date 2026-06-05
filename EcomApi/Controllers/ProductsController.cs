@@ -37,12 +37,28 @@ public class ProductsController : ControllerBase
         var productIds = searchResult.Items.Select(p => p.Id).ToList();
         var ratings = await _reviewRepository.GetRatingsForProductsAsync(productIds);
 
+        var galleryImages = await _context.ProductImages
+            .Where(i => productIds.Contains(i.ProductId))
+            .OrderBy(i => i.SortOrder)
+            .Select(i => new { i.ProductId, i.Id, i.ImageUrl, i.SortOrder })
+            .ToListAsync();
+
+        var imagesByProduct = galleryImages
+            .GroupBy(x => x.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(x => new ProductImageDto { Id = x.Id, ImageUrl = x.ImageUrl, SortOrder = x.SortOrder }).ToList());
+
         for (int i = 0; i < productDtos.Count; i++)
         {
             if (ratings.ContainsKey(productIds[i]))
             {
                 productDtos[i].AverageRating = ratings[productIds[i]].AverageRating;
                 productDtos[i].TotalReviews = ratings[productIds[i]].TotalReviews;
+            }
+            if (imagesByProduct.TryGetValue(productIds[i], out var productImages))
+            {
+                productDtos[i].Images = productImages;
             }
         }
 

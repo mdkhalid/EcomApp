@@ -121,8 +121,58 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.startBannerRotation();
   }
 
+  private imageCycles = new Map<number, { index: number; intervalId: ReturnType<typeof setInterval> }>();
+
+  getProductImages(product: Product): string[] {
+    const urls: string[] = [];
+    if (product.imageUrl) urls.push(product.imageUrl);
+    if (product.images?.length) {
+      for (const img of product.images) {
+        if (img.imageUrl && img.imageUrl !== product.imageUrl) urls.push(img.imageUrl);
+      }
+    }
+    return urls;
+  }
+
+  getCurrentImageIndex(productId: number): number {
+    return this.imageCycles.get(productId)?.index ?? 0;
+  }
+
+  startImageCycle(product: Product): void {
+    const urls = this.getProductImages(product);
+    if (urls.length <= 1) return;
+    if (this.imageCycles.has(product.id)) return;
+
+    this.imageCycles.set(product.id, { index: 1 % urls.length, intervalId: null as unknown as ReturnType<typeof setInterval> });
+    const cycle = this.imageCycles.get(product.id)!;
+    cycle.intervalId = setInterval(() => {
+      const c = this.imageCycles.get(product.id);
+      if (!c) return;
+      c.index = (c.index + 1) % urls.length;
+    }, 1000);
+  }
+
+  stopImageCycle(product: Product): void {
+    const cycle = this.imageCycles.get(product.id);
+    if (cycle) {
+      clearInterval(cycle.intervalId);
+      this.imageCycles.delete(product.id);
+    }
+  }
+
+  onImageDotClick(event: Event, product: Product, index: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.stopImageCycle(product);
+    this.imageCycles.set(product.id, { index, intervalId: null as unknown as ReturnType<typeof setInterval> });
+  }
+
   ngOnDestroy(): void {
     this.stopBannerRotation();
+    for (const cycle of this.imageCycles.values()) {
+      clearInterval(cycle.intervalId);
+    }
+    this.imageCycles.clear();
   }
 
   startBannerRotation(): void {

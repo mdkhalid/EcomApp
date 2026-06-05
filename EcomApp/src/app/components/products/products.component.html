@@ -175,16 +175,35 @@
           @for (product of products(); track product.id) {
             <div class="product-card">
               <!-- Image Section -->
-              <div class="product-card-image">
+              <div class="product-card-image"
+                   (mouseenter)="startImageCycle(product)"
+                   (mouseleave)="stopImageCycle(product)">
                 <a [routerLink]="['/products', product.id]" class="product-img-link">
-                  @if (product.imageUrl) {
-                    <img [src]="getFullImageUrl(product.imageUrl)" [alt]="product.name" class="product-img" loading="lazy" />
+                  @if (getProductImages(product).length > 0) {
+                    <div class="img-stack">
+                      @for (img of getProductImages(product); track img; let i = $index) {
+                        <img [src]="getFullImageUrl(img)" [alt]="product.name" class="product-img"
+                             [class.active]="getCurrentImageIndex(product.id) === i" loading="lazy" />
+                      }
+                    </div>
                   } @else {
                     <div class="product-img-placeholder">
                       <span class="material-icons">image</span>
                     </div>
                   }
                 </a>
+
+                <!-- Image navigation dots (only when more than 1 image) -->
+                @if (getProductImages(product).length > 1) {
+                  <div class="img-dots">
+                    @for (img of getProductImages(product); track img; let i = $index) {
+                      <button type="button" class="img-dot"
+                              [class.active]="getCurrentImageIndex(product.id) === i"
+                              (click)="onImageDotClick($event, product, i)"
+                              [attr.aria-label]="'View image ' + (i + 1)"></button>
+                    }
+                  </div>
+                }
 
                 <!-- Discount Badge -->
                 @if (product.discountPercent > 0) {
