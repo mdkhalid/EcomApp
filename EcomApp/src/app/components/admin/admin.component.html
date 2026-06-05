@@ -393,7 +393,7 @@
       <div class="admin-card">
         <h3>All Orders</h3>
         <div class="filter-bar">
-          <select [(ngModel)]="orderStatusFilter" (ngModelChange)="orderPage.set(1); loadOrders()" name="statusFilter">
+          <select [(ngModel)]="orderStatusFilter" (ngModelChange)="orderPage.set(1); loadOrders()" name="statusFilter" class="filter-select">
             <option value="">All Statuses</option>
             <option value="Pending">Pending</option>
             <option value="Processing">Processing</option>

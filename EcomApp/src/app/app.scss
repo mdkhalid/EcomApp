@@ -710,6 +710,11 @@
 .main-content {
   min-height: calc(100vh - var(--header-height) - 60px - 200px);
   padding-top: calc(var(--header-height) + 60px);
+
+  &.no-category-bar {
+    padding-top: calc(var(--header-height) + 16px);
+    min-height: calc(100vh - var(--header-height) - 200px);
+  }
 }
 
 /* ============================================

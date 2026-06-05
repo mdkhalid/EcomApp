@@ -202,21 +202,23 @@
 </header>
 
 <!-- ===== CATEGORIES NAV BAR ===== -->
-<nav class="category-bar">
-  <div class="category-bar-inner">
-    @for (cat of categories(); track cat.id) {
-      <a routerLink="/products" [queryParams]="{category: cat.name}" class="category-item">
-        @if (cat.icon) {
-          <span class="category-icon material-icons">{{ cat.icon }}</span>
-        }
-        <span class="category-label">{{ cat.name }}</span>
-      </a>
-    }
-  </div>
-</nav>
+@if (!isAdminRoute()) {
+  <nav class="category-bar">
+    <div class="category-bar-inner">
+      @for (cat of categories(); track cat.id) {
+        <a routerLink="/products" [queryParams]="{category: cat.name}" class="category-item">
+          @if (cat.icon) {
+            <span class="category-icon material-icons">{{ cat.icon }}</span>
+          }
+          <span class="category-label">{{ cat.name }}</span>
+        </a>
+      }
+    </div>
+  </nav>
+}
 
 <!-- ===== MAIN CONTENT ===== -->
-<main class="main-content">
+<main class="main-content" [class.no-category-bar]="isAdminRoute()">
   <router-outlet />
 </main>
 

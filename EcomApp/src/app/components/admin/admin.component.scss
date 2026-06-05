@@ -455,7 +455,14 @@
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-family: inherit;
+  color: var(--text-primary);
+  background: var(--card-bg);
   outline: none;
+
+  &::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
+  }
 
   &:focus {
     border-color: var(--flipkart-blue);
@@ -469,6 +476,8 @@
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-family: inherit;
+  color: var(--text-primary);
+  background: var(--card-bg);
   outline: none;
 
   &:focus {

@@ -1,7 +1,8 @@
-import { Component, signal, inject, OnInit, OnDestroy, HostListener, ElementRef, viewChild } from '@angular/core';
-import { RouterLink, RouterOutlet, Router } from '@angular/router';
+import { Component, signal, computed, inject, OnInit, OnDestroy, HostListener, ElementRef, viewChild } from '@angular/core';
+import { RouterLink, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil, of } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil, of, filter, map, startWith } from 'rxjs';
 import { AuthService } from './services/auth.service';
 import { CartService } from './services/cart.service';
 import { CategoryService } from './services/category.service';
@@ -35,6 +36,16 @@ export class App implements OnInit, OnDestroy {
   protected recentSearches = signal<string[]>([]);
   private readonly destroy$ = new Subject<void>();
   private readonly searchSubject = new Subject<string>();
+
+  protected readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+      startWith(this.router.url)
+    ),
+    { initialValue: this.router.url }
+  );
+  protected readonly isAdminRoute = computed(() => this.currentUrl().startsWith('/admin'));
 
   ngOnInit(): void {
     this.categoryService.getAll().subscribe(data => this.categories.set(data));
