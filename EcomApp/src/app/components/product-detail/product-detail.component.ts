@@ -83,13 +83,16 @@ export class ProductDetailComponent implements OnInit {
   reviewCheckMessage = signal('');
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (id) {
-      this.loadProduct(id);
-      this.loadReviews(id);
-      this.loadAlsoBought(id);
-      this.loadFrequentlyBought(id);
-    }
+    this.route.paramMap.subscribe(params => {
+      const id = Number(params.get('id'));
+      if (id) {
+        this.loading.set(true);
+        this.loadProduct(id);
+        this.loadReviews(id);
+        this.loadAlsoBought(id);
+        this.loadFrequentlyBought(id);
+      }
+    });
     if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
       this.activityService.getForYou().subscribe({
         next: (items) => this.recommended.set(items)
@@ -150,6 +153,17 @@ export class ProductDetailComponent implements OnInit {
     }
     const variantId = this.selectedVariant()?.id;
     this.cartService.addItem({ productId: p.id, quantity: this.quantity(), productVariantId: variantId }).subscribe({
+      next: () => this.notification.showSuccess('Added to cart'),
+      error: (err) => this.notification.showError(err.error?.error || 'Failed to add to cart')
+    });
+  }
+
+  addSuggestionToCart(productId: number): void {
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    this.cartService.addItem({ productId, quantity: 1 }).subscribe({
       next: () => this.notification.showSuccess('Added to cart'),
       error: (err) => this.notification.showError(err.error?.error || 'Failed to add to cart')
     });

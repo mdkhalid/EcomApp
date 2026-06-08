@@ -311,18 +311,20 @@
         </h2>
         <div class="pd-rec-grid">
           @for (rec of alsoBought(); track rec.productId) {
-            <a routerLink="/products/{{ rec.productId }}" class="pd-rec-card">
-              <div class="pd-rec-img">
-                @if (rec.imageUrl) {
-                  <img [src]="getFullImageUrl(rec.imageUrl)" [alt]="rec.name" />
-                } @else {
-                  <div class="pd-rec-img-placeholder">
-                    <span class="material-icons">image</span>
-                  </div>
-                }
-              </div>
+            <div class="pd-rec-card">
+              <a routerLink="/products/{{ rec.productId }}" class="pd-rec-img-link">
+                <div class="pd-rec-img">
+                  @if (rec.imageUrl) {
+                    <img [src]="getFullImageUrl(rec.imageUrl)" [alt]="rec.name" />
+                  } @else {
+                    <div class="pd-rec-img-placeholder">
+                      <span class="material-icons">image</span>
+                    </div>
+                  }
+                </div>
+              </a>
               <div class="pd-rec-info">
-                <span class="pd-rec-name">{{ rec.name }}</span>
+                <a routerLink="/products/{{ rec.productId }}" class="pd-rec-name">{{ rec.name }}</a>
                 <span class="pd-rec-price">&#8377;{{ rec.price.toLocaleString('en-IN') }}</span>
                 @if (rec.originalPrice && rec.originalPrice > rec.price) {
                   <span class="pd-rec-original">&#8377;{{ rec.originalPrice.toLocaleString('en-IN') }}</span>
@@ -330,8 +332,12 @@
                 @if (rec.averageRating > 0) {
                   <span class="pd-rec-rating">{{ rec.averageRating.toFixed(1) }} ★</span>
                 }
+                <button class="add-cart-btn" (click)="addSuggestionToCart(rec.productId)">
+                  <span class="material-icons">shopping_cart</span>
+                  Add to Cart
+                </button>
               </div>
-            </a>
+            </div>
           }
         </div>
       </div>
@@ -346,18 +352,20 @@
         </h2>
         <div class="pd-rec-grid">
           @for (rec of frequentlyBought(); track rec.productId) {
-            <a routerLink="/products/{{ rec.productId }}" class="pd-rec-card">
-              <div class="pd-rec-img">
-                @if (rec.imageUrl) {
-                  <img [src]="getFullImageUrl(rec.imageUrl)" [alt]="rec.name" />
-                } @else {
-                  <div class="pd-rec-img-placeholder">
-                    <span class="material-icons">image</span>
-                  </div>
-                }
-              </div>
+            <div class="pd-rec-card">
+              <a routerLink="/products/{{ rec.productId }}" class="pd-rec-img-link">
+                <div class="pd-rec-img">
+                  @if (rec.imageUrl) {
+                    <img [src]="getFullImageUrl(rec.imageUrl)" [alt]="rec.name" />
+                  } @else {
+                    <div class="pd-rec-img-placeholder">
+                      <span class="material-icons">image</span>
+                    </div>
+                  }
+                </div>
+              </a>
               <div class="pd-rec-info">
-                <span class="pd-rec-name">{{ rec.name }}</span>
+                <a routerLink="/products/{{ rec.productId }}" class="pd-rec-name">{{ rec.name }}</a>
                 <span class="pd-rec-price">&#8377;{{ rec.price.toLocaleString('en-IN') }}</span>
                 @if (rec.originalPrice && rec.originalPrice > rec.price) {
                   <span class="pd-rec-original">&#8377;{{ rec.originalPrice.toLocaleString('en-IN') }}</span>
@@ -365,8 +373,12 @@
                 @if (rec.averageRating > 0) {
                   <span class="pd-rec-rating">{{ rec.averageRating.toFixed(1) }} ★</span>
                 }
+                <button class="add-cart-btn" (click)="addSuggestionToCart(rec.productId)">
+                  <span class="material-icons">shopping_cart</span>
+                  Add to Cart
+                </button>
               </div>
-            </a>
+            </div>
           }
         </div>
       </div>
@@ -381,18 +393,20 @@
         </h2>
         <div class="pd-rec-grid">
           @for (rec of recommended(); track rec.productId) {
-            <a routerLink="/products/{{ rec.productId }}" class="pd-rec-card">
-              <div class="pd-rec-img">
-                @if (rec.imageUrl) {
-                  <img [src]="getFullImageUrl(rec.imageUrl)" [alt]="rec.name" />
-                } @else {
-                  <div class="pd-rec-img-placeholder">
-                    <span class="material-icons">image</span>
-                  </div>
-                }
-              </div>
+            <div class="pd-rec-card">
+              <a routerLink="/products/{{ rec.productId }}" class="pd-rec-img-link">
+                <div class="pd-rec-img">
+                  @if (rec.imageUrl) {
+                    <img [src]="getFullImageUrl(rec.imageUrl)" [alt]="rec.name" />
+                  } @else {
+                    <div class="pd-rec-img-placeholder">
+                      <span class="material-icons">image</span>
+                    </div>
+                  }
+                </div>
+              </a>
               <div class="pd-rec-info">
-                <span class="pd-rec-name">{{ rec.name }}</span>
+                <a routerLink="/products/{{ rec.productId }}" class="pd-rec-name">{{ rec.name }}</a>
                 <span class="pd-rec-price">&#8377;{{ rec.price.toLocaleString('en-IN') }}</span>
                 @if (rec.originalPrice && rec.originalPrice > rec.price) {
                   <span class="pd-rec-original">&#8377;{{ rec.originalPrice.toLocaleString('en-IN') }}</span>
@@ -400,8 +414,12 @@
                 @if (rec.averageRating > 0) {
                   <span class="pd-rec-rating">{{ rec.averageRating.toFixed(1) }} ★</span>
                 }
+                <button class="add-cart-btn" (click)="addSuggestionToCart(rec.productId)">
+                  <span class="material-icons">shopping_cart</span>
+                  Add to Cart
+                </button>
               </div>
-            </a>
+            </div>
           }
         </div>
       </div>
