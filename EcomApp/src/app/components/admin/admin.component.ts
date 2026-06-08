@@ -19,6 +19,8 @@ import { ReturnRequest } from '../../models/return.model';
 import { ReturnService } from '../../services/return.service';
 import { ReturnPolicyService } from '../../services/return-policy.service';
 import { ReturnPolicy, UpdateReturnPolicy } from '../../models/return-policy.model';
+import { SupportService } from '../../services/support.service';
+import { SupportConversation } from '../../models/support.model';
 import { AdminNotificationService } from '../../services/admin-notification.service';
 import { AnalyticsOverview, CategoryBreakdown, OrderStatusBreakdown, RevenuePoint, RevenueSummary, TopProduct } from '../../models/analytics.model';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
@@ -48,11 +50,12 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly couponService = inject(CouponService);
   private readonly returnService = inject(ReturnService);
   private readonly returnPolicyService = inject(ReturnPolicyService);
+  private readonly supportService = inject(SupportService);
   private readonly analyticsService = inject(AnalyticsService);
   readonly notifService = inject(AdminNotificationService);
   private readonly apiUrl = 'http://localhost:5068/api';
 
-  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy'>('dashboard');
+  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy' | 'support'>('dashboard');
 
   get isSuperAdmin(): boolean {
     return this.authService.isSuperAdmin();
@@ -142,6 +145,13 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   returnPolicyData = signal<ReturnPolicy | null>(null);
   returnPolicyForm = signal<UpdateReturnPolicy>({ returnWindowDays: 7, isActive: true, policyText: '' });
   returnPolicySaving = signal(false);
+
+  supportConversations = signal<SupportConversation[]>([]);
+  supportTotal = signal(0);
+  supportPage = signal(1);
+  supportReplyText = signal('');
+  supportReplying = signal(false);
+  supportReplyConvId = signal<number | null>(null);
   selectedReturn = signal<ReturnRequest | null>(null);
   returnAdminNote = signal('');
   returnDetailAction = signal('');
@@ -157,7 +167,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     setInterval(() => this.notifService.loadCount(), 30000);
   }
 
-  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy'): void {
+  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy' | 'support'): void {
     this.activeTab.set(tab);
     if (tab === 'orders') this.loadOrders();
     if (tab === 'users') { this.loadUsers(); this.loadRoles(); }
@@ -168,6 +178,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     if (tab === 'returns') this.loadReturns();
     if (tab === 'analytics') this.loadAnalytics();
     if (tab === 'returnpolicy') this.loadReturnPolicy();
+    if (tab === 'support') this.loadSupportConversations();
   }
 
   loadDashboard(): void {
@@ -1362,6 +1373,67 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => this.notificationService.showError(err.error?.error || 'Failed to toggle coupon')
     });
+  }
+
+  // Support / Escalations
+  loadSupportConversations(): void {
+    this.isLoading.set(true);
+    this.supportService.getEscalated(this.supportPage(), 20).subscribe({
+      next: (res) => {
+        this.supportConversations.set(res.items);
+        this.supportTotal.set(res.totalCount);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
+    });
+  }
+
+  openSupportReply(conv: SupportConversation): void {
+    this.supportReplyConvId.set(conv.id);
+    this.supportReplyText.set('');
+  }
+
+  closeSupportReply(): void {
+    this.supportReplyConvId.set(null);
+    this.supportReplyText.set('');
+  }
+
+  sendSupportReply(): void {
+    const convId = this.supportReplyConvId();
+    const content = this.supportReplyText().trim();
+    if (!convId || !content) return;
+
+    this.supportReplying.set(true);
+    this.supportService.adminReply(convId, content).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Reply sent to customer');
+        this.closeSupportReply();
+        this.loadSupportConversations();
+        this.supportReplying.set(false);
+      },
+      error: (err) => {
+        this.notificationService.showError(err.error?.error || 'Failed to send reply');
+        this.supportReplying.set(false);
+      }
+    });
+  }
+
+  resolveConversation(id: number): void {
+    this.supportService.updateStatus(id, 'Resolved').subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Conversation marked as resolved');
+        this.loadSupportConversations();
+      },
+      error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update status')
+    });
+  }
+
+  getSupportPreview(conv: SupportConversation): string {
+    if (conv.messages && conv.messages.length > 0) {
+      const last = conv.messages[conv.messages.length - 1];
+      return last.content.length > 80 ? last.content.substring(0, 80) + '...' : last.content;
+    }
+    return 'No messages';
   }
 
   // Return Policy Management

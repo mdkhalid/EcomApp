@@ -1,0 +1,80 @@
+<div class="support-bot" [class.open]="isOpen()">
+  @if (isOpen()) {
+    <div class="chat-window">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <span class="material-icons chat-avatar">support_agent</span>
+          <div>
+            <span class="chat-title">ShopKart Support</span>
+            <span class="chat-status">Online</span>
+          </div>
+        </div>
+        <button class="chat-close-btn" (click)="toggleChat()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="chat-body" #chatBody>
+        @if (messages().length === 0) {
+          <div class="chat-loading">
+            <div class="spinner-sm"></div>
+            <span>Connecting...</span>
+          </div>
+        }
+
+        @for (msg of messages(); track msg.id) {
+          <div class="chat-msg" [class.msg-user]="msg.sender === 'User'"
+                               [class.msg-bot]="msg.sender === 'Bot'"
+                               [class.msg-admin]="msg.sender === 'Admin'">
+            @if (msg.sender !== 'User') {
+              <span class="material-icons msg-avatar">
+                {{ msg.sender === 'Admin' ? 'support_agent' : 'smart_toy' }}
+              </span>
+            }
+            <div class="msg-bubble">
+              <div class="msg-content">{{ msg.content }}</div>
+              <span class="msg-time">{{ msg.createdAt | date:'h:mm a' }}</span>
+            </div>
+          </div>
+        }
+
+        @if (sending()) {
+          <div class="chat-msg msg-bot">
+            <span class="material-icons msg-avatar">smart_toy</span>
+            <div class="msg-bubble typing">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (needsEscalation()) {
+        <div class="chat-escalated">
+          <span class="material-icons">warning</span>
+          <span>This conversation has been escalated to our support team. A human agent will respond shortly.</span>
+        </div>
+      }
+
+      <div class="chat-footer">
+        <textarea
+          [value]="newMessage()"
+          (input)="newMessage.set($any($event.target).value)"
+          (keydown)="onKeyDown($event)"
+          placeholder="Type your message..."
+          rows="1"
+          class="chat-input"
+          [disabled]="needsEscalation()"
+        ></textarea>
+        <button class="chat-send-btn" (click)="sendMessage()" [disabled]="!newMessage().trim() || sending() || needsEscalation()">
+          <span class="material-icons">send</span>
+        </button>
+      </div>
+    </div>
+  }
+
+  <button class="chat-fab" (click)="toggleChat()" [class.has-notification]="false">
+    <span class="material-icons">{{ isOpen() ? 'close' : 'chat' }}</span>
+  </button>
+</div>

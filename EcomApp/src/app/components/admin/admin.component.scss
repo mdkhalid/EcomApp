@@ -1293,6 +1293,124 @@
   border-radius: 4px;
 }
 
+/* Escalation Badge */
+.escalation-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff5252;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9px;
+  margin-left: 4px;
+}
+
+/* Support List */
+.support-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.support-item {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: #2874f0;
+  }
+}
+
+.support-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.support-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #212121;
+
+  .material-icons {
+    font-size: 18px;
+    color: #2874f0;
+  }
+}
+
+.support-time {
+  font-size: 11px;
+  color: #878787;
+}
+
+.support-preview {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.4;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #f0f0f0;
+}
+
+.support-actions {
+  display: flex;
+  gap: 8px;
+
+  .btn-edit, .btn-reject {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+
+    .material-icons { font-size: 16px; }
+  }
+
+  .btn-edit {
+    background: #e3f2fd;
+    color: #1565c0;
+
+    &:hover { background: #bbdefb; }
+  }
+
+  .btn-reject {
+    background: #fce4ec;
+    color: #c62828;
+
+    &:hover { background: #f8bbd0; }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+
+  p {
+    color: #878787;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+}
+
 /* Return Policy Admin */
 .return-policy-form {
   .form-row {

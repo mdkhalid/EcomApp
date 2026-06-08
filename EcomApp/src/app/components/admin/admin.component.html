@@ -91,6 +91,12 @@
     <button [class.active]="activeTab() === 'returnpolicy'" (click)="setTab('returnpolicy')">
       <span class="material-icons">policy</span> Return Policy
     </button>
+    <button [class.active]="activeTab() === 'support'" (click)="setTab('support')">
+      <span class="material-icons">support_agent</span> Support
+      @if (supportTotal() > 0) {
+        <span class="escalation-badge">{{ supportTotal() }}</span>
+      }
+    </button>
   </div>
 
   @if (isLoading()) {
@@ -1106,6 +1112,65 @@
         </div>
       </div>
     }
+
+    @if (activeTab() === 'support') {
+      <div class="admin-card">
+        <h3>Escalated Support Conversations ({{ supportTotal() }})</h3>
+        @if (supportConversations().length === 0) {
+          <div class="empty-state">
+            <span class="material-icons" style="font-size: 48px; color: #ccc;">support_agent</span>
+            <p>No escalated conversations.</p>
+          </div>
+        } @else {
+          <div class="support-list">
+            @for (conv of supportConversations(); track conv.id) {
+              <div class="support-item">
+                <div class="support-item-header">
+                  <span class="support-user">
+                    <span class="material-icons">person</span>
+                    {{ conv.userEmail || conv.userId ? 'User #' + conv.userId : 'Guest' }}
+                  </span>
+                  <span class="support-time">{{ conv.updatedAt | date:'dd MMM yyyy, h:mm a' }}</span>
+                </div>
+                <div class="support-preview">{{ getSupportPreview(conv) }}</div>
+                <div class="support-actions">
+                  <button class="btn-edit" (click)="openSupportReply(conv)" title="Reply">
+                    <span class="material-icons">reply</span> Reply
+                  </button>
+                  <button class="btn btn-reject" (click)="resolveConversation(conv.id)" title="Resolve">
+                    <span class="material-icons">check_circle</span> Resolve
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+@if (supportReplyConvId()) {
+  <div class="modal-overlay" (click)="closeSupportReply()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Reply to Customer</h3>
+        <button class="modal-close" (click)="closeSupportReply()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Your Response</label>
+          <textarea [value]="supportReplyText()" (input)="supportReplyText.set($any($event.target).value)"
+            placeholder="Type your reply to the customer..." rows="5"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" (click)="sendSupportReply()" [disabled]="supportReplying() || !supportReplyText().trim()">
+          {{ supportReplying() ? 'Sending...' : 'Send Reply' }}
+        </button>
+        <button class="btn-cancel" (click)="closeSupportReply()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
 
 @if (showReturnDetailModal()) {
   @let sr = selectedReturn()!;

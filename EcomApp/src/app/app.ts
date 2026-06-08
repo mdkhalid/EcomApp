@@ -9,10 +9,11 @@ import { CategoryService } from './services/category.service';
 import { Category } from './models/category.model';
 import { ProductService } from './services/product.service';
 import { SearchSuggestion } from './models/product.model';
+import { SupportBotComponent } from './components/support-bot/support-bot.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterOutlet, FormsModule],
+  imports: [RouterLink, RouterOutlet, FormsModule, SupportBotComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
