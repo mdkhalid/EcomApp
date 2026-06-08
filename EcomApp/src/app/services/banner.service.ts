@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { Banner, CreateBanner, UpdateBanner } from '../models/banner.model';
 
 @Injectable({
@@ -8,7 +10,7 @@ import { Banner, CreateBanner, UpdateBanner } from '../models/banner.model';
 })
 export class BannerService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/banners';
+  private readonly apiUrl = API_URL + '/banners';
 
   getAll(): Observable<Banner[]> {
     return this.http.get<Banner[]>(this.apiUrl);

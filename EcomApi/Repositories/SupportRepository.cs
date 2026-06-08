@@ -22,7 +22,7 @@ public class SupportRepository : ISupportRepository
 
     public async Task<SupportConversation?> GetConversationAsync(int id)
     {
-        return await _context.SupportConversations
+        return await _context.SupportConversations.AsNoTracking()
             .Include(c => c.Messages.OrderBy(m => m.CreatedAt))
             .Include(c => c.User)
             .FirstOrDefaultAsync(c => c.Id == id);
@@ -30,7 +30,7 @@ public class SupportRepository : ISupportRepository
 
     public async Task<List<SupportConversation>> GetUserConversationsAsync(int userId)
     {
-        return await _context.SupportConversations
+        return await _context.SupportConversations.AsNoTracking()
             .Where(c => c.UserId == userId)
             .OrderByDescending(c => c.UpdatedAt)
             .ToListAsync();
@@ -38,7 +38,7 @@ public class SupportRepository : ISupportRepository
 
     public async Task<List<SupportConversation>> GetGuestConversationsAsync(string sessionId)
     {
-        return await _context.SupportConversations
+        return await _context.SupportConversations.AsNoTracking()
             .Where(c => c.SessionId == sessionId)
             .OrderByDescending(c => c.UpdatedAt)
             .ToListAsync();
@@ -61,7 +61,7 @@ public class SupportRepository : ISupportRepository
 
     public async Task<List<SupportMessage>> GetMessagesAsync(int conversationId)
     {
-        return await _context.SupportMessages
+        return await _context.SupportMessages.AsNoTracking()
             .Where(m => m.ConversationId == conversationId)
             .OrderBy(m => m.CreatedAt)
             .ToListAsync();
@@ -69,7 +69,7 @@ public class SupportRepository : ISupportRepository
 
     public async Task<List<SupportConversation>> GetAllConversationsAsync(int page, int pageSize, string? status = null)
     {
-        var query = _context.SupportConversations
+        var query = _context.SupportConversations.AsNoTracking()
             .Include(c => c.User)
             .Include(c => c.Messages)
             .AsQueryable();
@@ -88,7 +88,7 @@ public class SupportRepository : ISupportRepository
 
     public async Task<(List<SupportConversation> Items, int TotalCount)> GetEscalatedAsync(int page, int pageSize)
     {
-        var query = _context.SupportConversations
+        var query = _context.SupportConversations.AsNoTracking()
             .Include(c => c.User)
             .Include(c => c.Messages)
             .Where(c => c.Status == ConversationStatus.Escalated);

@@ -132,6 +132,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<OrderItem>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ProductId);
             entity.Property(e => e.ProductName).IsRequired().HasMaxLength(200);
             entity.Property(e => e.ProductImage).HasMaxLength(500);
             entity.Property(e => e.UnitPrice).HasPrecision(18, 2);

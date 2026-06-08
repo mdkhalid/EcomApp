@@ -9,6 +9,7 @@ import { ActivityService } from '../../services/activity.service';
 import { Cart, CartItem } from '../../models/cart.model';
 import { ValidateCouponResponse } from '../../models/coupon.model';
 import { RecentlyViewedProduct } from '../../models/activity.model';
+import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
 
 @Component({
   selector: 'app-cart',

@@ -125,7 +125,7 @@ public class OrderRepository : IOrderRepository
 
     public async Task<IEnumerable<Order>> GetBySessionIdAsync(string sessionId)
     {
-        return await _context.Orders
+        return await _context.Orders.AsNoTracking()
             .Include(o => o.Items)
             .Include(o => o.StatusHistory)
             .Where(o => o.SessionId == sessionId)
@@ -153,7 +153,7 @@ public class OrderRepository : IOrderRepository
 
     public async Task<Order?> GetByIdAsync(int orderId)
     {
-        return await _context.Orders
+        return await _context.Orders.AsNoTracking()
             .Include(o => o.Items)
             .Include(o => o.StatusHistory)
             .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -161,7 +161,7 @@ public class OrderRepository : IOrderRepository
 
     public async Task<Order?> GetWithHistoryAsync(int orderId)
     {
-        return await _context.Orders
+        return await _context.Orders.AsNoTracking()
             .Include(o => o.Items)
             .Include(o => o.StatusHistory.OrderByDescending(h => h.CreatedAt))
             .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -255,7 +255,7 @@ public class OrderRepository : IOrderRepository
 
     public async Task<bool> HasUserPurchasedProductAsync(int userId, int productId)
     {
-        return await _context.Orders
+        return await _context.Orders.AsNoTracking()
             .Where(o => o.UserId == userId && o.Status == OrderStatus.Delivered)
             .AnyAsync(o => o.Items.Any(i => i.ProductId == productId));
     }

@@ -1,12 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { BotResponse, SupportConversation, SupportMessage } from '../models/support.model';
 
 @Injectable({ providedIn: 'root' })
 export class SupportService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/support';
+  private readonly apiUrl = API_URL + '/support';
 
   createConversation(): Observable<SupportConversation> {
     return this.http.post<SupportConversation>(`${this.apiUrl}/conversations`, {});

@@ -1,11 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ReturnPolicy, UpdateReturnPolicy } from '../models/return-policy.model';
+import { API_URL } from '../utils/api-config';
 
 @Injectable({ providedIn: 'root' })
 export class ReturnPolicyService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/returnpolicy';
+  private readonly apiUrl = API_URL + '/returnpolicy';
 
   get() {
     return this.http.get<ReturnPolicy>(this.apiUrl);

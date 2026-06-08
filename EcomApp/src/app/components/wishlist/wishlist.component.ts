@@ -5,6 +5,7 @@ import { WishlistService } from '../../services/wishlist.service';
 import { CartService } from '../../services/cart.service';
 import { NotificationService } from '../../services/notification.service';
 import { WishlistItem } from '../../models/wishlist.model';
+import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
 
 @Component({
   selector: 'app-wishlist',

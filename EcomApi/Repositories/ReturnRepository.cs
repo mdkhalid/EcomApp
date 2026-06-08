@@ -23,7 +23,7 @@ public class ReturnRepository : IReturnRepository
 
     public async Task<List<ReturnRequest>> GetByUserIdAsync(int userId)
     {
-        return await _context.ReturnRequests
+        return await _context.ReturnRequests.AsNoTracking()
             .Include(r => r.Order)
             .Where(r => r.UserId == userId)
             .OrderByDescending(r => r.CreatedAt)
@@ -32,14 +32,14 @@ public class ReturnRepository : IReturnRepository
 
     public async Task<ReturnRequest?> GetByOrderIdAsync(int orderId, int userId)
     {
-        return await _context.ReturnRequests
+        return await _context.ReturnRequests.AsNoTracking()
             .Include(r => r.Order)
             .FirstOrDefaultAsync(r => r.OrderId == orderId && r.UserId == userId);
     }
 
     public async Task<bool> HasPendingReturnAsync(int orderId, int userId)
     {
-        return await _context.ReturnRequests
+        return await _context.ReturnRequests.AsNoTracking()
             .AnyAsync(r => r.OrderId == orderId && r.UserId == userId
                 && r.Status == ReturnStatus.Requested);
     }

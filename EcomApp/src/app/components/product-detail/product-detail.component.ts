@@ -12,6 +12,7 @@ import { ActivityService } from '../../services/activity.service';
 import { Product, ProductVariant } from '../../models/product.model';
 import { Review, CreateReview } from '../../models/review.model';
 import { RecentlyViewedProduct } from '../../models/activity.model';
+import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
 
 @Component({
   selector: 'app-product-detail',

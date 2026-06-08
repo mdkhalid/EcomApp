@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import {
   AnalyticsOverview,
   CategoryBreakdown,
@@ -15,7 +17,7 @@ import {
 })
 export class AnalyticsService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/analytics';
+  private readonly apiUrl = API_URL + '/analytics';
 
   getOverview(): Observable<AnalyticsOverview> {
     return this.http.get<AnalyticsOverview>(`${this.apiUrl}/overview`);

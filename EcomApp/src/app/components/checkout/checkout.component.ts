@@ -11,6 +11,7 @@ import { Cart } from '../../models/cart.model';
 import { CreateOrder, SavedAddress } from '../../models/order.model';
 import { Address, CreateAddressRequest } from '../../models/auth.model';
 import { ValidateCouponResponse } from '../../models/coupon.model';
+import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
 
 @Component({
   selector: 'app-checkout',

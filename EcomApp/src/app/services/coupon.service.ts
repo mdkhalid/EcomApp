@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { Coupon, CreateCoupon, ValidateCouponRequest, ValidateCouponResponse } from '../models/coupon.model';
 
 @Injectable({ providedIn: 'root' })
 export class CouponService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/coupons';
+  private readonly apiUrl = API_URL + '/coupons';
 
   getAll(): Observable<Coupon[]> {
     return this.http.get<Coupon[]>(this.apiUrl);

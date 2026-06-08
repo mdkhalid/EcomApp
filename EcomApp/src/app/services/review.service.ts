@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { Review, CreateReview, ReviewResponse } from '../models/review.model';
 
 @Injectable({
@@ -8,7 +10,7 @@ import { Review, CreateReview, ReviewResponse } from '../models/review.model';
 })
 export class ReviewService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/reviews';
+  private readonly apiUrl = API_URL + '/reviews';
 
   getByProduct(productId: number, pageNumber = 1, pageSize = 20): Observable<ReviewResponse> {
     return this.http.get<ReviewResponse>(`${this.apiUrl}/product/${productId}`, {

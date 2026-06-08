@@ -94,12 +94,12 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> EmailExistsAsync(string email)
     {
-        return await _context.Users.AnyAsync(u => u.Email == email);
+        return await _context.Users.AsNoTracking().AnyAsync(u => u.Email == email);
     }
 
     public async Task<bool> UsernameExistsAsync(string username)
     {
-        return await _context.Users.AnyAsync(u => u.Username == username);
+        return await _context.Users.AsNoTracking().AnyAsync(u => u.Username == username);
     }
 
     public async Task<bool> DeactivateAsync(int id)
@@ -207,7 +207,7 @@ public class UserRepository : IUserRepository
 
     public async Task<IEnumerable<Address>> GetAddressesAsync(int userId)
     {
-        return await _context.Addresses
+        return await _context.Addresses.AsNoTracking()
             .Where(a => a.UserId == userId)
             .OrderByDescending(a => a.IsDefault)
             .ThenByDescending(a => a.CreatedAt)

@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { Category, CreateCategory, UpdateCategory } from '../models/category.model';
 
 @Injectable({
@@ -8,7 +10,7 @@ import { Category, CreateCategory, UpdateCategory } from '../models/category.mod
 })
 export class CategoryService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/categories';
+  private readonly apiUrl = API_URL + '/categories';
 
   getAll(): Observable<Category[]> {
     return this.http.get<Category[]>(this.apiUrl);

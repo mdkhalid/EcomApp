@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { Order, CreateOrder, SavedAddress, OrderTracking } from '../models/order.model';
 
 @Injectable({
@@ -8,7 +10,7 @@ import { Order, CreateOrder, SavedAddress, OrderTracking } from '../models/order
 })
 export class OrderService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/orders';
+  private readonly apiUrl = API_URL + '/orders';
 
   createOrder(order: CreateOrder): Observable<Order> {
     return this.http.post<Order>(this.apiUrl, order);

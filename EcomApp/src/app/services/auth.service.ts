@@ -1,6 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { User, RegisterRequest, LoginRequest, TokenResponse, ChangePasswordRequest, Address, CreateAddressRequest, UpdateAddressRequest } from '../models/auth.model';
 
 @Injectable({
@@ -8,7 +10,7 @@ import { User, RegisterRequest, LoginRequest, TokenResponse, ChangePasswordReque
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/auth';
+  private readonly apiUrl = API_URL + '/auth';
 
   private currentUserSignal = signal<User | null>(null);
   private isAuthenticatedSignal = signal<boolean>(false);

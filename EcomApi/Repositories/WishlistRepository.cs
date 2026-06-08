@@ -15,7 +15,7 @@ public class WishlistRepository : IWishlistRepository
 
     public async Task<IEnumerable<WishlistItem>> GetByUserIdAsync(int userId)
     {
-        return await _context.WishlistItems
+        return await _context.WishlistItems.AsNoTracking()
             .Include(w => w.Product)
             .Where(w => w.UserId == userId)
             .OrderByDescending(w => w.CreatedAt)
@@ -30,7 +30,7 @@ public class WishlistRepository : IWishlistRepository
 
     public async Task<bool> IsWishlistedAsync(int userId, int productId)
     {
-        return await _context.WishlistItems
+        return await _context.WishlistItems.AsNoTracking()
             .AnyAsync(w => w.UserId == userId && w.ProductId == productId);
     }
 

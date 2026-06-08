@@ -486,6 +486,8 @@ namespace EcomApi.Migrations
 
                     b.HasIndex("OrderId");
 
+                    b.HasIndex("ProductId");
+
                     b.ToTable("OrderItems");
                 });
 

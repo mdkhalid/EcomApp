@@ -15,7 +15,7 @@ public class ReviewRepository : IReviewRepository
 
     public async Task<(IEnumerable<Review> Items, int TotalCount)> GetByProductIdAsync(int productId, int pageNumber, int pageSize)
     {
-        var query = _context.Reviews
+        var query = _context.Reviews.AsNoTracking()
             .Include(r => r.User)
             .Where(r => r.ProductId == productId)
             .OrderByDescending(r => r.CreatedAt);
@@ -31,7 +31,7 @@ public class ReviewRepository : IReviewRepository
 
     public async Task<(double AverageRating, int TotalReviews)> GetProductRatingAsync(int productId)
     {
-        var reviews = await _context.Reviews
+        var reviews = await _context.Reviews.AsNoTracking()
             .Where(r => r.ProductId == productId)
             .ToListAsync();
 
@@ -43,7 +43,7 @@ public class ReviewRepository : IReviewRepository
 
     public async Task<Dictionary<int, (double AverageRating, int TotalReviews)>> GetRatingsForProductsAsync(List<int> productIds)
     {
-        var ratings = await _context.Reviews
+        var ratings = await _context.Reviews.AsNoTracking()
             .Where(r => productIds.Contains(r.ProductId))
             .GroupBy(r => r.ProductId)
             .Select(g => new
@@ -72,7 +72,7 @@ public class ReviewRepository : IReviewRepository
 
     public async Task<Review?> GetByUserAndProductAsync(int userId, int productId)
     {
-        return await _context.Reviews
+        return await _context.Reviews.AsNoTracking()
             .FirstOrDefaultAsync(r => r.UserId == userId && r.ProductId == productId);
     }
 

@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { Product, CreateProduct, UpdateProduct, SearchFilter, SearchResult, SearchSuggestion, FilterMetadata, PriceRange } from '../models/product.model';
 
 @Injectable({
@@ -8,7 +10,7 @@ import { Product, CreateProduct, UpdateProduct, SearchFilter, SearchResult, Sear
 })
 export class ProductService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/products';
+  private readonly apiUrl = API_URL + '/products';
 
   search(filter: SearchFilter): Observable<SearchResult<Product>> {
     let params = new HttpParams()

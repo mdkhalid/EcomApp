@@ -1,6 +1,8 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 
 export interface AdminNotificationItem {
   id: number;
@@ -14,7 +16,7 @@ export interface AdminNotificationItem {
 @Injectable({ providedIn: 'root' })
 export class AdminNotificationService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/notifications';
+  private readonly apiUrl = API_URL + '/notifications';
 
   unreadCount = signal(0);
   notifications = signal<AdminNotificationItem[]>([]);

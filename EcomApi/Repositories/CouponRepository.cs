@@ -16,7 +16,7 @@ public class CouponRepository : ICouponRepository
 
     public async Task<IEnumerable<Coupon>> GetAllAsync()
     {
-        return await _context.Coupons.OrderByDescending(c => c.CreatedAt).ToListAsync();
+        return await _context.Coupons.AsNoTracking().OrderByDescending(c => c.CreatedAt).ToListAsync();
     }
 
     public async Task<Coupon?> GetByIdAsync(int id)
@@ -26,7 +26,7 @@ public class CouponRepository : ICouponRepository
 
     public async Task<Coupon?> GetByCodeAsync(string code)
     {
-        return await _context.Coupons
+        return await _context.Coupons.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Code.ToUpper() == code.ToUpper());
     }
 
@@ -56,7 +56,7 @@ public class CouponRepository : ICouponRepository
 
     public async Task<ValidateCouponResponse> ValidateAndCalculateAsync(string code, decimal cartTotal, int? userId)
     {
-        var coupon = await _context.Coupons
+        var coupon = await _context.Coupons.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Code.ToUpper() == code.ToUpper());
 
         if (coupon == null)

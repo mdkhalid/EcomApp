@@ -15,6 +15,7 @@ import { Category } from '../../models/category.model';
 import { Banner } from '../../models/banner.model';
 import { FilterSidebarComponent, FilterState } from '../filter-sidebar/filter-sidebar.component';
 import { RecentlyViewedProduct } from '../../models/activity.model';
+import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
 
 @Component({
   selector: 'app-products',

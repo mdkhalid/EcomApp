@@ -16,7 +16,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<SearchResultDto<Product>> SearchProductsAsync(SearchFilterDto filter)
     {
-        var query = _context.Products.Where(p => p.IsActive).AsQueryable();
+        var query = _context.Products.AsNoTracking().Where(p => p.IsActive).AsQueryable();
 
         // Full-text search across name, description, brand, category
         if (!string.IsNullOrWhiteSpace(filter.Search))
@@ -99,7 +99,7 @@ public class ProductRepository : IProductRepository
 
         var searchTerm = query.Trim().ToLower();
 
-        var suggestions = await _context.Products
+        var suggestions = await _context.Products.AsNoTracking()
             .Where(p => p.IsActive &&
                 (p.Name.ToLower().Contains(searchTerm) ||
                  p.Brand!.ToLower().Contains(searchTerm) ||
@@ -110,7 +110,7 @@ public class ProductRepository : IProductRepository
             .ToListAsync();
 
         // Also add matching brands
-        var brandSuggestions = await _context.Products
+        var brandSuggestions = await _context.Products.AsNoTracking()
             .Where(p => p.IsActive && p.Brand != null &&
                 p.Brand.ToLower().Contains(searchTerm))
             .Select(p => p.Brand!)
@@ -119,7 +119,7 @@ public class ProductRepository : IProductRepository
             .ToListAsync();
 
         // Also add matching categories
-        var categorySuggestions = await _context.Products
+        var categorySuggestions = await _context.Products.AsNoTracking()
             .Where(p => p.IsActive &&
                 p.Category.ToLower().Contains(searchTerm))
             .Select(p => p.Category)
@@ -137,7 +137,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<FilterMetadataDto> GetFilterMetadataAsync(SearchFilterDto filter)
     {
-        var query = _context.Products.Where(p => p.IsActive).AsQueryable();
+        var query = _context.Products.AsNoTracking().Where(p => p.IsActive).AsQueryable();
 
         // Apply same filters except rating and discount
         if (!string.IsNullOrWhiteSpace(filter.Search))
@@ -264,7 +264,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<List<string>> GetBrandsAsync()
     {
-        return await _context.Products
+        return await _context.Products.AsNoTracking()
             .Where(p => p.IsActive && p.Brand != null)
             .Select(p => p.Brand!)
             .Distinct()
@@ -274,7 +274,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<PriceRangeDto> GetPriceRangeAsync(string? category = null)
     {
-        var query = _context.Products.Where(p => p.IsActive);
+        var query = _context.Products.AsNoTracking().Where(p => p.IsActive);
 
         if (!string.IsNullOrWhiteSpace(category))
         {

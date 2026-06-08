@@ -1,6 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { Cart, AddCartItem, UpdateCartItem } from '../models/cart.model';
 
 @Injectable({
@@ -9,7 +11,7 @@ import { Cart, AddCartItem, UpdateCartItem } from '../models/cart.model';
 export class CartService {
   readonly cartItemCount = signal(0);
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/carts';
+  private readonly apiUrl = API_URL + '/carts';
 
   private updateCountFromCart(cart: Cart): Cart {
     this.cartItemCount.set(cart.items.reduce((sum, item) => sum + item.quantity, 0));

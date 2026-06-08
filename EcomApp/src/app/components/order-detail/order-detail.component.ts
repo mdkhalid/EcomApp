@@ -10,6 +10,7 @@ import { Order } from '../../models/order.model';
 import { ReturnRequest } from '../../models/return.model';
 import { ReturnPolicy } from '../../models/return-policy.model';
 import { OrderTrackingComponent } from '../order-tracking/order-tracking.component';
+import { getFullImageUrl as buildImageUrl, API_URL } from '../../utils/api-config';
 
 @Component({
   selector: 'app-order-detail',

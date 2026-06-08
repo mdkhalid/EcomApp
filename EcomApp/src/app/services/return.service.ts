@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { ReturnRequest, CreateReturnRequest } from '../models/return.model';
 
 @Injectable({
@@ -8,7 +10,7 @@ import { ReturnRequest, CreateReturnRequest } from '../models/return.model';
 })
 export class ReturnService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/returns';
+  private readonly apiUrl = API_URL + '/returns';
 
   createReturnRequest(dto: CreateReturnRequest): Observable<ReturnRequest> {
     return this.http.post<ReturnRequest>(this.apiUrl, dto);

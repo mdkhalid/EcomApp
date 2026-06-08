@@ -15,13 +15,13 @@ public class BannerRepository : IBannerRepository
 
     public async Task<IEnumerable<Banner>> GetAllAsync()
     {
-        return await _context.Banners.OrderBy(b => b.SortOrder).ThenBy(b => b.Id).ToListAsync();
+        return await _context.Banners.AsNoTracking().OrderBy(b => b.SortOrder).ThenBy(b => b.Id).ToListAsync();
     }
 
     public async Task<IEnumerable<Banner>> GetActiveAsync()
     {
         var now = DateTime.UtcNow;
-        return await _context.Banners
+        return await _context.Banners.AsNoTracking()
             .Where(b => b.IsActive && b.StartDate <= now && b.StartDate.AddDays(b.DurationDays) > now)
             .OrderBy(b => b.SortOrder)
             .ThenBy(b => b.Id)

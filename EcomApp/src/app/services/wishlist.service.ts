@@ -1,6 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { API_URL } from '../utils/api-config';
+
 import { WishlistItem, WishlistResponse } from '../models/wishlist.model';
 
 @Injectable({
@@ -8,7 +10,7 @@ import { WishlistItem, WishlistResponse } from '../models/wishlist.model';
 })
 export class WishlistService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5068/api/wishlist';
+  private readonly apiUrl = API_URL + '/wishlist';
 
   private wishlistIds = signal<Set<number>>(new Set());
 

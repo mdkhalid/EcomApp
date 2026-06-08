@@ -24,6 +24,7 @@ import { SupportConversation } from '../../models/support.model';
 import { AdminNotificationService } from '../../services/admin-notification.service';
 import { AnalyticsOverview, CategoryBreakdown, OrderStatusBreakdown, RevenuePoint, RevenueSummary, TopProduct } from '../../models/analytics.model';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { getFullImageUrl as buildImageUrl, API_URL } from '../../utils/api-config';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -53,7 +54,8 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly supportService = inject(SupportService);
   private readonly analyticsService = inject(AnalyticsService);
   readonly notifService = inject(AdminNotificationService);
-  private readonly apiUrl = 'http://localhost:5068/api';
+  private readonly apiUrl = API_URL;
+  private _notifInterval: ReturnType<typeof setInterval> | null = null;
 
   activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy' | 'support'>('dashboard');
 
@@ -164,7 +166,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.loadDashboard();
     this.notifService.loadCount();
-    setInterval(() => this.notifService.loadCount(), 30000);
+    this._notifInterval = setInterval(() => this.notifService.loadCount(), 30000);
   }
 
   setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy' | 'support'): void {
@@ -280,6 +282,10 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     this.topProductsChart?.destroy();
     this.categoryChart?.destroy();
     this.orderStatusChart?.destroy();
+    if (this._notifInterval) {
+      clearInterval(this._notifInterval);
+      this._notifInterval = null;
+    }
   }
 
   private renderRevenueChart(): void {
