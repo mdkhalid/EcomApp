@@ -561,7 +561,8 @@
     }
 
     .add-cart-btn:not(.btn-disabled) {
-      background: var(--flipkart-orange);
+      background: var(--flipkart-blue-dark);
+      box-shadow: 0 2px 8px rgba(40, 116, 240, 0.3);
     }
   }
 }
