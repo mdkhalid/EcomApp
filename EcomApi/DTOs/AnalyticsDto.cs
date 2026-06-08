@@ -78,6 +78,12 @@ public class TopSearchDto
     public int Count { get; set; }
 }
 
+public class TrackPageViewDto
+{
+    public string Path { get; set; } = string.Empty;
+    public string? Referrer { get; set; }
+}
+
 public class AnalyticsOverviewDto
 {
     public int TotalProducts { get; set; }

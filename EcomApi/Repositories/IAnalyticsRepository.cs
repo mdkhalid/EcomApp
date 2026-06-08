@@ -1,4 +1,5 @@
 using EcomApi.DTOs;
+using EcomApi.Models;
 
 namespace EcomApi.Repositories;
 
@@ -13,4 +14,5 @@ public interface IAnalyticsRepository
     Task<PageViewSummaryDto> GetPageViewsAsync(string period);
     Task<List<TopPageDto>> GetTopPagesAsync(string period);
     Task<List<TopSearchDto>> GetTopSearchesAsync(string period);
+    Task TrackPageViewAsync(PageView pageView);
 }

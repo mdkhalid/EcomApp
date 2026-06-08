@@ -39,18 +39,21 @@ public class PageViewMiddleware
 
             var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
+            string? sessionId = null;
+            try { sessionId = context.Session?.Id; } catch { }
+
             db.PageViews.Add(new PageView
             {
                 Path = path.Length > 500 ? path[..500] : path,
                 IpAddress = ip,
                 UserAgent = context.Request.Headers.UserAgent.ToString()?[..Math.Min(500, context.Request.Headers.UserAgent.ToString().Length)],
-                SessionId = context.Session?.Id,
+                SessionId = sessionId,
                 UserId = userId != null ? int.Parse(userId) : null,
                 Referrer = context.Request.Headers.Referer.ToString()?[..Math.Min(1000, context.Request.Headers.Referer.ToString().Length)],
                 CreatedAt = DateTime.UtcNow
             });
 
-            await db.SaveChangesAsync();
+            try { await db.SaveChangesAsync(); } catch { }
         }
 
         await _next(context);

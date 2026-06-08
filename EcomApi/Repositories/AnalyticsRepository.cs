@@ -349,4 +349,10 @@ public class AnalyticsRepository : IAnalyticsRepository
             _ => DateTime.UtcNow.Date.AddDays(-7)
         };
     }
+
+    public async Task TrackPageViewAsync(PageView pageView)
+    {
+        _context.PageViews.Add(pageView);
+        try { await _context.SaveChangesAsync(); } catch { }
+    }
 }

@@ -10,6 +10,8 @@ import { Category } from './models/category.model';
 import { ProductService } from './services/product.service';
 import { SearchSuggestion } from './models/product.model';
 import { SupportBotComponent } from './components/support-bot/support-bot.component';
+import { PageViewTrackerService } from './services/page-view-tracker.service';
+import { ActivityService } from './services/activity.service';
 
 @Component({
   selector: 'app-root',
@@ -24,6 +26,8 @@ export class App implements OnInit, OnDestroy {
   protected readonly router = inject(Router);
   protected readonly categoryService = inject(CategoryService);
   protected readonly productService = inject(ProductService);
+  private readonly pageTracker = inject(PageViewTrackerService);
+  private readonly activityService = inject(ActivityService);
   protected categories = signal<Category[]>([]);
   protected darkMode = signal(false);
   protected readonly userMenuOpen = signal(false);
@@ -103,7 +107,10 @@ export class App implements OnInit, OnDestroy {
 
   protected onSearch(): void {
     const q = this.searchQuery().trim();
-    if (q) this.saveRecentSearch(q);
+    if (q) {
+      this.saveRecentSearch(q);
+      this.activityService.logActivity('Search', q).subscribe();
+    }
     this.showSuggestions.set(false);
     if (q) {
       this.router.navigate(['/products'], { queryParams: { search: q } });
@@ -165,6 +172,7 @@ export class App implements OnInit, OnDestroy {
     this.searchQuery.set(suggestion);
     this.showSuggestions.set(false);
     this.saveRecentSearch(suggestion);
+    this.activityService.logActivity('Search', suggestion).subscribe();
     this.router.navigate(['/products'], { queryParams: { search: suggestion } });
   }
 

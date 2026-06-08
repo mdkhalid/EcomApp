@@ -108,13 +108,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<RateLimitMiddleware>();
-app.UsePageViewMiddleware();
 app.UseCors("AllowAngular");
 app.UseSession();
 app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UsePageViewMiddleware();
 
 app.MapControllers();
 
