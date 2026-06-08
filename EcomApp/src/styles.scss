@@ -171,6 +171,39 @@ ul, ol {
   }
 }
 
+.add-cart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--flipkart-blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: var(--space-sm);
+  font-family: inherit;
+
+  .material-icons { font-size: 18px; }
+
+  &:hover:not(:disabled) {
+    background: var(--flipkart-blue-dark);
+    box-shadow: 0 2px 8px rgba(40, 116, 240, 0.3);
+  }
+
+  &.btn-disabled,
+  &:disabled {
+    background: #E0E0E0;
+    color: #999;
+    cursor: not-allowed;
+  }
+}
+
 .btn-blue {
   background-color: var(--flipkart-blue);
   color: var(--text-white);

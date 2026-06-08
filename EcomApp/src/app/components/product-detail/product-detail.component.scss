@@ -501,38 +501,7 @@
 }
 
 /* Action Buttons */
-.add-cart-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  width: 100%;
-  padding: var(--space-md);
-  background: var(--flipkart-blue);
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: inherit;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 
-  .material-icons { font-size: 20px; }
-
-  &:hover:not(:disabled) {
-    background: var(--flipkart-blue-dark);
-    box-shadow: 0 2px 8px rgba(40, 116, 240, 0.3);
-  }
-
-  &:disabled {
-    background: #E0E0E0;
-    color: #999;
-    cursor: not-allowed;
-  }
-}
 
 .pd-wishlist-btn {
   display: flex;
