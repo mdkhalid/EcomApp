@@ -188,6 +188,7 @@ ul, ol {
   transition: all 0.2s ease;
   margin-top: var(--space-sm);
   font-family: inherit;
+  white-space: nowrap;
 
   .material-icons { font-size: 18px; }
 
