@@ -72,6 +72,8 @@ export class ProductDetailComponent implements OnInit {
   }
 
   recommended = signal<RecentlyViewedProduct[]>([]);
+  alsoBought = signal<RecentlyViewedProduct[]>([]);
+  frequentlyBought = signal<RecentlyViewedProduct[]>([]);
 
   newReview = signal<CreateReview>({ rating: 5, comment: '' });
   submittingReview = signal(false);
@@ -84,6 +86,8 @@ export class ProductDetailComponent implements OnInit {
     if (id) {
       this.loadProduct(id);
       this.loadReviews(id);
+      this.loadAlsoBought(id);
+      this.loadFrequentlyBought(id);
     }
     if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
       this.activityService.getForYou().subscribe({
@@ -194,6 +198,18 @@ export class ProductDetailComponent implements OnInit {
 
   getFullImageUrl(path: string): string {
     return `http://localhost:5068${path}`;
+  }
+
+  loadAlsoBought(productId: number): void {
+    this.activityService.getAlsoBought(productId).subscribe({
+      next: (items) => this.alsoBought.set(items)
+    });
+  }
+
+  loadFrequentlyBought(productId: number): void {
+    this.activityService.getFrequentlyBoughtTogether(productId).subscribe({
+      next: (items) => this.frequentlyBought.set(items)
+    });
   }
 
   getFormattedDate(dateStr: string): string {

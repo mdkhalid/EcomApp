@@ -25,4 +25,12 @@ export class ActivityService {
   getTrending(): Observable<RecentlyViewedProduct[]> {
     return this.http.get<RecentlyViewedProduct[]>(`${this.apiUrl}/recommendations/trending`);
   }
+
+  getAlsoBought(productId: number): Observable<RecentlyViewedProduct[]> {
+    return this.http.get<RecentlyViewedProduct[]>(`${this.apiUrl}/recommendations/also-bought/${productId}`);
+  }
+
+  getFrequentlyBoughtTogether(productId: number): Observable<RecentlyViewedProduct[]> {
+    return this.http.get<RecentlyViewedProduct[]>(`${this.apiUrl}/recommendations/frequently-bought-together/${productId}`);
+  }
 }

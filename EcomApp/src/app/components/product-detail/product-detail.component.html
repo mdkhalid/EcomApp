@@ -302,7 +302,77 @@
       </div>
     </div>
 
-    <!-- Recommended Products -->
+    <!-- Customers Also Bought -->
+    @if (alsoBought().length > 0) {
+      <div class="pd-recommended">
+        <h2 class="section-title">
+          <span class="material-icons">shopping_bag</span>
+          Customers Also Bought
+        </h2>
+        <div class="pd-rec-grid">
+          @for (rec of alsoBought(); track rec.productId) {
+            <a routerLink="/products/{{ rec.productId }}" class="pd-rec-card">
+              <div class="pd-rec-img">
+                @if (rec.imageUrl) {
+                  <img [src]="getFullImageUrl(rec.imageUrl)" [alt]="rec.name" />
+                } @else {
+                  <div class="pd-rec-img-placeholder">
+                    <span class="material-icons">image</span>
+                  </div>
+                }
+              </div>
+              <div class="pd-rec-info">
+                <span class="pd-rec-name">{{ rec.name }}</span>
+                <span class="pd-rec-price">&#8377;{{ rec.price.toLocaleString('en-IN') }}</span>
+                @if (rec.originalPrice && rec.originalPrice > rec.price) {
+                  <span class="pd-rec-original">&#8377;{{ rec.originalPrice.toLocaleString('en-IN') }}</span>
+                }
+                @if (rec.averageRating > 0) {
+                  <span class="pd-rec-rating">{{ rec.averageRating.toFixed(1) }} ★</span>
+                }
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Frequently Bought Together -->
+    @if (frequentlyBought().length > 0) {
+      <div class="pd-recommended">
+        <h2 class="section-title">
+          <span class="material-icons">group</span>
+          Frequently Bought Together
+        </h2>
+        <div class="pd-rec-grid">
+          @for (rec of frequentlyBought(); track rec.productId) {
+            <a routerLink="/products/{{ rec.productId }}" class="pd-rec-card">
+              <div class="pd-rec-img">
+                @if (rec.imageUrl) {
+                  <img [src]="getFullImageUrl(rec.imageUrl)" [alt]="rec.name" />
+                } @else {
+                  <div class="pd-rec-img-placeholder">
+                    <span class="material-icons">image</span>
+                  </div>
+                }
+              </div>
+              <div class="pd-rec-info">
+                <span class="pd-rec-name">{{ rec.name }}</span>
+                <span class="pd-rec-price">&#8377;{{ rec.price.toLocaleString('en-IN') }}</span>
+                @if (rec.originalPrice && rec.originalPrice > rec.price) {
+                  <span class="pd-rec-original">&#8377;{{ rec.originalPrice.toLocaleString('en-IN') }}</span>
+                }
+                @if (rec.averageRating > 0) {
+                  <span class="pd-rec-rating">{{ rec.averageRating.toFixed(1) }} ★</span>
+                }
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Recommended for You -->
     @if (recommended().length > 0) {
       <div class="pd-recommended">
         <h2 class="section-title">

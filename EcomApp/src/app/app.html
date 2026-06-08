@@ -222,8 +222,10 @@
   <router-outlet />
 </main>
 
-<!-- ===== SUPPORT BOT ===== -->
-<app-support-bot />
+<!-- ===== SUPPORT BOT (not on admin pages) ===== -->
+@if (!isAdminRoute()) {
+  <app-support-bot />
+}
 
 <!-- ===== FOOTER ===== -->
 <footer class="footer">

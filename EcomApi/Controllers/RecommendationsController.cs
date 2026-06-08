@@ -85,6 +85,52 @@ public class RecommendationsController : ControllerBase
         return Ok(ordered);
     }
 
+    [HttpGet("also-bought/{productId}")]
+    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetAlsoBought(int productId)
+    {
+        var productIds = await _activityRepository.GetAlsoBoughtProductIdsAsync(productId, 10);
+
+        if (productIds.Count == 0)
+            return Ok(new List<RecentlyViewedProductDto>());
+
+        var products = await _context.Products
+            .AsNoTracking()
+            .Include(p => p.Reviews)
+            .Where(p => productIds.Contains(p.Id) && p.IsActive)
+            .ToListAsync();
+
+        var ordered = productIds
+            .Select(id => products.FirstOrDefault(p => p.Id == id))
+            .Where(p => p != null)
+            .Select(p => MapProduct(p!))
+            .ToList();
+
+        return Ok(ordered);
+    }
+
+    [HttpGet("frequently-bought-together/{productId}")]
+    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetFrequentlyBoughtTogether(int productId)
+    {
+        var productIds = await _activityRepository.GetFrequentlyBoughtTogetherAsync(productId, 6);
+
+        if (productIds.Count == 0)
+            return Ok(new List<RecentlyViewedProductDto>());
+
+        var products = await _context.Products
+            .AsNoTracking()
+            .Include(p => p.Reviews)
+            .Where(p => productIds.Contains(p.Id) && p.IsActive)
+            .ToListAsync();
+
+        var ordered = productIds
+            .Select(id => products.FirstOrDefault(p => p.Id == id))
+            .Where(p => p != null)
+            .Select(p => MapProduct(p!))
+            .ToList();
+
+        return Ok(ordered);
+    }
+
     [HttpGet("trending")]
     public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetTrending()
     {

@@ -121,4 +121,56 @@ public class ActivityRepository : IActivityRepository
 
         return recommended;
     }
+
+    public async Task<List<int>> GetAlsoBoughtProductIdsAsync(int productId, int limit = 10)
+    {
+        var orderIds = await _context.OrderItems
+            .AsNoTracking()
+            .Where(oi => oi.ProductId == productId)
+            .Select(oi => oi.OrderId)
+            .Distinct()
+            .Take(100)
+            .ToListAsync();
+
+        if (orderIds.Count == 0)
+            return new List<int>();
+
+        var alsoBought = await _context.OrderItems
+            .AsNoTracking()
+            .Where(oi => orderIds.Contains(oi.OrderId) && oi.ProductId != productId)
+            .GroupBy(oi => oi.ProductId)
+            .Select(g => new { ProductId = g.Key, Count = g.Sum(oi => oi.Quantity) })
+            .OrderByDescending(x => x.Count)
+            .Take(limit)
+            .Select(x => x.ProductId)
+            .ToListAsync();
+
+        return alsoBought;
+    }
+
+    public async Task<List<int>> GetFrequentlyBoughtTogetherAsync(int productId, int limit = 6)
+    {
+        var orderIds = await _context.OrderItems
+            .AsNoTracking()
+            .Where(oi => oi.ProductId == productId)
+            .Select(oi => oi.OrderId)
+            .Distinct()
+            .Take(100)
+            .ToListAsync();
+
+        if (orderIds.Count == 0)
+            return new List<int>();
+
+        var pairCounts = await _context.OrderItems
+            .AsNoTracking()
+            .Where(oi => orderIds.Contains(oi.OrderId) && oi.ProductId != productId)
+            .GroupBy(oi => oi.ProductId)
+            .Select(g => new { ProductId = g.Key, Count = g.Select(oi => oi.OrderId).Distinct().Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(limit)
+            .Select(x => x.ProductId)
+            .ToListAsync();
+
+        return pairCounts;
+    }
 }

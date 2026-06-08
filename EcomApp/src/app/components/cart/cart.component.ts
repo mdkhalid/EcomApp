@@ -5,8 +5,10 @@ import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { CouponService } from '../../services/coupon.service';
 import { NotificationService } from '../../services/notification.service';
+import { ActivityService } from '../../services/activity.service';
 import { Cart, CartItem } from '../../models/cart.model';
 import { ValidateCouponResponse } from '../../models/coupon.model';
+import { RecentlyViewedProduct } from '../../models/activity.model';
 
 @Component({
   selector: 'app-cart',
@@ -18,12 +20,15 @@ import { ValidateCouponResponse } from '../../models/coupon.model';
 export class CartComponent implements OnInit {
   private readonly cartService = inject(CartService);
   private readonly couponService = inject(CouponService);
+  private readonly activityService = inject(ActivityService);
   private readonly router = inject(Router);
   readonly notification = inject(NotificationService);
   protected readonly notifications = this.notification.notifications;
 
   cart = signal<Cart | null>(null);
   loading = signal(true);
+  suggestions = signal<RecentlyViewedProduct[]>([]);
+  protected readonly Math = Math;
 
   couponCode = signal('');
   applyingCoupon = signal(false);
@@ -33,6 +38,13 @@ export class CartComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCart();
+    this.loadSuggestions();
+  }
+
+  loadSuggestions(): void {
+    this.activityService.getTrending().subscribe({
+      next: (items) => this.suggestions.set(items.slice(0, 6))
+    });
   }
 
   loadCart(): void {

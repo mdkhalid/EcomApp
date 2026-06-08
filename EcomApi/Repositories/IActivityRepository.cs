@@ -9,4 +9,6 @@ public interface IActivityRepository
     Task<List<UserActivity>> GetRecentBySessionAsync(string sessionId, ActivityType? type = null, int limit = 20);
     Task<List<int>> GetRecentProductIdsAsync(int userId, string? sessionId, int limit = 20);
     Task<List<int>> GetRecommendedProductIdsAsync(int userId, int limit = 10);
+    Task<List<int>> GetAlsoBoughtProductIdsAsync(int productId, int limit = 10);
+    Task<List<int>> GetFrequentlyBoughtTogetherAsync(int productId, int limit = 6);
 }
