@@ -25,7 +25,7 @@ public class AnalyticsController : ControllerBase
     }
 
     [HttpGet("overview")]
-    public async Task<ActionResult<AnalyticsOverviewDto>> GetOverview()
+    public async Task<ActionResult<AnalyticsOverviewDto>> GetOverview(CancellationToken cancellationToken = default)
     {
         var overview = await _analytics.GetOverviewAsync();
         if (!IsSuperAdmin(User))
@@ -37,7 +37,7 @@ public class AnalyticsController : ControllerBase
 
     [HttpGet("revenue")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<RevenueSummaryDto>> GetRevenue([FromQuery] string period = "monthly")
+    public async Task<ActionResult<RevenueSummaryDto>> GetRevenue([FromQuery] string period = "monthly", CancellationToken cancellationToken = default)
     {
         var revenue = await _analytics.GetRevenueAsync(period);
         return Ok(revenue);
@@ -45,47 +45,47 @@ public class AnalyticsController : ControllerBase
 
     [HttpGet("top-products")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<List<TopProductDto>>> GetTopProducts([FromQuery] int limit = 10)
+    public async Task<ActionResult<List<TopProductDto>>> GetTopProducts([FromQuery] int limit = 10, CancellationToken cancellationToken = default)
     {
         return Ok(await _analytics.GetTopProductsAsync(limit));
     }
 
     [HttpGet("category-breakdown")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<List<CategoryBreakdownDto>>> GetCategoryBreakdown()
+    public async Task<ActionResult<List<CategoryBreakdownDto>>> GetCategoryBreakdown(CancellationToken cancellationToken = default)
     {
         return Ok(await _analytics.GetCategoryBreakdownAsync());
     }
 
     [HttpGet("order-status")]
-    public async Task<ActionResult<List<OrderStatusBreakdownDto>>> GetOrderStatusBreakdown()
+    public async Task<ActionResult<List<OrderStatusBreakdownDto>>> GetOrderStatusBreakdown(CancellationToken cancellationToken = default)
     {
         return Ok(await _analytics.GetOrderStatusBreakdownAsync());
     }
 
     [HttpGet("low-stock")]
-    public async Task<ActionResult<List<LowStockProductDto>>> GetLowStock([FromQuery] int threshold = 10)
+    public async Task<ActionResult<List<LowStockProductDto>>> GetLowStock([FromQuery] int threshold = 10, CancellationToken cancellationToken = default)
     {
         return Ok(await _analytics.GetLowStockProductsAsync(threshold));
     }
 
     [HttpGet("page-views")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<PageViewSummaryDto>> GetPageViews([FromQuery] string period = "7d")
+    public async Task<ActionResult<PageViewSummaryDto>> GetPageViews([FromQuery] string period = "7d", CancellationToken cancellationToken = default)
     {
         return Ok(await _analytics.GetPageViewsAsync(period));
     }
 
     [HttpGet("top-pages")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<List<TopPageDto>>> GetTopPages([FromQuery] string period = "7d")
+    public async Task<ActionResult<List<TopPageDto>>> GetTopPages([FromQuery] string period = "7d", CancellationToken cancellationToken = default)
     {
         return Ok(await _analytics.GetTopPagesAsync(period));
     }
 
     [HttpGet("top-searches")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<List<TopSearchDto>>> GetTopSearches([FromQuery] string period = "7d")
+    public async Task<ActionResult<List<TopSearchDto>>> GetTopSearches([FromQuery] string period = "7d", CancellationToken cancellationToken = default)
     {
         return Ok(await _analytics.GetTopSearchesAsync(period));
     }

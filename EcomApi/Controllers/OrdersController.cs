@@ -52,7 +52,7 @@ public class OrdersController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderDto createDto)
+    public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderDto createDto, CancellationToken cancellationToken = default)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdClaim))
@@ -82,7 +82,8 @@ public class OrdersController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders(
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var (items, totalCount) = await _orderRepository.GetByUserIdAsync(int.Parse(userId), pageNumber, pageSize);
@@ -97,7 +98,7 @@ public class OrdersController : ControllerBase
 
     [HttpGet("{id}")]
     [Authorize]
-    public async Task<ActionResult<OrderDto>> GetOrder(int id)
+    public async Task<ActionResult<OrderDto>> GetOrder(int id, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var order = await _orderRepository.GetWithHistoryAsync(id);
@@ -110,7 +111,7 @@ public class OrdersController : ControllerBase
 
     [HttpGet("{id}/tracking")]
     [Authorize]
-    public async Task<ActionResult<OrderTrackingDto>> GetOrderTracking(int id)
+    public async Task<ActionResult<OrderTrackingDto>> GetOrderTracking(int id, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var order = await _orderRepository.GetWithHistoryAsync(id);
@@ -139,7 +140,7 @@ public class OrdersController : ControllerBase
 
     [HttpGet("{id}/invoice")]
     [Authorize]
-    public async Task<ActionResult> DownloadInvoice(int id)
+    public async Task<ActionResult> DownloadInvoice(int id, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var role = User.FindFirstValue(ClaimTypes.Role);
@@ -157,7 +158,7 @@ public class OrdersController : ControllerBase
 
     [HttpGet("previous-addresses")]
     [Authorize]
-    public async Task<ActionResult<List<ShippingAddressDto>>> GetPreviousAddresses()
+    public async Task<ActionResult<List<ShippingAddressDto>>> GetPreviousAddresses(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var addresses = await _orderRepository.GetPreviousAddressesAsync(userId);
@@ -166,7 +167,7 @@ public class OrdersController : ControllerBase
 
     [HttpPut("{id}/status")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<OrderDto>> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
+    public async Task<ActionResult<OrderDto>> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto, CancellationToken cancellationToken = default)
     {
         if (!Enum.TryParse<OrderStatus>(dto.Status, true, out var status))
             return BadRequest(new { error = $"Invalid status. Valid values: {string.Join(", ", Enum.GetNames<OrderStatus>())}" });
@@ -183,7 +184,7 @@ public class OrdersController : ControllerBase
 
     [HttpPut("{id}/tracking")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<OrderDto>> UpdateTracking(int id, [FromBody] UpdateOrderTrackingDto dto)
+    public async Task<ActionResult<OrderDto>> UpdateTracking(int id, [FromBody] UpdateOrderTrackingDto dto, CancellationToken cancellationToken = default)
     {
         var order = await _orderRepository.UpdateTrackingAsync(id, dto.TrackingNumber, dto.Carrier, dto.EstimatedDeliveryDate);
         if (order == null)
@@ -200,7 +201,8 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult> GetAllOrders(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        CancellationToken cancellationToken = default)
     {
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 20;

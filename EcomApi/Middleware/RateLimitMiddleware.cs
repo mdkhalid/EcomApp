@@ -19,29 +19,26 @@ public class RateLimitMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Path.StartsWithSegments("/api/auth"))
+        var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var now = DateTime.UtcNow;
+
+        var log = _requestLogs.GetOrAdd(ipAddress, _ => new RequestLog());
+
+        lock (log)
         {
-            var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var now = DateTime.UtcNow;
+            log.Requests = log.Requests.Where(r => r > now.Subtract(_window)).ToList();
 
-            var log = _requestLogs.GetOrAdd(ipAddress, _ => new RequestLog());
-
-            lock (log)
+            if (log.Requests.Count >= MaxRequests)
             {
-                log.Requests = log.Requests.Where(r => r > now.Subtract(_window)).ToList();
-
-                if (log.Requests.Count >= MaxRequests)
-                {
-                    _logger.LogWarning("Rate limit exceeded for IP: {IpAddress}", ipAddress);
-                    context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
-                    context.Response.ContentType = "application/json";
-                    context.Response.WriteAsync(
-                        "{\"error\":\"Too many requests. Please try again later.\"}").Wait();
-                    return;
-                }
-
-                log.Requests.Add(now);
+                _logger.LogWarning("Rate limit exceeded for IP: {IpAddress}", ipAddress);
+                context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
+                context.Response.ContentType = "application/json";
+                context.Response.WriteAsync(
+                    "{\"error\":\"Too many requests. Please try again later.\"}");
+                return;
             }
+
+            log.Requests.Add(now);
         }
 
         await _next(context);

@@ -23,7 +23,7 @@ public class WishlistController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult> GetWishlist()
+    public async Task<ActionResult> GetWishlist(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var items = await _repository.GetByUserIdAsync(userId);
@@ -52,7 +52,7 @@ public class WishlistController : ControllerBase
     }
 
     [HttpGet("check/{productId}")]
-    public async Task<ActionResult> CheckWishlisted(int productId)
+    public async Task<ActionResult> CheckWishlisted(int productId, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var isWishlisted = await _repository.IsWishlistedAsync(userId, productId);
@@ -60,7 +60,7 @@ public class WishlistController : ControllerBase
     }
 
     [HttpPost("products/{productId}")]
-    public async Task<ActionResult> Toggle(int productId)
+    public async Task<ActionResult> Toggle(int productId, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -82,7 +82,7 @@ public class WishlistController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult> Remove(int id)
+    public async Task<ActionResult> Remove(int id, CancellationToken cancellationToken = default)
     {
         var deleted = await _repository.RemoveAsync(id);
         if (!deleted)

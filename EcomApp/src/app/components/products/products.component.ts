@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, withComponentInputBinding } from '@angular/router';
@@ -25,6 +26,7 @@ import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
   styleUrl: './products.component.scss'
 })
 export class ProductsComponent implements OnInit, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly productService = inject(ProductService);
   private readonly cartService = inject(CartService);
   private readonly categoryService = inject(CategoryService);
@@ -70,23 +72,23 @@ export class ProductsComponent implements OnInit, OnDestroy {
       this.router.navigate(['/admin']);
       return;
     }
-    this.categoryService.getAll().subscribe(data => this.categories.set(data));
-    this.bannerService.getActive().subscribe(data => {
+    this.categoryService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => this.categories.set(data));
+    this.bannerService.getActive().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.banners.set(data);
       if (data.length > 0) this.startBannerRotation();
     });
     if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
-      this.activityService.getRecentlyViewed().subscribe({
+      this.activityService.getRecentlyViewed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (items) => this.recentlyViewed.set(items)
       });
-      this.activityService.getForYou().subscribe({
+      this.activityService.getForYou().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (items) => this.forYou.set(items)
       });
     }
-    this.activityService.getTrending().subscribe({
+    this.activityService.getTrending().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (items) => this.trending.set(items)
     });
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       if (params['search']) {
         this.searchTerm.set(params['search']);
       }
@@ -206,7 +208,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
     this.currentFilter.set(filter);
 
-    this.productService.search(filter).subscribe({
+    this.productService.search(filter).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data: SearchResult<Product>) => {
         this.products.set(data.items);
         this.totalCount.set(data.totalCount);
@@ -289,7 +291,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   getFullImageUrl(path: string): string {
-    return `http://localhost:5068${path}`;
+    return buildImageUrl(path);
   }
 
   addToCart(productId: number): void {
@@ -297,7 +299,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login'], { queryParams: { returnUrl: '/products' } });
       return;
     }
-    this.cartService.addItem({ productId, quantity: 1 }).subscribe({
+    this.cartService.addItem({ productId, quantity: 1 }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.notification.showSuccess('Added to cart'),
       error: (err) => this.notification.showError(err.error?.error || 'Failed to add to cart')
     });
@@ -309,7 +311,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login'], { queryParams: { returnUrl: '/products' } });
       return;
     }
-    this.wishlistService.toggle(productId).subscribe({
+    this.wishlistService.toggle(productId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => this.notification.showSuccess(res.message),
       error: (err) => this.notification.showError(err.error?.error || 'Failed to update wishlist')
     });

@@ -46,7 +46,7 @@ public class CartsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<CartDto>> GetCart()
+    public async Task<ActionResult<CartDto>> GetCart(CancellationToken cancellationToken = default)
     {
         var identifier = GetUserIdOrSession();
         var cart = await _repository.GetByIdentifierAsync(identifier);
@@ -60,7 +60,7 @@ public class CartsController : ControllerBase
     }
 
     [HttpPost("items")]
-    public async Task<ActionResult<CartDto>> AddItem([FromBody] AddCartItemDto dto)
+    public async Task<ActionResult<CartDto>> AddItem([FromBody] AddCartItemDto dto, CancellationToken cancellationToken = default)
     {
         var identifier = GetUserIdOrSession();
         var cart = await _repository.AddItemAsync(identifier, dto.ProductId, dto.Quantity, dto.ProductVariantId);
@@ -74,7 +74,7 @@ public class CartsController : ControllerBase
     }
 
     [HttpPut("items/{cartItemId}")]
-    public async Task<ActionResult<CartDto>> UpdateItem(int cartItemId, [FromBody] UpdateCartItemDto dto)
+    public async Task<ActionResult<CartDto>> UpdateItem(int cartItemId, [FromBody] UpdateCartItemDto dto, CancellationToken cancellationToken = default)
     {
         var identifier = GetUserIdOrSession();
         var cart = await _repository.UpdateItemAsync(cartItemId, dto.Quantity);
@@ -88,7 +88,7 @@ public class CartsController : ControllerBase
     }
 
     [HttpDelete("items/{cartItemId}")]
-    public async Task<ActionResult<CartDto>> RemoveItem(int cartItemId)
+    public async Task<ActionResult<CartDto>> RemoveItem(int cartItemId, CancellationToken cancellationToken = default)
     {
         var identifier = GetUserIdOrSession();
         var cart = await _repository.RemoveItemAsync(cartItemId);
@@ -102,7 +102,7 @@ public class CartsController : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult<CartDto>> ClearCart()
+    public async Task<ActionResult<CartDto>> ClearCart(CancellationToken cancellationToken = default)
     {
         var identifier = GetUserIdOrSession();
         var cart = await _repository.ClearAsync(identifier);
@@ -111,7 +111,7 @@ public class CartsController : ControllerBase
 
     [Authorize]
     [HttpPost("merge")]
-    public async Task<IActionResult> MergeSessionCart()
+    public async Task<IActionResult> MergeSessionCart(CancellationToken cancellationToken = default)
     {
         if (!Request.Cookies.TryGetValue("CartId", out var sessionId) || string.IsNullOrEmpty(sessionId))
             return Ok(new { message = "No session cart to merge." });

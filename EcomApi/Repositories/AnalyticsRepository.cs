@@ -22,7 +22,7 @@ public class AnalyticsRepository : IAnalyticsRepository
         OrderStatus.Delivered
     };
 
-    public async Task<RevenueSummaryDto> GetRevenueAsync(string period)
+    public async Task<RevenueSummaryDto> GetRevenueAsync(string period, CancellationToken cancellationToken = default)
     {
         period = (period ?? "monthly").ToLowerInvariant();
         if (period is not ("daily" or "weekly" or "monthly"))
@@ -61,7 +61,7 @@ public class AnalyticsRepository : IAnalyticsRepository
             .AsNoTracking()
             .Where(o => o.CreatedAt >= start && o.Status != OrderStatus.Cancelled && o.Status != OrderStatus.Returned)
             .Select(o => new { o.CreatedAt, o.TotalAmount })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var buckets = Enumerable.Range(0, bucketCount)
             .Select(i =>
@@ -112,7 +112,7 @@ public class AnalyticsRepository : IAnalyticsRepository
         };
     }
 
-    public async Task<List<TopProductDto>> GetTopProductsAsync(int limit)
+    public async Task<List<TopProductDto>> GetTopProductsAsync(int limit, CancellationToken cancellationToken = default)
     {
         limit = limit <= 0 ? 10 : Math.Min(limit, 50);
 
@@ -130,7 +130,7 @@ public class AnalyticsRepository : IAnalyticsRepository
             })
             .OrderByDescending(x => x.Revenue)
             .Take(limit)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (rows.Count == 0) return new List<TopProductDto>();
 
@@ -139,7 +139,7 @@ public class AnalyticsRepository : IAnalyticsRepository
             .AsNoTracking()
             .Where(p => productIds.Contains(p.Id))
             .Select(p => new { p.Id, p.Category })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         var catMap = categories.ToDictionary(p => p.Id, p => p.Category);
 
         return rows.Select(r => new TopProductDto
@@ -153,7 +153,7 @@ public class AnalyticsRepository : IAnalyticsRepository
         }).ToList();
     }
 
-    public async Task<List<CategoryBreakdownDto>> GetCategoryBreakdownAsync()
+    public async Task<List<CategoryBreakdownDto>> GetCategoryBreakdownAsync(CancellationToken cancellationToken = default)
     {
         var rows = await _context.OrderItems
             .AsNoTracking()
@@ -163,7 +163,7 @@ public class AnalyticsRepository : IAnalyticsRepository
             {
                 Items = g.ToList()
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (rows == null || rows.Items.Count == 0) return new List<CategoryBreakdownDto>();
 
@@ -172,7 +172,7 @@ public class AnalyticsRepository : IAnalyticsRepository
             .AsNoTracking()
             .Where(p => productIds.Contains(p.Id))
             .Select(p => new { p.Id, p.Category })
-            .ToDictionaryAsync(p => p.Id, p => p.Category);
+            .ToDictionaryAsync(p => p.Id, p => p.Category, cancellationToken);
 
         return rows.Items
             .GroupBy(i => categoryMap.TryGetValue(i.ProductId, out var c) ? c : "Uncategorized")
@@ -187,13 +187,13 @@ public class AnalyticsRepository : IAnalyticsRepository
             .ToList();
     }
 
-    public async Task<List<OrderStatusBreakdownDto>> GetOrderStatusBreakdownAsync()
+    public async Task<List<OrderStatusBreakdownDto>> GetOrderStatusBreakdownAsync(CancellationToken cancellationToken = default)
     {
         var rows = await _context.Orders
             .AsNoTracking()
             .GroupBy(o => o.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return rows
             .Select(r => new OrderStatusBreakdownDto
@@ -205,7 +205,7 @@ public class AnalyticsRepository : IAnalyticsRepository
             .ToList();
     }
 
-    public async Task<List<LowStockProductDto>> GetLowStockProductsAsync(int threshold)
+    public async Task<List<LowStockProductDto>> GetLowStockProductsAsync(int threshold, CancellationToken cancellationToken = default)
     {
         threshold = threshold <= 0 ? 10 : threshold;
         return await _context.Products
@@ -224,24 +224,24 @@ public class AnalyticsRepository : IAnalyticsRepository
                     .FirstOrDefault(),
                 Stock = p.Stock
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<AnalyticsOverviewDto> GetOverviewAsync()
+    public async Task<AnalyticsOverviewDto> GetOverviewAsync(CancellationToken cancellationToken = default)
     {
         var today = DateTime.UtcNow.Date;
-        var totalProducts = await _context.Products.AsNoTracking().CountAsync();
-        var totalOrders = await _context.Orders.AsNoTracking().CountAsync();
-        var totalUsers = await _context.Users.AsNoTracking().CountAsync();
+        var totalProducts = await _context.Products.AsNoTracking().CountAsync(cancellationToken);
+        var totalOrders = await _context.Orders.AsNoTracking().CountAsync(cancellationToken);
+        var totalUsers = await _context.Users.AsNoTracking().CountAsync(cancellationToken);
         var pendingOrders = await _context.Orders.AsNoTracking()
-            .CountAsync(o => o.Status == OrderStatus.Pending);
+            .CountAsync(o => o.Status == OrderStatus.Pending, cancellationToken);
         var pageViewsToday = await _context.PageViews.AsNoTracking()
-            .CountAsync(pv => pv.CreatedAt >= today);
+            .CountAsync(pv => pv.CreatedAt >= today, cancellationToken);
         var uniqueVisitorsToday = await _context.PageViews.AsNoTracking()
             .Where(pv => pv.CreatedAt >= today)
             .Select(pv => pv.IpAddress)
             .Distinct()
-            .CountAsync();
+            .CountAsync(cancellationToken);
 
         return new AnalyticsOverviewDto
         {
@@ -249,15 +249,15 @@ public class AnalyticsRepository : IAnalyticsRepository
             TotalOrders = totalOrders,
             TotalUsers = totalUsers,
             PendingOrders = pendingOrders,
-            OrderStatusBreakdown = await GetOrderStatusBreakdownAsync(),
-            TopProducts = await GetTopProductsAsync(5),
-            LowStockProducts = await GetLowStockProductsAsync(10),
+            OrderStatusBreakdown = await GetOrderStatusBreakdownAsync(cancellationToken),
+            TopProducts = await GetTopProductsAsync(5, cancellationToken),
+            LowStockProducts = await GetLowStockProductsAsync(10, cancellationToken),
             PageViewsToday = pageViewsToday,
             UniqueVisitorsToday = uniqueVisitorsToday
         };
     }
 
-    public async Task<PageViewSummaryDto> GetPageViewsAsync(string period)
+    public async Task<PageViewSummaryDto> GetPageViewsAsync(string period, CancellationToken cancellationToken = default)
     {
         period = (period ?? "7d").ToLowerInvariant();
         int days;
@@ -274,7 +274,7 @@ public class AnalyticsRepository : IAnalyticsRepository
             .AsNoTracking()
             .Where(pv => pv.CreatedAt >= start)
             .Select(pv => new { pv.CreatedAt, pv.IpAddress })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var points = Enumerable.Range(0, days).Select(i =>
         {
@@ -314,7 +314,7 @@ public class AnalyticsRepository : IAnalyticsRepository
         };
     }
 
-    public async Task<List<TopPageDto>> GetTopPagesAsync(string period)
+    public async Task<List<TopPageDto>> GetTopPagesAsync(string period, CancellationToken cancellationToken = default)
     {
         var start = GetPeriodStart(period);
         return await _context.PageViews
@@ -324,10 +324,10 @@ public class AnalyticsRepository : IAnalyticsRepository
             .Select(g => new TopPageDto { Path = g.Key, Count = g.Count() })
             .OrderByDescending(dto => dto.Count)
             .Take(20)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<TopSearchDto>> GetTopSearchesAsync(string period)
+    public async Task<List<TopSearchDto>> GetTopSearchesAsync(string period, CancellationToken cancellationToken = default)
     {
         var start = GetPeriodStart(period);
         return await _context.UserActivities
@@ -337,7 +337,7 @@ public class AnalyticsRepository : IAnalyticsRepository
             .Select(g => new TopSearchDto { Keyword = g.Key, Count = g.Count() })
             .OrderByDescending(dto => dto.Count)
             .Take(20)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     private static DateTime GetPeriodStart(string period)

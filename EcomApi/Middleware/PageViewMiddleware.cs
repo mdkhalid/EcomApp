@@ -1,22 +1,22 @@
-using System.Net;
 using EcomApi.Data;
 using EcomApi.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace EcomApi.Middleware;
 
 public class PageViewMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<PageViewMiddleware> _logger;
     private static readonly HashSet<string> _skipExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp",
         ".woff", ".woff2", ".ttf", ".eot", ".json", ".map"
     };
 
-    public PageViewMiddleware(RequestDelegate next)
+    public PageViewMiddleware(RequestDelegate next, ILogger<PageViewMiddleware> logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context, ApplicationDbContext db)
@@ -40,7 +40,8 @@ public class PageViewMiddleware
             var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
             string? sessionId = null;
-            try { sessionId = context.Session?.Id; } catch { }
+            try { sessionId = context.Session?.Id; }
+            catch (Exception ex) { _logger.LogDebug(ex, "Failed to access session for page view"); }
 
             db.PageViews.Add(new PageView
             {
@@ -53,7 +54,8 @@ public class PageViewMiddleware
                 CreatedAt = DateTime.UtcNow
             });
 
-            try { await db.SaveChangesAsync(); } catch { }
+            try { await db.SaveChangesAsync(); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Failed to save page view for {Path}", path); }
         }
 
         await _next(context);

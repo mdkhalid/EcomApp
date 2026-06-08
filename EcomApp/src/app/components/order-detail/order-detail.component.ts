@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +21,7 @@ import { getFullImageUrl as buildImageUrl, API_URL } from '../../utils/api-confi
   styleUrl: './order-detail.component.scss'
 })
 export class OrderDetailComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly orderService = inject(OrderService);
   private readonly returnService = inject(ReturnService);
   private readonly returnPolicyService = inject(ReturnPolicyService);
@@ -43,10 +45,10 @@ export class OrderDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) {
-      this.returnPolicyService.get().subscribe({
+      this.returnPolicyService.get().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (p) => this.returnPolicy.set(p)
       });
-      this.orderService.getById(id).subscribe({
+      this.orderService.getById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (order) => {
           this.order.set(order);
           this.loadReturnRequest(order.id);
@@ -61,7 +63,7 @@ export class OrderDetailComponent implements OnInit {
   }
 
   loadReturnRequest(orderId: number): void {
-    this.returnService.getByOrder(orderId).subscribe({
+    this.returnService.getByOrder(orderId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (returnReq) => this.returnRequest.set(returnReq)
     });
   }
@@ -128,7 +130,7 @@ export class OrderDetailComponent implements OnInit {
       orderId: order.id,
       reason: this.returnReason(),
       comment: this.returnComment() || undefined
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (returnReq) => {
         this.returnRequest.set(returnReq);
         this.notification.showSuccess('Return request submitted successfully.');
@@ -145,11 +147,11 @@ export class OrderDetailComponent implements OnInit {
   downloadInvoice(): void {
     const order = this.order();
     if (!order) return;
-    window.open(`http://localhost:5068/api/orders/${order.id}/invoice`, '_blank');
+    window.open(`${API_URL}/orders/${order.id}/invoice`, '_blank');
   }
 
   getFullImageUrl(path: string): string {
-    return `http://localhost:5068${path}`;
+    return buildImageUrl(path);
   }
 
   formatDate(dateStr?: string): string {

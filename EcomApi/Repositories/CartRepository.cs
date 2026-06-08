@@ -14,12 +14,12 @@ public class CartRepository : ICartRepository
         _context = context;
     }
 
-    public async Task<Cart?> GetBySessionIdAsync(string sessionId)
+    public async Task<Cart?> GetBySessionIdAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        return await GetByIdentifierAsync(sessionId);
+        return await GetByIdentifierAsync(sessionId, cancellationToken);
     }
 
-    public async Task<Cart?> GetByIdentifierAsync(string identifier)
+    public async Task<Cart?> GetByIdentifierAsync(string identifier, CancellationToken cancellationToken = default)
     {
         if (identifier.StartsWith("user:"))
         {
@@ -29,17 +29,17 @@ public class CartRepository : ICartRepository
                 .ThenInclude(ci => ci.Product)
                 .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.UpdatedAt)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         var sessionId = identifier.StartsWith("session:") ? identifier.Substring(8) : identifier;
         return await _context.Carts
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
-            .FirstOrDefaultAsync(c => c.SessionId == sessionId);
+            .FirstOrDefaultAsync(c => c.SessionId == sessionId, cancellationToken);
     }
 
-    public async Task<Cart> CreateAsync(string sessionId)
+    public async Task<Cart> CreateAsync(string sessionId, CancellationToken cancellationToken = default)
     {
         var cart = new Cart();
 
@@ -53,13 +53,13 @@ public class CartRepository : ICartRepository
         }
 
         _context.Carts.Add(cart);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return cart;
     }
 
-    public async Task<Cart?> AddItemAsync(string sessionId, int productId, int quantity, int? productVariantId = null)
+    public async Task<Cart?> AddItemAsync(string sessionId, int productId, int quantity, int? productVariantId = null, CancellationToken cancellationToken = default)
     {
-        var cart = await GetByIdentifierAsync(sessionId) ?? await CreateAsync(sessionId);
+        var cart = await GetByIdentifierAsync(sessionId, cancellationToken) ?? await CreateAsync(sessionId, cancellationToken);
         var product = await _context.Products.FindAsync(productId);
 
         if (product == null)
@@ -69,7 +69,7 @@ public class CartRepository : ICartRepository
         if (productVariantId.HasValue)
         {
             variant = await _context.ProductVariants
-                .FirstOrDefaultAsync(v => v.Id == productVariantId && v.ProductId == productId);
+                .FirstOrDefaultAsync(v => v.Id == productVariantId && v.ProductId == productId, cancellationToken);
             if (variant == null || variant.Stock < quantity)
                 return null;
         }
@@ -108,16 +108,16 @@ public class CartRepository : ICartRepository
         }
 
         cart.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-        return await GetByIdentifierAsync(sessionId);
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetByIdentifierAsync(sessionId, cancellationToken);
     }
 
-    public async Task<Cart?> UpdateItemAsync(int cartItemId, int quantity)
+    public async Task<Cart?> UpdateItemAsync(int cartItemId, int quantity, CancellationToken cancellationToken = default)
     {
         var cartItem = await _context.CartItems
             .Include(ci => ci.Cart)
             .ThenInclude(c => c.Items)
-            .FirstOrDefaultAsync(ci => ci.Id == cartItemId);
+            .FirstOrDefaultAsync(ci => ci.Id == cartItemId, cancellationToken);
 
         if (cartItem == null) return null;
 
@@ -127,7 +127,7 @@ public class CartRepository : ICartRepository
         if (cartItem.ProductVariantId.HasValue)
         {
             var variant = await _context.ProductVariants
-                .FirstOrDefaultAsync(v => v.Id == cartItem.ProductVariantId);
+                .FirstOrDefaultAsync(v => v.Id == cartItem.ProductVariantId, cancellationToken);
             if (variant == null || variant.Stock < quantity)
                 return null;
             effectivePrice = variant.Price;
@@ -147,57 +147,57 @@ public class CartRepository : ICartRepository
         cartItem.TotalPrice = quantity * cartItem.UnitPrice;
         cartItem.Cart.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         var identifier = cartItem.Cart.UserId != null
             ? $"user:{cartItem.Cart.UserId}"
             : $"session:{cartItem.Cart.SessionId}";
-        return await GetByIdentifierAsync(identifier);
+        return await GetByIdentifierAsync(identifier, cancellationToken);
     }
 
-    public async Task<Cart?> RemoveItemAsync(int cartItemId)
+    public async Task<Cart?> RemoveItemAsync(int cartItemId, CancellationToken cancellationToken = default)
     {
         var cartItem = await _context.CartItems
             .Include(ci => ci.Cart)
-            .FirstOrDefaultAsync(ci => ci.Id == cartItemId);
+            .FirstOrDefaultAsync(ci => ci.Id == cartItemId, cancellationToken);
 
         if (cartItem == null) return null;
 
         var cart = cartItem.Cart;
         _context.CartItems.Remove(cartItem);
         cart.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         var identifier = cart.UserId != null
             ? $"user:{cart.UserId}"
             : $"session:{cart.SessionId}";
-        return await GetByIdentifierAsync(identifier);
+        return await GetByIdentifierAsync(identifier, cancellationToken);
     }
 
-    public async Task<Cart> ClearAsync(string sessionId)
+    public async Task<Cart> ClearAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        var cart = await GetByIdentifierAsync(sessionId);
+        var cart = await GetByIdentifierAsync(sessionId, cancellationToken);
         if (cart != null)
         {
             _context.CartItems.RemoveRange(cart.Items);
             cart.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
-        return cart ?? await CreateAsync(sessionId);
+        return cart ?? await CreateAsync(sessionId, cancellationToken);
     }
 
-    public async Task<bool> ExistsAsync(int id)
+    public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _context.Carts.AnyAsync(c => c.Id == id);
+        return await _context.Carts.AnyAsync(c => c.Id == id, cancellationToken);
     }
 
-    public async Task MergeCartsAsync(string sourceIdentifier, string targetIdentifier)
+    public async Task MergeCartsAsync(string sourceIdentifier, string targetIdentifier, CancellationToken cancellationToken = default)
     {
-        var sourceCart = await GetByIdentifierAsync(sourceIdentifier);
+        var sourceCart = await GetByIdentifierAsync(sourceIdentifier, cancellationToken);
         if (sourceCart == null || sourceCart.Items.Count == 0)
             return;
 
-        var targetCart = await GetByIdentifierAsync(targetIdentifier) ?? await CreateAsync(targetIdentifier);
+        var targetCart = await GetByIdentifierAsync(targetIdentifier, cancellationToken) ?? await CreateAsync(targetIdentifier, cancellationToken);
 
         foreach (var sourceItem in sourceCart.Items.ToList())
         {
@@ -224,6 +224,6 @@ public class CartRepository : ICartRepository
         targetCart.UpdatedAt = DateTime.UtcNow;
         _context.CartItems.RemoveRange(sourceCart.Items);
         _context.Carts.Remove(sourceCart);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

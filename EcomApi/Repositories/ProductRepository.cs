@@ -14,7 +14,7 @@ public class ProductRepository : IProductRepository
         _context = context;
     }
 
-    public async Task<SearchResultDto<Product>> SearchProductsAsync(SearchFilterDto filter)
+    public async Task<SearchResultDto<Product>> SearchProductsAsync(SearchFilterDto filter, CancellationToken cancellationToken = default)
     {
         var query = _context.Products.AsNoTracking().Where(p => p.IsActive).AsQueryable();
 
@@ -72,7 +72,7 @@ public class ProductRepository : IProductRepository
         if (filter.InStock.HasValue && filter.InStock.Value)
             query = query.Where(p => p.Stock > 0);
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         // Apply sorting
         query = ApplySorting(query, filter.SortBy);
@@ -81,7 +81,7 @@ public class ProductRepository : IProductRepository
         var items = await query
             .Skip((filter.PageNumber - 1) * filter.PageSize)
             .Take(filter.PageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new SearchResultDto<Product>
         {
@@ -92,7 +92,7 @@ public class ProductRepository : IProductRepository
         };
     }
 
-    public async Task<List<string>> GetSearchSuggestionsAsync(string query)
+    public async Task<List<string>> GetSearchSuggestionsAsync(string query, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query))
             return new List<string>();
@@ -107,7 +107,7 @@ public class ProductRepository : IProductRepository
             .Select(p => p.Name)
             .Distinct()
             .Take(10)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         // Also add matching brands
         var brandSuggestions = await _context.Products.AsNoTracking()
@@ -116,7 +116,7 @@ public class ProductRepository : IProductRepository
             .Select(p => p.Brand!)
             .Distinct()
             .Take(5)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         // Also add matching categories
         var categorySuggestions = await _context.Products.AsNoTracking()
@@ -125,7 +125,7 @@ public class ProductRepository : IProductRepository
             .Select(p => p.Category)
             .Distinct()
             .Take(5)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return suggestions
             .Union(brandSuggestions)
@@ -135,7 +135,7 @@ public class ProductRepository : IProductRepository
             .ToList();
     }
 
-    public async Task<FilterMetadataDto> GetFilterMetadataAsync(SearchFilterDto filter)
+    public async Task<FilterMetadataDto> GetFilterMetadataAsync(SearchFilterDto filter, CancellationToken cancellationToken = default)
     {
         var query = _context.Products.AsNoTracking().Where(p => p.IsActive).AsQueryable();
 
@@ -177,7 +177,7 @@ public class ProductRepository : IProductRepository
             .Select(g => new { Category = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .Select(x => x.Category)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         // Get brands with counts
         var brands = await query
@@ -186,7 +186,7 @@ public class ProductRepository : IProductRepository
             .Select(g => new { Brand = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .Select(x => x.Brand!)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         // Get price range
         var priceRange = await query
@@ -196,14 +196,14 @@ public class ProductRepository : IProductRepository
                 Min = g.Min(p => p.Price),
                 Max = g.Max(p => p.Price)
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         // Calculate price step (10% of range or minimum 10)
         var priceStep = priceRange != null ? Math.Max(10, (priceRange.Max - priceRange.Min) / 10) : 10;
 
         // Get rating buckets
         var ratingBuckets = new List<RatingBucketDto>();
-        var allProducts = await query.ToListAsync();
+        var allProducts = await query.ToListAsync(cancellationToken);
         foreach (var bucket in new[] {
             new { Min = 4.0, Max = 5.0, Label = "4★ & above" },
             new { Min = 3.0, Max = 4.0, Label = "3★ & above" },
@@ -216,7 +216,7 @@ public class ProductRepository : IProductRepository
                     _context.Reviews
                         .Where(r => r.ProductId == p.Id)
                         .Average(r => (double?)r.Rating) >= bucket.Min)
-                .CountAsync();
+                .CountAsync(cancellationToken);
 
             ratingBuckets.Add(new RatingBucketDto
             {
@@ -239,7 +239,7 @@ public class ProductRepository : IProductRepository
             var count = await query
                 .Where(p => p.OriginalPrice.HasValue && p.OriginalPrice > 0 &&
                     ((1 - p.Price / p.OriginalPrice.Value) * 100) >= bucket.Min)
-                .CountAsync();
+                .CountAsync(cancellationToken);
 
             discountBuckets.Add(new DiscountBucketDto
             {
@@ -262,17 +262,17 @@ public class ProductRepository : IProductRepository
         };
     }
 
-    public async Task<List<string>> GetBrandsAsync()
+    public async Task<List<string>> GetBrandsAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Products.AsNoTracking()
             .Where(p => p.IsActive && p.Brand != null)
             .Select(p => p.Brand!)
             .Distinct()
             .OrderBy(b => b)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<PriceRangeDto> GetPriceRangeAsync(string? category = null)
+    public async Task<PriceRangeDto> GetPriceRangeAsync(string? category = null, CancellationToken cancellationToken = default)
     {
         var query = _context.Products.AsNoTracking().Where(p => p.IsActive);
 
@@ -289,7 +289,7 @@ public class ProductRepository : IProductRepository
                 Min = g.Min(p => p.Price),
                 Max = g.Max(p => p.Price)
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         var step = range != null ? Math.Max(10, (range.Max - range.Min) / 10) : 10;
 
@@ -320,34 +320,34 @@ public class ProductRepository : IProductRepository
         };
     }
 
-    public async Task<Product?> GetByIdAsync(int id)
+    public async Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await _context.Products.FindAsync(id);
     }
 
-    public async Task<Product> AddAsync(Product product)
+    public async Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default)
     {
         product.UpdatedAt = DateTime.UtcNow;
         _context.Products.Add(product);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return product;
     }
 
-    public async Task<Product> UpdateAsync(Product product)
+    public async Task<Product> UpdateAsync(Product product, CancellationToken cancellationToken = default)
     {
         product.UpdatedAt = DateTime.UtcNow;
         _context.Entry(product).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return product;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var product = await _context.Products.FindAsync(id);
         if (product == null) return false;
 
         _context.Products.Remove(product);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

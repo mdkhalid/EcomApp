@@ -14,50 +14,50 @@ public class CouponRepository : ICouponRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Coupon>> GetAllAsync()
+    public async Task<IEnumerable<Coupon>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Coupons.AsNoTracking().OrderByDescending(c => c.CreatedAt).ToListAsync();
+        return await _context.Coupons.AsNoTracking().OrderByDescending(c => c.CreatedAt).ToListAsync(cancellationToken);
     }
 
-    public async Task<Coupon?> GetByIdAsync(int id)
+    public async Task<Coupon?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await _context.Coupons.FindAsync(id);
     }
 
-    public async Task<Coupon?> GetByCodeAsync(string code)
+    public async Task<Coupon?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
         return await _context.Coupons.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Code.ToUpper() == code.ToUpper());
+            .FirstOrDefaultAsync(c => c.Code.ToUpper() == code.ToUpper(), cancellationToken);
     }
 
-    public async Task<Coupon> AddAsync(Coupon coupon)
+    public async Task<Coupon> AddAsync(Coupon coupon, CancellationToken cancellationToken = default)
     {
         _context.Coupons.Add(coupon);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return coupon;
     }
 
-    public async Task<Coupon> UpdateAsync(Coupon coupon)
+    public async Task<Coupon> UpdateAsync(Coupon coupon, CancellationToken cancellationToken = default)
     {
         _context.Entry(coupon).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return coupon;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var coupon = await _context.Coupons.FindAsync(id);
         if (coupon == null) return false;
 
         _context.Coupons.Remove(coupon);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
-    public async Task<ValidateCouponResponse> ValidateAndCalculateAsync(string code, decimal cartTotal, int? userId)
+    public async Task<ValidateCouponResponse> ValidateAndCalculateAsync(string code, decimal cartTotal, int? userId, CancellationToken cancellationToken = default)
     {
         var coupon = await _context.Coupons.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Code.ToUpper() == code.ToUpper());
+            .FirstOrDefaultAsync(c => c.Code.ToUpper() == code.ToUpper(), cancellationToken);
 
         if (coupon == null)
             return new ValidateCouponResponse { IsValid = false, ErrorMessage = "Invalid coupon code." };
@@ -81,7 +81,7 @@ public class CouponRepository : ICouponRepository
         if (userId.HasValue)
         {
             var usageCount = await _context.CouponUsages
-                .CountAsync(u => u.CouponId == coupon.Id && u.UserId == userId.Value);
+                .CountAsync(u => u.CouponId == coupon.Id && u.UserId == userId.Value, cancellationToken);
             if (coupon.MaxUses > 0 && usageCount >= coupon.MaxUses)
                 return new ValidateCouponResponse
                 {

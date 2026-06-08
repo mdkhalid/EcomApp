@@ -25,7 +25,10 @@ builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")), poolSize: 128);
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
+    ?? jwtSettings["SecretKey"]
+    ?? throw new InvalidOperationException("JWT_SECRET_KEY environment variable or Jwt:SecretKey configuration is required.");
+var key = Encoding.UTF8.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -75,13 +78,17 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
+
+var corsOrigins = builder.Configuration["CorsOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+    ?? new[] { "http://localhost:4200" };
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -92,20 +99,24 @@ MappingConfig.ConfigureMapping();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.Migrate();
     DbSeeder.Seed(context);
-}
 
-if (app.Environment.IsDevelopment())
-{
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ecom API v1"));
 }
+else
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+}
 
+app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<RateLimitMiddleware>();
 app.UseCors("AllowAngular");

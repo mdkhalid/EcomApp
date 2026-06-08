@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -13,6 +14,7 @@ import { LoginRequest } from '../../models/auth.model';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
   private readonly cartService = inject(CartService);
   readonly notificationService = inject(NotificationService);
@@ -33,13 +35,13 @@ export class LoginComponent {
 
     this.clearLockout();
     this.isLoading = true;
-    this.authService.login(this.loginData).subscribe({
+    this.authService.login(this.loginData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.isLoading = false;
         this.notificationService.showSuccess('Login successful!');
         if (!this.authService.isAdmin()) {
-          this.cartService.mergeCart().subscribe({
-            next: () => this.cartService.getCart().subscribe()
+          this.cartService.mergeCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: () => this.cartService.getCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe()
           });
         }
         const returnUrl = this.route.snapshot.queryParams['returnUrl'];

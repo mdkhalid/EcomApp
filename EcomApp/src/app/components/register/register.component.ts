@@ -1,4 +1,5 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -13,6 +14,7 @@ import { RegisterRequest } from '../../models/auth.model';
   styleUrl: './register.component.scss'
 })
 export class RegisterComponent {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
   private readonly cartService = inject(CartService);
   readonly notificationService = inject(NotificationService);
@@ -69,11 +71,11 @@ export class RegisterComponent {
     if (!payload.firstName) delete payload.firstName;
     if (!payload.lastName) delete payload.lastName;
     this.isLoading = true;
-    this.authService.register(payload).subscribe({
+    this.authService.register(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Registration successful!');
-        this.cartService.mergeCart().subscribe({
-          next: () => this.cartService.getCart().subscribe()
+        this.cartService.mergeCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: () => this.cartService.getCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe()
         });
         this.router.navigate(['/products']);
       },

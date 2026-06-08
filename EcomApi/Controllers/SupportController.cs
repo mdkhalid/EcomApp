@@ -22,7 +22,7 @@ public class SupportController : ControllerBase
     }
 
     [HttpPost("conversations")]
-    public async Task<ActionResult<ConversationDto>> CreateConversation()
+    public async Task<ActionResult<ConversationDto>> CreateConversation(CancellationToken cancellationToken = default)
     {
         var userId = GetUserId();
         var sessionId = GetSessionId();
@@ -49,7 +49,7 @@ public class SupportController : ControllerBase
     }
 
     [HttpPost("conversations/{id}/messages")]
-    public async Task<ActionResult<BotResponseDto>> SendMessage(int id, [FromBody] SendMessageDto dto)
+    public async Task<ActionResult<BotResponseDto>> SendMessage(int id, [FromBody] SendMessageDto dto, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(dto.Content))
             return BadRequest(new { error = "Message content is required." });
@@ -95,7 +95,7 @@ public class SupportController : ControllerBase
     }
 
     [HttpGet("conversations/{id}/messages")]
-    public async Task<ActionResult<List<SupportMessageDto>>> GetMessages(int id)
+    public async Task<ActionResult<List<SupportMessageDto>>> GetMessages(int id, CancellationToken cancellationToken = default)
     {
         var conversation = await _supportRepository.GetConversationAsync(id);
         if (conversation == null)
@@ -110,7 +110,7 @@ public class SupportController : ControllerBase
     }
 
     [HttpGet("conversations/my")]
-    public async Task<ActionResult<List<ConversationDto>>> GetMyConversations()
+    public async Task<ActionResult<List<ConversationDto>>> GetMyConversations(CancellationToken cancellationToken = default)
     {
         var userId = GetUserId();
 
@@ -133,7 +133,8 @@ public class SupportController : ControllerBase
     public async Task<ActionResult> GetAll(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        CancellationToken cancellationToken = default)
     {
         var conversations = await _supportRepository.GetAllConversationsAsync(pageNumber, pageSize, status);
         return Ok(new
@@ -149,7 +150,8 @@ public class SupportController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult> GetEscalated(
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
         var (items, totalCount) = await _supportRepository.GetEscalatedAsync(pageNumber, pageSize);
         return Ok(new
@@ -163,7 +165,7 @@ public class SupportController : ControllerBase
 
     [HttpPut("conversations/{id}/status")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> UpdateStatus(int id, [FromBody] UpdateSupportStatusDto dto)
+    public async Task<ActionResult> UpdateStatus(int id, [FromBody] UpdateSupportStatusDto dto, CancellationToken cancellationToken = default)
     {
         if (!Enum.TryParse<ConversationStatus>(dto.Status, true, out var status))
             return BadRequest(new { error = "Invalid status." });
@@ -177,7 +179,7 @@ public class SupportController : ControllerBase
 
     [HttpPost("conversations/{id}/reply")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<SupportMessageDto>> AdminReply(int id, [FromBody] SendMessageDto dto)
+    public async Task<ActionResult<SupportMessageDto>> AdminReply(int id, [FromBody] SendMessageDto dto, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(dto.Content))
             return BadRequest(new { error = "Message content is required." });

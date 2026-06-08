@@ -5,13 +5,13 @@ namespace EcomApi.Repositories;
 
 public interface IProductRepository
 {
-    Task<SearchResultDto<Product>> SearchProductsAsync(SearchFilterDto filter);
-    Task<List<string>> GetSearchSuggestionsAsync(string query);
-    Task<FilterMetadataDto> GetFilterMetadataAsync(SearchFilterDto filter);
-    Task<List<string>> GetBrandsAsync();
-    Task<PriceRangeDto> GetPriceRangeAsync(string? category = null);
-    Task<Product?> GetByIdAsync(int id);
-    Task<Product> AddAsync(Product product);
-    Task<Product> UpdateAsync(Product product);
-    Task<bool> DeleteAsync(int id);
+    Task<SearchResultDto<Product>> SearchProductsAsync(SearchFilterDto filter, CancellationToken cancellationToken = default);
+    Task<List<string>> GetSearchSuggestionsAsync(string query, CancellationToken cancellationToken = default);
+    Task<FilterMetadataDto> GetFilterMetadataAsync(SearchFilterDto filter, CancellationToken cancellationToken = default);
+    Task<List<string>> GetBrandsAsync(CancellationToken cancellationToken = default);
+    Task<PriceRangeDto> GetPriceRangeAsync(string? category = null, CancellationToken cancellationToken = default);
+    Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default);
+    Task<Product> UpdateAsync(Product product, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

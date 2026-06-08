@@ -13,14 +13,14 @@ public class ReturnPolicyRepository : IReturnPolicyRepository
         _context = context;
     }
 
-    public async Task<ReturnPolicy?> GetAsync()
+    public async Task<ReturnPolicy?> GetAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.ReturnPolicies.FirstOrDefaultAsync();
+        return await _context.ReturnPolicies.FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<ReturnPolicy> CreateOrUpdateAsync(ReturnPolicy policy)
+    public async Task<ReturnPolicy> CreateOrUpdateAsync(ReturnPolicy policy, CancellationToken cancellationToken = default)
     {
-        var existing = await _context.ReturnPolicies.FirstOrDefaultAsync();
+        var existing = await _context.ReturnPolicies.FirstOrDefaultAsync(cancellationToken);
         if (existing != null)
         {
             existing.ReturnWindowDays = policy.ReturnWindowDays;
@@ -35,7 +35,7 @@ public class ReturnPolicyRepository : IReturnPolicyRepository
             _context.ReturnPolicies.Add(policy);
         }
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return existing ?? policy;
     }
 }

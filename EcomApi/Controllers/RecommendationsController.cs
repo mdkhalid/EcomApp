@@ -24,7 +24,7 @@ public class RecommendationsController : ControllerBase
 
     [HttpGet("recently-viewed")]
     [Authorize]
-    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetRecentlyViewed()
+    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetRecentlyViewed(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var sessionId = Request.Cookies.TryGetValue("CartId", out var sid) ? sid : null;
@@ -52,7 +52,7 @@ public class RecommendationsController : ControllerBase
 
     [HttpGet("for-you")]
     [Authorize]
-    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetForYou()
+    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetForYou(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var productIds = await _activityRepository.GetRecommendedProductIdsAsync(userId, 10);
@@ -89,7 +89,7 @@ public class RecommendationsController : ControllerBase
     }
 
     [HttpGet("also-bought/{productId}")]
-    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetAlsoBought(int productId)
+    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetAlsoBought(int productId, CancellationToken cancellationToken = default)
     {
         var productIds = await _activityRepository.GetAlsoBoughtProductIdsAsync(productId, 10);
 
@@ -113,7 +113,7 @@ public class RecommendationsController : ControllerBase
     }
 
     [HttpGet("frequently-bought-together/{productId}")]
-    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetFrequentlyBoughtTogether(int productId)
+    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetFrequentlyBoughtTogether(int productId, CancellationToken cancellationToken = default)
     {
         var productIds = await _activityRepository.GetFrequentlyBoughtTogetherAsync(productId, 6);
 
@@ -137,7 +137,7 @@ public class RecommendationsController : ControllerBase
     }
 
     [HttpGet("trending")]
-    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetTrending()
+    public async Task<ActionResult<List<RecentlyViewedProductDto>>> GetTrending(CancellationToken cancellationToken = default)
     {
         var products = await _context.Products
             .AsNoTracking()

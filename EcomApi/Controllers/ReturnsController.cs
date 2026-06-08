@@ -24,7 +24,7 @@ public class ReturnsController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<ReturnRequestDto>> CreateReturnRequest([FromBody] CreateReturnRequestDto dto)
+    public async Task<ActionResult<ReturnRequestDto>> CreateReturnRequest([FromBody] CreateReturnRequestDto dto, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var role = User.FindFirstValue(ClaimTypes.Role);
@@ -73,7 +73,7 @@ public class ReturnsController : ControllerBase
 
     [HttpGet("my-returns")]
     [Authorize]
-    public async Task<ActionResult<List<ReturnRequestDto>>> GetMyReturns()
+    public async Task<ActionResult<List<ReturnRequestDto>>> GetMyReturns(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var returns = await _returnRepository.GetByUserIdAsync(userId);
@@ -82,7 +82,7 @@ public class ReturnsController : ControllerBase
 
     [HttpGet("{id}")]
     [Authorize]
-    public async Task<ActionResult<ReturnRequestDto>> GetById(int id)
+    public async Task<ActionResult<ReturnRequestDto>> GetById(int id, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var role = User.FindFirstValue(ClaimTypes.Role);
@@ -99,7 +99,7 @@ public class ReturnsController : ControllerBase
 
     [HttpGet("order/{orderId}")]
     [Authorize]
-    public async Task<ActionResult<ReturnRequestDto?>> GetByOrder(int orderId)
+    public async Task<ActionResult<ReturnRequestDto?>> GetByOrder(int orderId, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var role = User.FindFirstValue(ClaimTypes.Role);
@@ -121,7 +121,7 @@ public class ReturnsController : ControllerBase
 
     [HttpPut("{id}/status")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ReturnRequestDto>> UpdateStatus(int id, [FromBody] UpdateReturnStatusDto dto)
+    public async Task<ActionResult<ReturnRequestDto>> UpdateStatus(int id, [FromBody] UpdateReturnStatusDto dto, CancellationToken cancellationToken = default)
     {
         if (!Enum.TryParse<ReturnStatus>(dto.Status, true, out var status))
             return BadRequest(new { error = $"Invalid status. Valid values: {string.Join(", ", Enum.GetNames<ReturnStatus>())}" });
@@ -146,7 +146,8 @@ public class ReturnsController : ControllerBase
     public async Task<ActionResult> GetAll(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        CancellationToken cancellationToken = default)
     {
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 20;

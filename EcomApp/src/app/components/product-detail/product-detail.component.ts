@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -22,6 +23,7 @@ import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
   styleUrl: './product-detail.component.scss'
 })
 export class ProductDetailComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly productService = inject(ProductService);
   private readonly reviewService = inject(ReviewService);
   private readonly cartService = inject(CartService);
@@ -79,7 +81,7 @@ export class ProductDetailComponent implements OnInit {
   reviewCheckMessage = signal('');
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const id = Number(params.get('id'));
       if (id) {
         this.loading.set(true);
@@ -90,14 +92,14 @@ export class ProductDetailComponent implements OnInit {
       }
     });
     if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
-      this.activityService.getForYou().subscribe({
+      this.activityService.getForYou().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (items) => this.recommended.set(items)
       });
     }
   }
 
   loadProduct(id: number): void {
-    this.productService.getById(id).subscribe({
+    this.productService.getById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (product) => {
         this.product.set(product);
         this.avgRating.set(product.averageRating);
@@ -105,10 +107,10 @@ export class ProductDetailComponent implements OnInit {
         this.selectedVariant.set(product.variants?.length > 0 ? product.variants[0] : null);
         this.loading.set(false);
         if (this.authService.isAuthenticated() && !this.authService.isAdmin()) {
-          this.wishlistService.check(id).subscribe();
+          this.wishlistService.check(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
           this.checkCanReview(id);
         }
-        this.activityService.logActivity('ProductView', String(id)).subscribe();
+        this.activityService.logActivity('ProductView', String(id)).pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
       },
       error: () => {
         this.notification.showError('Failed to load product');
@@ -118,7 +120,7 @@ export class ProductDetailComponent implements OnInit {
   }
 
   checkCanReview(productId: number): void {
-    this.reviewService.canReview(productId).subscribe({
+    this.reviewService.canReview(productId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.hasPurchased.set(res.canReview);
         this.reviewCheckMessage.set(res.reason);
@@ -131,7 +133,7 @@ export class ProductDetailComponent implements OnInit {
   }
 
   loadReviews(productId: number): void {
-    this.reviewService.getByProduct(productId).subscribe({
+    this.reviewService.getByProduct(productId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.reviews.set(res.items);
         this.avgRating.set(res.averageRating);
@@ -148,7 +150,7 @@ export class ProductDetailComponent implements OnInit {
       return;
     }
     const variantId = this.selectedVariant()?.id;
-    this.cartService.addItem({ productId: p.id, quantity: this.quantity(), productVariantId: variantId }).subscribe({
+    this.cartService.addItem({ productId: p.id, quantity: this.quantity(), productVariantId: variantId }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.notification.showSuccess('Added to cart'),
       error: (err) => this.notification.showError(err.error?.error || 'Failed to add to cart')
     });
@@ -159,7 +161,7 @@ export class ProductDetailComponent implements OnInit {
       this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
       return;
     }
-    this.cartService.addItem({ productId, quantity: 1 }).subscribe({
+    this.cartService.addItem({ productId, quantity: 1 }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.notification.showSuccess('Added to cart'),
       error: (err) => this.notification.showError(err.error?.error || 'Failed to add to cart')
     });
@@ -172,7 +174,7 @@ export class ProductDetailComponent implements OnInit {
       this.router.navigate(['/login'], { queryParams: { returnUrl: `/products/${p.id}` } });
       return;
     }
-    this.wishlistService.toggle(p.id).subscribe({
+    this.wishlistService.toggle(p.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => this.notification.showSuccess(res.message),
       error: (err) => this.notification.showError(err.error?.error || 'Failed to update wishlist')
     });
@@ -182,7 +184,7 @@ export class ProductDetailComponent implements OnInit {
     const p = this.product();
     if (!p) return;
     this.submittingReview.set(true);
-    this.reviewService.create(p.id, this.newReview()).subscribe({
+    this.reviewService.create(p.id, this.newReview()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (review) => {
         this.notification.showSuccess('Review submitted!');
         this.reviews.update(r => [review, ...r]);
@@ -208,17 +210,17 @@ export class ProductDetailComponent implements OnInit {
   }
 
   getFullImageUrl(path: string): string {
-    return `http://localhost:5068${path}`;
+    return buildImageUrl(path);
   }
 
   loadAlsoBought(productId: number): void {
-    this.activityService.getAlsoBought(productId).subscribe({
+    this.activityService.getAlsoBought(productId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (items) => this.alsoBought.set(items)
     });
   }
 
   loadFrequentlyBought(productId: number): void {
-    this.activityService.getFrequentlyBoughtTogether(productId).subscribe({
+    this.activityService.getFrequentlyBoughtTogether(productId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (items) => this.frequentlyBought.set(items)
     });
   }

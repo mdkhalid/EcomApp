@@ -1,4 +1,5 @@
-import { Component, ElementRef, inject, OnInit, signal, viewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, signal, viewChild, AfterViewInit, OnDestroy, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -42,6 +43,7 @@ Chart.register(...registerables);
   styleUrl: './admin.component.scss'
 })
 export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
   readonly notificationService = inject(NotificationService);
@@ -192,13 +194,13 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadDashboard(): void {
     this.isLoading.set(true);
-    this.http.get<PaginatedResponse<Product>>(`${this.apiUrl}/products?pageNumber=1&pageSize=1000`).subscribe({
+    this.http.get<PaginatedResponse<Product>>(`${this.apiUrl}/products?pageNumber=1&pageSize=1000`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.products.set(res.items);
         this.stats.update(s => ({ ...s, totalProducts: res.totalCount }));
       },
       complete: () => {
-        this.http.get<any>(`${this.apiUrl}/orders/all?pageNumber=1&pageSize=1000`).subscribe({
+        this.http.get<any>(`${this.apiUrl}/orders/all?pageNumber=1&pageSize=1000`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: (res) => {
             this.orders.set(res.items);
             this.stats.update(s => ({
@@ -208,7 +210,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
             }));
           },
           complete: () => {
-            this.http.get<PaginatedResponse<User>>(`${this.apiUrl}/auth/users?pageNumber=1&pageSize=1000`).subscribe({
+            this.http.get<PaginatedResponse<User>>(`${this.apiUrl}/auth/users?pageNumber=1&pageSize=1000`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
               next: (res) => this.stats.update(s => ({ ...s, totalUsers: res.totalCount })),
               complete: () => this.isLoading.set(false)
             });
@@ -220,7 +222,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadAnalytics(): void {
     this.analyticsLoading.set(true);
-    this.analyticsService.getOverview().subscribe({
+    this.analyticsService.getOverview().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.analyticsOverview.set(data);
         this.orderStatusBreakdown.set(data.orderStatusBreakdown);
@@ -242,7 +244,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadRevenue(): void {
-    this.analyticsService.getRevenue(this.revenuePeriod()).subscribe({
+    this.analyticsService.getRevenue(this.revenuePeriod()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.revenue.set(data);
         queueMicrotask(() => this.renderRevenueChart());
@@ -252,14 +254,14 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadTopProductsAndCategory(): void {
-    this.analyticsService.getTopProducts(10).subscribe({
+    this.analyticsService.getTopProducts(10).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.topProducts.set(data);
         queueMicrotask(() => this.renderTopProductsChart());
       },
       error: () => this.notificationService.showError('Failed to load top products')
     });
-    this.analyticsService.getCategoryBreakdown().subscribe({
+    this.analyticsService.getCategoryBreakdown().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.categoryBreakdown.set(data);
         queueMicrotask(() => this.renderCategoryChart());
@@ -280,18 +282,18 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadVisitorAnalytics(): void {
-    this.analyticsService.getPageViews(this.visitorPeriod()).subscribe({
+    this.analyticsService.getPageViews(this.visitorPeriod()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.pageViews.set(data);
         queueMicrotask(() => this.renderPageViewsChart());
       },
       error: () => this.notificationService.showError('Failed to load page views')
     });
-    this.analyticsService.getTopPages(this.visitorPeriod()).subscribe({
+    this.analyticsService.getTopPages(this.visitorPeriod()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.topPages.set(data),
       error: () => this.notificationService.showError('Failed to load top pages')
     });
-    this.analyticsService.getTopSearches(this.visitorPeriod()).subscribe({
+    this.analyticsService.getTopSearches(this.visitorPeriod()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.topSearches.set(data),
       error: () => this.notificationService.showError('Failed to load top searches')
     });
@@ -581,7 +583,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadProducts(): void {
     this.isLoading.set(true);
-    this.http.get<PaginatedResponse<Product>>(`${this.apiUrl}/products?pageNumber=1&pageSize=1000`).subscribe({
+    this.http.get<PaginatedResponse<Product>>(`${this.apiUrl}/products?pageNumber=1&pageSize=1000`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.products.set(res.items);
         this.isLoading.set(false);
@@ -596,7 +598,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     let url = `${this.apiUrl}/orders/all?pageNumber=${this.orderPage()}&pageSize=20`;
     if (status) url += `&status=${status}`;
 
-    this.http.get<any>(url).subscribe({
+    this.http.get<any>(url).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.orders.set(res.items);
         this.isLoading.set(false);
@@ -612,7 +614,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     let url = `${this.apiUrl}/auth/users?pageNumber=${this.userPage()}&pageSize=20`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (role) url += `&role=${encodeURIComponent(role)}`;
-    this.http.get<PaginatedResponse<User>>(url).subscribe({
+    this.http.get<PaginatedResponse<User>>(url).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.users.set(res.items);
         this.totalUsersCount.set(res.totalCount);
@@ -649,7 +651,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadRoles(): void {
-    this.http.get<{ roles: string[] }>(`${this.apiUrl}/auth/users/roles`).subscribe({
+    this.http.get<{ roles: string[] }>(`${this.apiUrl}/auth/users/roles`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => this.availableRoles.set(res.roles)
     });
   }
@@ -708,7 +710,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!payload.phone) delete payload.phone;
     if (!payload.firstName) delete payload.firstName;
     if (!payload.lastName) delete payload.lastName;
-    this.http.post<User>(`${this.apiUrl}/auth/users`, payload).subscribe({
+    this.http.post<User>(`${this.apiUrl}/auth/users`, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('User created successfully');
         this.closeCreateUser();
@@ -750,7 +752,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       this.notificationService.showError('Passwords do not match');
       return;
     }
-    this.http.post(`${this.apiUrl}/auth/users/${userId}/change-password`, f).subscribe({
+    this.http.post(`${this.apiUrl}/auth/users/${userId}/change-password`, f).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Password changed successfully');
         this.closeChangePassword();
@@ -764,7 +766,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   updateOrderStatus(orderId: number, status: string): void {
-    this.http.put(`${this.apiUrl}/orders/${orderId}/status`, { status }).subscribe({
+    this.http.put(`${this.apiUrl}/orders/${orderId}/status`, { status }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Order status updated');
         this.loadOrders();
@@ -775,7 +777,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleUserStatus(user: User): void {
     const action = user.isActive ? 'deactivate' : 'activate';
-    this.http.put(`${this.apiUrl}/auth/users/${user.id}/${action}`, {}).subscribe({
+    this.http.put(`${this.apiUrl}/auth/users/${user.id}/${action}`, {}).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess(`User ${action}d`);
         this.loadUsers();
@@ -785,7 +787,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   unlockUser(user: User): void {
-    this.http.post(`${this.apiUrl}/auth/users/${user.id}/unlock`, {}).subscribe({
+    this.http.post(`${this.apiUrl}/auth/users/${user.id}/unlock`, {}).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess(`User ${user.username} unlocked`);
         this.loadUsers();
@@ -843,7 +845,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   deleteProductImage(imageId: number): void {
-    this.http.delete(`${this.apiUrl}/products/images/${imageId}`).subscribe({
+    this.http.delete(`${this.apiUrl}/products/images/${imageId}`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.productImages.update(imgs => imgs.filter(img => img.id !== imageId));
         this.notificationService.showSuccess('Image deleted');
@@ -881,7 +883,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
         category: this.productForm.category,
         brand: this.productForm.brand || undefined
       };
-      this.http.put<Product>(`${this.apiUrl}/products/${this.editingProduct.id}`, updateDto).subscribe({
+      this.http.put<Product>(`${this.apiUrl}/products/${this.editingProduct.id}`, updateDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (updated) => finish(),
         error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update product')
       });
@@ -895,7 +897,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
         category: this.productForm.category,
         brand: this.productForm.brand || undefined
       };
-      this.http.post<Product>(`${this.apiUrl}/products`, createDto).subscribe({
+      this.http.post<Product>(`${this.apiUrl}/products`, createDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (created) => {
           this.createdProductId = created.id;
           finish();
@@ -913,7 +915,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     for (const file of this.selectedFiles) {
       const formData = new FormData();
       formData.append('file', file);
-      this.http.post(`${this.apiUrl}/products/${productId}/images`, formData).subscribe({
+      this.http.post(`${this.apiUrl}/products/${productId}/images`, formData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           completed++;
           if (completed === total) {
@@ -948,7 +950,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       category: product.category,
       brand: product.brand || undefined
     };
-    this.http.put<Product>(`${this.apiUrl}/products/${product.id}`, updateDto).subscribe({
+    this.http.put<Product>(`${this.apiUrl}/products/${product.id}`, updateDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess(`Stock updated to ${newStock}`);
         this.loadProducts();
@@ -960,7 +962,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
 
   deleteProduct(id: number): void {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    this.http.delete(`${this.apiUrl}/products/${id}`).subscribe({
+    this.http.delete(`${this.apiUrl}/products/${id}`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Product deleted');
         this.products.update(p => p.filter(x => x.id !== id));
@@ -996,7 +998,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!product || !this.variantForm.name || this.variantForm.price <= 0) return;
 
     if (this.editingVariant) {
-      this.http.put<ProductVariant>(`${this.apiUrl}/products/${product.id}/variants/${this.editingVariant.id}`, this.variantForm).subscribe({
+      this.http.put<ProductVariant>(`${this.apiUrl}/products/${product.id}/variants/${this.editingVariant.id}`, this.variantForm).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.notificationService.showSuccess('Variant updated');
           this.closeVariantModal();
@@ -1005,7 +1007,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
         error: () => this.notificationService.showError('Failed to update variant')
       });
     } else {
-      this.http.post<ProductVariant>(`${this.apiUrl}/products/${product.id}/variants`, this.variantForm).subscribe({
+      this.http.post<ProductVariant>(`${this.apiUrl}/products/${product.id}/variants`, this.variantForm).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.notificationService.showSuccess('Variant added');
           this.closeVariantModal();
@@ -1019,7 +1021,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   deleteVariant(v: ProductVariant): void {
     const product = this.editingProduct;
     if (!product || !confirm('Delete this variant?')) return;
-    this.http.delete(`${this.apiUrl}/products/${product.id}/variants/${v.id}`).subscribe({
+    this.http.delete(`${this.apiUrl}/products/${product.id}/variants/${v.id}`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Variant deleted');
         this.productVariants.update(list => list.filter(x => x.id !== v.id));
@@ -1029,14 +1031,14 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadProductVariants(productId: number): void {
-    this.http.get<ProductVariant[]>(`${this.apiUrl}/products/${productId}/variants`).subscribe({
+    this.http.get<ProductVariant[]>(`${this.apiUrl}/products/${productId}/variants`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (variants) => this.productVariants.set(variants),
       error: () => this.notificationService.showError('Failed to load variants')
     });
   }
 
   getFullImageUrl(path: string): string {
-    return `http://localhost:5068${path}`;
+    return buildImageUrl(path);
   }
 
   getStatusClass(status: string): string {
@@ -1051,7 +1053,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadCategories(): void {
-    this.categoryService.getAll().subscribe({
+    this.categoryService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.categories.set(data),
       error: () => this.notificationService.showError('Failed to load categories')
     });
@@ -1082,7 +1084,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const iconVal = this.categoryForm.icon || undefined;
     if (this.editingCategory) {
-      this.categoryService.update(this.editingCategory.id, { name: this.categoryForm.name, icon: iconVal }).subscribe({
+      this.categoryService.update(this.editingCategory.id, { name: this.categoryForm.name, icon: iconVal }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.notificationService.showSuccess('Category updated');
           this.closeCategoryModal();
@@ -1091,7 +1093,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
         error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update category')
       });
     } else {
-      this.categoryService.create({ name: this.categoryForm.name, icon: iconVal }).subscribe({
+      this.categoryService.create({ name: this.categoryForm.name, icon: iconVal }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.notificationService.showSuccess('Category created');
           this.closeCategoryModal();
@@ -1104,7 +1106,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
 
   deleteCategory(id: number): void {
     if (!confirm('Delete this category? Products using it will keep the category name but it will be removed from the list.')) return;
-    this.categoryService.delete(id).subscribe({
+    this.categoryService.delete(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Category deleted');
         this.categories.update(c => c.filter(x => x.id !== id));
@@ -1114,7 +1116,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadBanners(): void {
-    this.bannerService.getAll().subscribe({
+    this.bannerService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.banners.set(data),
       error: () => this.notificationService.showError('Failed to load banners')
     });
@@ -1173,7 +1175,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       startDate: new Date(this.bannerForm.startDate).toISOString()
     };
     if (this.editingBanner) {
-      this.bannerService.update(this.editingBanner.id, payload as UpdateBanner).subscribe({
+      this.bannerService.update(this.editingBanner.id, payload as UpdateBanner).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (updated) => {
           if (this.bannerSelectedFile) {
             this.uploadBannerImage(updated.id);
@@ -1186,7 +1188,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
         error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update banner')
       });
     } else {
-      this.bannerService.create(payload).subscribe({
+      this.bannerService.create(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (created) => {
           if (this.bannerSelectedFile) {
             this.uploadBannerImage(created.id);
@@ -1204,7 +1206,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   private uploadBannerImage(bannerId: number): void {
     const formData = new FormData();
     formData.append('file', this.bannerSelectedFile!);
-    this.http.post<Banner>(`${this.apiUrl}/banners/${bannerId}/image`, formData).subscribe({
+    this.http.post<Banner>(`${this.apiUrl}/banners/${bannerId}/image`, formData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Banner saved with image');
         this.closeBannerModal();
@@ -1220,7 +1222,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
 
   deleteBanner(id: number): void {
     if (!confirm('Delete this banner?')) return;
-    this.bannerService.delete(id).subscribe({
+    this.bannerService.delete(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Banner deleted');
         this.banners.update(b => b.filter(x => x.id !== id));
@@ -1240,7 +1242,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       sortOrder: banner.sortOrder,
       isActive: !banner.isActive
     };
-    this.bannerService.update(banner.id, updated).subscribe({
+    this.bannerService.update(banner.id, updated).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess(`Banner ${updated.isActive ? 'activated' : 'deactivated'}`);
         this.loadBanners();
@@ -1268,7 +1270,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   // Return Management
   loadReturns(): void {
     this.isLoading.set(true);
-    this.returnService.getAll(this.returnPage(), 20, this.returnStatusFilter || undefined).subscribe({
+    this.returnService.getAll(this.returnPage(), 20, this.returnStatusFilter || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.returns.set(res.items);
         this.totalReturns.set(res.totalCount);
@@ -1305,7 +1307,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   approveReturn(): void {
     const r = this.selectedReturn();
     if (!r) return;
-    this.returnService.updateStatus(r.id, 'Approved', this.returnAdminNote() || undefined).subscribe({
+    this.returnService.updateStatus(r.id, 'Approved', this.returnAdminNote() || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Return request approved');
         this.closeReturnDetail();
@@ -1318,7 +1320,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   rejectReturn(): void {
     const r = this.selectedReturn();
     if (!r) return;
-    this.returnService.updateStatus(r.id, 'Rejected', this.returnAdminNote() || undefined).subscribe({
+    this.returnService.updateStatus(r.id, 'Rejected', this.returnAdminNote() || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Return request rejected');
         this.closeReturnDetail();
@@ -1331,7 +1333,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   initiateRefund(): void {
     const r = this.selectedReturn();
     if (!r) return;
-    this.returnService.updateStatus(r.id, 'RefundInitiated', this.returnAdminNote() || undefined).subscribe({
+    this.returnService.updateStatus(r.id, 'RefundInitiated', this.returnAdminNote() || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Refund initiated');
         this.closeReturnDetail();
@@ -1344,7 +1346,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   markRefunded(): void {
     const r = this.selectedReturn();
     if (!r) return;
-    this.returnService.updateStatus(r.id, 'Refunded', this.returnAdminNote() || undefined).subscribe({
+    this.returnService.updateStatus(r.id, 'Refunded', this.returnAdminNote() || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Refund completed');
         this.closeReturnDetail();
@@ -1366,7 +1368,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   // Coupon Management
   loadCoupons(): void {
     this.isLoading.set(true);
-    this.couponService.getAll().subscribe({
+    this.couponService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.coupons.set(data);
         this.isLoading.set(false);
@@ -1421,7 +1423,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       expiresAt: new Date(f.expiresAt).toISOString()
     };
     if (this.editingCoupon) {
-      this.couponService.update(this.editingCoupon.id, payload).subscribe({
+      this.couponService.update(this.editingCoupon.id, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.notificationService.showSuccess('Coupon updated');
           this.closeCouponModal();
@@ -1430,7 +1432,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
         error: (err) => this.notificationService.showError(err.error?.error || 'Failed to update coupon')
       });
     } else {
-      this.couponService.create(payload).subscribe({
+      this.couponService.create(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.notificationService.showSuccess('Coupon created');
           this.closeCouponModal();
@@ -1443,7 +1445,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
 
   deleteCoupon(id: number): void {
     if (!confirm('Delete this coupon?')) return;
-    this.couponService.delete(id).subscribe({
+    this.couponService.delete(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Coupon deleted');
         this.coupons.update(c => c.filter(x => x.id !== id));
@@ -1467,7 +1469,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       expiresAt: coupon.expiresAt,
       isActive: !coupon.isActive
     };
-    this.couponService.update(coupon.id, payload).subscribe({
+    this.couponService.update(coupon.id, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess(`Coupon ${coupon.isActive ? 'deactivated' : 'activated'}`);
         this.loadCoupons();
@@ -1479,7 +1481,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   // Support / Escalations
   loadSupportConversations(): void {
     this.isLoading.set(true);
-    this.supportService.getEscalated(this.supportPage(), 20).subscribe({
+    this.supportService.getEscalated(this.supportPage(), 20).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.supportConversations.set(res.items);
         this.supportTotal.set(res.totalCount);
@@ -1505,7 +1507,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!convId || !content) return;
 
     this.supportReplying.set(true);
-    this.supportService.adminReply(convId, content).subscribe({
+    this.supportService.adminReply(convId, content).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Reply sent to customer');
         this.closeSupportReply();
@@ -1520,7 +1522,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   resolveConversation(id: number): void {
-    this.supportService.updateStatus(id, 'Resolved').subscribe({
+    this.supportService.updateStatus(id, 'Resolved').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notificationService.showSuccess('Conversation marked as resolved');
         this.loadSupportConversations();
@@ -1540,7 +1542,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   // Return Policy Management
   loadReturnPolicy(): void {
     this.isLoading.set(true);
-    this.returnPolicyService.get().subscribe({
+    this.returnPolicyService.get().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (p) => {
         this.returnPolicyData.set(p);
         this.returnPolicyForm.set({
@@ -1561,7 +1563,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.returnPolicySaving.set(true);
-    this.returnPolicyService.update(form).subscribe({
+    this.returnPolicyService.update(form).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (p) => {
         this.returnPolicyData.set(p);
         this.notificationService.showSuccess('Return policy updated successfully');

@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, signal, ViewChild, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,6 +22,7 @@ import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
   styleUrl: './checkout.component.scss'
 })
 export class CheckoutComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly cartService = inject(CartService);
   private readonly orderService = inject(OrderService);
   private readonly couponService = inject(CouponService);
@@ -77,14 +79,14 @@ export class CheckoutComponent implements OnInit {
   }
 
   loadAddressBook(): void {
-    this.authService.getAddresses().subscribe({
+    this.authService.getAddresses().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (addresses) => this.addressBookAddresses.set(addresses),
       error: () => {}
     });
   }
 
   loadSavedAddresses(): void {
-    this.orderService.getPreviousAddresses().subscribe({
+    this.orderService.getPreviousAddresses().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (addresses) => this.savedAddresses.set(addresses),
       error: () => {}
     });
@@ -167,7 +169,7 @@ export class CheckoutComponent implements OnInit {
     }
     this.newAddressSaving.set(true);
     const { name, ...addressData } = addr;
-    this.authService.addAddress(addressData as CreateAddressRequest).subscribe({
+    this.authService.addAddress(addressData as CreateAddressRequest).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (saved) => {
         this.newAddressSaving.set(false);
         this.showNewAddressForm.set(false);
@@ -194,7 +196,7 @@ export class CheckoutComponent implements OnInit {
 
   loadCart(): void {
     this.loading.set(true);
-    this.cartService.getCart().subscribe({
+    this.cartService.getCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (cart) => {
         this.cart.set(cart);
         this.loading.set(false);
@@ -218,7 +220,7 @@ export class CheckoutComponent implements OnInit {
       ...this.orderForm,
       couponCode: this.couponResult()?.isValid ? this.couponCode() : undefined
     };
-    this.orderService.createOrder(orderData).subscribe({
+    this.orderService.createOrder(orderData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (order) => {
         this.cartService.resetCount();
         this.notification.showSuccess('Order placed successfully!');
@@ -239,7 +241,7 @@ export class CheckoutComponent implements OnInit {
     this.couponResult.set(null);
 
     const cartTotal = this.cart()!.totalAmount;
-    this.couponService.validate({ code, cartTotal }).subscribe({
+    this.couponService.validate({ code, cartTotal }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (result) => {
         this.applyingCoupon.set(false);
         if (result.isValid) {
@@ -281,6 +283,6 @@ export class CheckoutComponent implements OnInit {
   }
 
   getFullImageUrl(path: string): string {
-    return `http://localhost:5068${path}`;
+    return buildImageUrl(path);
   }
 }

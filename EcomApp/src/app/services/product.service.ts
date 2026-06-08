@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, Observable, of, switchMap, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { API_URL } from '../utils/api-config';
 
 import { Product, CreateProduct, UpdateProduct, SearchFilter, SearchResult, SearchSuggestion, FilterMetadata, PriceRange } from '../models/product.model';
@@ -27,7 +28,9 @@ export class ProductService {
     if (filter.inStock != null) params = params.set('inStock', filter.inStock.toString());
     if (filter.sortBy) params = params.set('sortBy', filter.sortBy);
 
-    return this.http.get<SearchResult<Product>>(this.apiUrl, { params });
+    return this.http.get<SearchResult<Product>>(this.apiUrl, { params }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   getSuggestions(query: string): Observable<SearchSuggestion> {
@@ -36,7 +39,9 @@ export class ProductService {
     }
     return this.http.get<SearchSuggestion>(`${this.apiUrl}/suggestions`, {
       params: new HttpParams().set('query', query)
-    });
+    }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   getFilters(filter: SearchFilter): Observable<FilterMetadata> {
@@ -49,38 +54,54 @@ export class ProductService {
     if (filter.maxPrice != null) params = params.set('maxPrice', filter.maxPrice.toString());
     if (filter.inStock != null) params = params.set('inStock', filter.inStock.toString());
 
-    return this.http.get<FilterMetadata>(`${this.apiUrl}/filters`, { params });
+    return this.http.get<FilterMetadata>(`${this.apiUrl}/filters`, { params }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   getBrands(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.apiUrl}/brands`);
+    return this.http.get<string[]>(`${this.apiUrl}/brands`).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   getPriceRange(category?: string): Observable<PriceRange> {
     let params = new HttpParams();
     if (category) params = params.set('category', category);
-    return this.http.get<PriceRange>(`${this.apiUrl}/price-range`, { params });
+    return this.http.get<PriceRange>(`${this.apiUrl}/price-range`, { params }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   getById(id: number): Observable<Product> {
-    return this.http.get<Product>(`${this.apiUrl}/${id}`);
+    return this.http.get<Product>(`${this.apiUrl}/${id}`).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   create(product: CreateProduct): Observable<Product> {
-    return this.http.post<Product>(this.apiUrl, product);
+    return this.http.post<Product>(this.apiUrl, product).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   update(id: number, product: UpdateProduct): Observable<Product> {
-    return this.http.put<Product>(`${this.apiUrl}/${id}`, product);
+    return this.http.put<Product>(`${this.apiUrl}/${id}`, product).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   uploadImage(id: number, file: File): Observable<Product> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<Product>(`${this.apiUrl}/${id}/image`, formData);
+    return this.http.post<Product>(`${this.apiUrl}/${id}/image`, formData).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 }

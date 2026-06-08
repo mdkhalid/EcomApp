@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -19,6 +20,7 @@ import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
   styleUrl: './cart.component.scss'
 })
 export class CartComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly cartService = inject(CartService);
   private readonly couponService = inject(CouponService);
   private readonly activityService = inject(ActivityService);
@@ -43,14 +45,14 @@ export class CartComponent implements OnInit {
   }
 
   loadSuggestions(): void {
-    this.activityService.getTrending().subscribe({
+    this.activityService.getTrending().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (items) => this.suggestions.set(items.slice(0, 6))
     });
   }
 
   loadCart(): void {
     this.loading.set(true);
-    this.cartService.getCart().subscribe({
+    this.cartService.getCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (cart) => {
         this.cart.set(cart);
         this.loading.set(false);
@@ -68,14 +70,14 @@ export class CartComponent implements OnInit {
       this.removeItem(item.id);
       return;
     }
-    this.cartService.updateItem(item.id, { quantity: newQty }).subscribe({
+    this.cartService.updateItem(item.id, { quantity: newQty }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (cart) => this.cart.set(cart),
       error: (err) => this.notification.showError(err.error?.error || 'Failed to update quantity')
     });
   }
 
   removeItem(cartItemId: number): void {
-    this.cartService.removeItem(cartItemId).subscribe({
+    this.cartService.removeItem(cartItemId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (cart) => {
         this.cart.set(cart);
         this.notification.showSuccess('Item removed');
@@ -85,7 +87,7 @@ export class CartComponent implements OnInit {
   }
 
   clearCart(): void {
-    this.cartService.clearCart().subscribe({
+    this.cartService.clearCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (cart) => {
         this.cart.set(cart);
         this.notification.showSuccess('Cart cleared');
@@ -104,11 +106,11 @@ export class CartComponent implements OnInit {
   }
 
   getFullImageUrl(path: string): string {
-    return `http://localhost:5068${path}`;
+    return buildImageUrl(path);
   }
 
   addToCart(productId: number): void {
-    this.cartService.addItem({ productId, quantity: 1 }).subscribe({
+    this.cartService.addItem({ productId, quantity: 1 }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (cart) => {
         this.cart.set(cart);
         this.notification.showSuccess('Item added to cart');
@@ -125,7 +127,7 @@ export class CartComponent implements OnInit {
     this.couponResult.set(null);
 
     const cartTotal = this.cart()!.totalAmount;
-    this.couponService.validate({ code, cartTotal }).subscribe({
+    this.couponService.validate({ code, cartTotal }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (result) => {
         this.applyingCoupon.set(false);
         if (result.isValid) {

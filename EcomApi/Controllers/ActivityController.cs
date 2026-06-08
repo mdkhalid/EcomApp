@@ -19,7 +19,7 @@ public class ActivityController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> LogActivity([FromBody] LogActivityDto dto)
+    public async Task<ActionResult> LogActivity([FromBody] LogActivityDto dto, CancellationToken cancellationToken = default)
     {
         if (!Enum.TryParse<ActivityType>(dto.Type, true, out var type))
             return BadRequest(new { error = $"Invalid activity type. Valid values: {string.Join(", ", Enum.GetNames<ActivityType>())}" });

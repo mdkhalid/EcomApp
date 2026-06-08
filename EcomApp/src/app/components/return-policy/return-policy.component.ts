@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReturnPolicyService } from '../../services/return-policy.service';
 import { ReturnPolicy } from '../../models/return-policy.model';
@@ -11,6 +12,7 @@ import { ReturnPolicy } from '../../models/return-policy.model';
   styleUrl: './return-policy.component.scss'
 })
 export class ReturnPolicyComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly returnPolicyService = inject(ReturnPolicyService);
 
   policy = signal<ReturnPolicy | null>(null);
@@ -18,7 +20,7 @@ export class ReturnPolicyComponent implements OnInit {
   error = signal('');
 
   ngOnInit(): void {
-    this.returnPolicyService.get().subscribe({
+    this.returnPolicyService.get().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (p) => {
         this.policy.set(p);
         this.loading.set(false);

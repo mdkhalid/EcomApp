@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,6 +16,7 @@ import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
   styleUrl: './profile.component.scss'
 })
 export class ProfileComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
   readonly notification = inject(NotificationService);
   private readonly router = inject(Router);
@@ -70,7 +72,7 @@ export class ProfileComponent implements OnInit {
 
   loadProfile(): void {
     this.loading.set(true);
-    this.authService.getProfile().subscribe({
+    this.authService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (user) => {
         this.user.set(user);
         this.editForm.set({
@@ -92,7 +94,7 @@ export class ProfileComponent implements OnInit {
   }
 
   loadAddresses(): void {
-    this.authService.getAddresses().subscribe({
+    this.authService.getAddresses().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (addresses) => {
         this.addresses.set(addresses);
         this.calculateCompletion();
@@ -115,7 +117,7 @@ export class ProfileComponent implements OnInit {
   getFullImageUrl(path: string): string {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    return `http://localhost:5068${path}`;
+    return buildImageUrl(path);
   }
 
   // Profile Picture
@@ -138,7 +140,7 @@ export class ProfileComponent implements OnInit {
     }
 
     this.profilePictureUploading.set(true);
-    this.authService.uploadProfilePicture(file).subscribe({
+    this.authService.uploadProfilePicture(file).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (user) => {
         this.user.set(user);
         this.profilePictureUploading.set(false);
@@ -154,7 +156,7 @@ export class ProfileComponent implements OnInit {
   }
 
   removeProfilePicture(): void {
-    this.authService.removeProfilePicture().subscribe({
+    this.authService.removeProfilePicture().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (user) => {
         this.user.set(user);
         this.calculateCompletion();
@@ -176,7 +178,7 @@ export class ProfileComponent implements OnInit {
       phone: form.phone,
       gender: form.gender,
       dateOfBirth: form.dateOfBirth || undefined
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (user) => {
         this.user.set(user);
         this.saving.set(false);
@@ -203,7 +205,7 @@ export class ProfileComponent implements OnInit {
       currentPassword: form.currentPassword,
       newPassword: form.newPassword,
       confirmNewPassword: form.confirmNewPassword
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.changingPassword.set(false);
         this.passwordForm.set({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
@@ -264,7 +266,7 @@ export class ProfileComponent implements OnInit {
     const editing = this.editingAddress();
 
     if (editing) {
-      this.authService.updateAddress(editing.id, form).subscribe({
+      this.authService.updateAddress(editing.id, form).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.addressSaving.set(false);
           this.closeAddressForm();
@@ -277,7 +279,7 @@ export class ProfileComponent implements OnInit {
         }
       });
     } else {
-      this.authService.addAddress(form as CreateAddressRequest).subscribe({
+      this.authService.addAddress(form as CreateAddressRequest).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.addressSaving.set(false);
           this.closeAddressForm();
@@ -294,7 +296,7 @@ export class ProfileComponent implements OnInit {
 
   deleteAddress(id: number): void {
     this.addressDeleting.set(id);
-    this.authService.deleteAddress(id).subscribe({
+    this.authService.deleteAddress(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.addressDeleting.set(null);
         this.loadAddresses();
@@ -308,7 +310,7 @@ export class ProfileComponent implements OnInit {
   }
 
   setDefaultAddress(id: number): void {
-    this.authService.updateAddress(id, { isDefault: true }).subscribe({
+    this.authService.updateAddress(id, { isDefault: true }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.loadAddresses();
         this.notification.showSuccess('Default address updated');

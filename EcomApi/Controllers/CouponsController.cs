@@ -21,7 +21,7 @@ public class CouponsController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<CouponDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<CouponDto>>> GetAll(CancellationToken cancellationToken = default)
     {
         var coupons = await _repository.GetAllAsync();
         return Ok(coupons.Adapt<List<CouponDto>>());
@@ -29,7 +29,7 @@ public class CouponsController : ControllerBase
 
     [HttpGet("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<CouponDto>> GetById(int id)
+    public async Task<ActionResult<CouponDto>> GetById(int id, CancellationToken cancellationToken = default)
     {
         var coupon = await _repository.GetByIdAsync(id);
         if (coupon == null)
@@ -39,7 +39,7 @@ public class CouponsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<CouponDto>> Create([FromBody] CreateCouponDto createDto)
+    public async Task<ActionResult<CouponDto>> Create([FromBody] CreateCouponDto createDto, CancellationToken cancellationToken = default)
     {
         var existing = await _repository.GetByCodeAsync(createDto.Code);
         if (existing != null)
@@ -54,7 +54,7 @@ public class CouponsController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<CouponDto>> Update(int id, [FromBody] UpdateCouponDto updateDto)
+    public async Task<ActionResult<CouponDto>> Update(int id, [FromBody] UpdateCouponDto updateDto, CancellationToken cancellationToken = default)
     {
         var coupon = await _repository.GetByIdAsync(id);
         if (coupon == null)
@@ -80,7 +80,7 @@ public class CouponsController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
         var deleted = await _repository.DeleteAsync(id);
         if (!deleted)
@@ -90,7 +90,7 @@ public class CouponsController : ControllerBase
 
     [HttpPost("validate")]
     [Authorize]
-    public async Task<ActionResult<ValidateCouponResponse>> Validate([FromBody] ValidateCouponRequest request)
+    public async Task<ActionResult<ValidateCouponResponse>> Validate([FromBody] ValidateCouponRequest request, CancellationToken cancellationToken = default)
     {
         int? userId = null;
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

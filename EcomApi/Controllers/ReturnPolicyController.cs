@@ -18,7 +18,7 @@ public class ReturnPolicyController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<ReturnPolicyDto>> Get()
+    public async Task<ActionResult<ReturnPolicyDto>> Get(CancellationToken cancellationToken = default)
     {
         var policy = await _returnPolicyRepository.GetAsync();
         if (policy == null)
@@ -42,7 +42,7 @@ public class ReturnPolicyController : ControllerBase
 
     [HttpPut]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ReturnPolicyDto>> Update([FromBody] UpdateReturnPolicyDto dto)
+    public async Task<ActionResult<ReturnPolicyDto>> Update([FromBody] UpdateReturnPolicyDto dto, CancellationToken cancellationToken = default)
     {
         if (dto.ReturnWindowDays < 0)
             return BadRequest(new { error = "Return window must be 0 or more days." });

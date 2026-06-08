@@ -16,7 +16,7 @@ public class OrderRepository : IOrderRepository
         _couponRepository = couponRepository;
     }
 
-    public async Task<Order?> CreateFromCartAsync(string identifier, CreateOrderDto createDto)
+    public async Task<Order?> CreateFromCartAsync(string identifier, CreateOrderDto createDto, CancellationToken cancellationToken = default)
     {
         Cart? cart;
 
@@ -28,7 +28,7 @@ public class OrderRepository : IOrderRepository
                 .ThenInclude(ci => ci.Product)
                 .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.UpdatedAt)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
         }
         else
         {
@@ -36,7 +36,7 @@ public class OrderRepository : IOrderRepository
             cart = await _context.Carts
                 .Include(c => c.Items)
                 .ThenInclude(ci => ci.Product)
-                .FirstOrDefaultAsync(c => c.SessionId == sessionId);
+                .FirstOrDefaultAsync(c => c.SessionId == sessionId, cancellationToken);
         }
 
         if (cart == null || cart.Items.Count == 0)
@@ -89,7 +89,7 @@ public class OrderRepository : IOrderRepository
         if (!string.IsNullOrWhiteSpace(createDto.CouponCode))
         {
             var validation = await _couponRepository.ValidateAndCalculateAsync(
-                createDto.CouponCode, order.TotalAmount, cart.UserId);
+                createDto.CouponCode, order.TotalAmount, cart.UserId, cancellationToken);
 
             if (!validation.IsValid)
                 return null;
@@ -98,7 +98,7 @@ public class OrderRepository : IOrderRepository
             order.DiscountAmount = validation.DiscountAmount;
             order.TotalAmount -= validation.DiscountAmount;
 
-            var coupon = await _couponRepository.GetByCodeAsync(createDto.CouponCode);
+            var coupon = await _couponRepository.GetByCodeAsync(createDto.CouponCode, cancellationToken);
             if (coupon != null)
             {
                 coupon.CurrentUses++;
@@ -122,21 +122,21 @@ public class OrderRepository : IOrderRepository
         _context.CartItems.RemoveRange(cart.Items);
         _context.Carts.Remove(cart);
 
-        await _context.SaveChangesAsync();
-        return await GetWithHistoryAsync(order.Id);
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetWithHistoryAsync(order.Id, cancellationToken);
     }
 
-    public async Task<IEnumerable<Order>> GetBySessionIdAsync(string sessionId)
+    public async Task<IEnumerable<Order>> GetBySessionIdAsync(string sessionId, CancellationToken cancellationToken = default)
     {
         return await _context.Orders.AsNoTracking()
             .Include(o => o.Items)
             .Include(o => o.StatusHistory)
             .Where(o => o.SessionId == sessionId)
             .OrderByDescending(o => o.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetByUserIdAsync(int userId, int pageNumber, int pageSize)
+    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetByUserIdAsync(int userId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Orders
             .AsNoTracking()
@@ -145,32 +145,32 @@ public class OrderRepository : IOrderRepository
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAt);
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (items, totalCount);
     }
 
-    public async Task<Order?> GetByIdAsync(int orderId)
+    public async Task<Order?> GetByIdAsync(int orderId, CancellationToken cancellationToken = default)
     {
         return await _context.Orders.AsNoTracking()
             .Include(o => o.Items)
             .Include(o => o.StatusHistory)
-            .FirstOrDefaultAsync(o => o.Id == orderId);
+            .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
     }
 
-    public async Task<Order?> GetWithHistoryAsync(int orderId)
+    public async Task<Order?> GetWithHistoryAsync(int orderId, CancellationToken cancellationToken = default)
     {
         return await _context.Orders.AsNoTracking()
             .Include(o => o.Items)
             .Include(o => o.StatusHistory.OrderByDescending(h => h.CreatedAt))
-            .FirstOrDefaultAsync(o => o.Id == orderId);
+            .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
     }
 
-    public async Task<Order?> UpdateStatusAsync(int orderId, OrderStatus status, string? note = null, string? location = null)
+    public async Task<Order?> UpdateStatusAsync(int orderId, OrderStatus status, string? note = null, string? location = null, CancellationToken cancellationToken = default)
     {
         var order = await _context.Orders.FindAsync(orderId);
         if (order == null)
@@ -196,11 +196,11 @@ public class OrderRepository : IOrderRepository
         };
         _context.OrderStatusHistories.Add(historyEntry);
 
-        await _context.SaveChangesAsync();
-        return await GetWithHistoryAsync(orderId);
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetWithHistoryAsync(orderId, cancellationToken);
     }
 
-    public async Task<Order?> UpdateTrackingAsync(int orderId, string trackingNumber, string carrier, DateTime? estimatedDeliveryDate)
+    public async Task<Order?> UpdateTrackingAsync(int orderId, string trackingNumber, string carrier, DateTime? estimatedDeliveryDate, CancellationToken cancellationToken = default)
     {
         var order = await _context.Orders.FindAsync(orderId);
         if (order == null)
@@ -212,11 +212,11 @@ public class OrderRepository : IOrderRepository
             order.EstimatedDeliveryDate = estimatedDeliveryDate.Value;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
-        return await GetWithHistoryAsync(orderId);
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetWithHistoryAsync(orderId, cancellationToken);
     }
 
-    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? status = null)
+    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? status = null, CancellationToken cancellationToken = default)
     {
         var query = _context.Orders
             .AsNoTracking()
@@ -229,17 +229,17 @@ public class OrderRepository : IOrderRepository
             query = query.Where(o => o.Status == orderStatus);
         }
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
             .OrderByDescending(o => o.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (items, totalCount);
     }
 
-    public async Task<List<ShippingAddressDto>> GetPreviousAddressesAsync(int userId)
+    public async Task<List<ShippingAddressDto>> GetPreviousAddressesAsync(int userId, CancellationToken cancellationToken = default)
     {
         return await _context.Orders
             .AsNoTracking()
@@ -253,14 +253,14 @@ public class OrderRepository : IOrderRepository
             })
             .Distinct()
             .Take(10)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<bool> HasUserPurchasedProductAsync(int userId, int productId)
+    public async Task<bool> HasUserPurchasedProductAsync(int userId, int productId, CancellationToken cancellationToken = default)
     {
         return await _context.Orders.AsNoTracking()
             .Where(o => o.UserId == userId && o.Status == OrderStatus.Delivered)
-            .AnyAsync(o => o.Items.Any(i => i.ProductId == productId));
+            .AnyAsync(o => o.Items.Any(i => i.ProductId == productId), cancellationToken);
     }
 
     private static DateTime CalculateEstimatedDelivery(DateTime orderDate)

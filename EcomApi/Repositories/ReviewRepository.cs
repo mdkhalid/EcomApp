@@ -13,27 +13,27 @@ public class ReviewRepository : IReviewRepository
         _context = context;
     }
 
-    public async Task<(IEnumerable<Review> Items, int TotalCount)> GetByProductIdAsync(int productId, int pageNumber, int pageSize)
+    public async Task<(IEnumerable<Review> Items, int TotalCount)> GetByProductIdAsync(int productId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Reviews.AsNoTracking()
             .Include(r => r.User)
             .Where(r => r.ProductId == productId)
             .OrderByDescending(r => r.CreatedAt);
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (items, totalCount);
     }
 
-    public async Task<(double AverageRating, int TotalReviews)> GetProductRatingAsync(int productId)
+    public async Task<(double AverageRating, int TotalReviews)> GetProductRatingAsync(int productId, CancellationToken cancellationToken = default)
     {
         var reviews = await _context.Reviews.AsNoTracking()
             .Where(r => r.ProductId == productId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (reviews.Count == 0)
             return (0, 0);
@@ -41,7 +41,7 @@ public class ReviewRepository : IReviewRepository
         return (reviews.Average(r => r.Rating), reviews.Count);
     }
 
-    public async Task<Dictionary<int, (double AverageRating, int TotalReviews)>> GetRatingsForProductsAsync(List<int> productIds)
+    public async Task<Dictionary<int, (double AverageRating, int TotalReviews)>> GetRatingsForProductsAsync(List<int> productIds, CancellationToken cancellationToken = default)
     {
         var ratings = await _context.Reviews.AsNoTracking()
             .Where(r => productIds.Contains(r.ProductId))
@@ -52,7 +52,7 @@ public class ReviewRepository : IReviewRepository
                 AverageRating = g.Average(r => r.Rating),
                 TotalReviews = g.Count()
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var result = new Dictionary<int, (double, int)>();
         foreach (var id in productIds)
@@ -65,30 +65,30 @@ public class ReviewRepository : IReviewRepository
         return result;
     }
 
-    public async Task<Review?> GetByIdAsync(int id)
+    public async Task<Review?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await _context.Reviews.FindAsync(id);
     }
 
-    public async Task<Review?> GetByUserAndProductAsync(int userId, int productId)
+    public async Task<Review?> GetByUserAndProductAsync(int userId, int productId, CancellationToken cancellationToken = default)
     {
         return await _context.Reviews.AsNoTracking()
-            .FirstOrDefaultAsync(r => r.UserId == userId && r.ProductId == productId);
+            .FirstOrDefaultAsync(r => r.UserId == userId && r.ProductId == productId, cancellationToken);
     }
 
-    public async Task<Review> CreateAsync(Review review)
+    public async Task<Review> CreateAsync(Review review, CancellationToken cancellationToken = default)
     {
         _context.Reviews.Add(review);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return review;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var review = await _context.Reviews.FindAsync(id);
         if (review == null) return false;
         _context.Reviews.Remove(review);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

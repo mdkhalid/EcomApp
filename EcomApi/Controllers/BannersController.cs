@@ -19,21 +19,21 @@ public class BannersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<BannerDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<BannerDto>>> GetAll(CancellationToken cancellationToken = default)
     {
-        var banners = await _repository.GetAllAsync();
+        var banners = await _repository.GetAllAsync(cancellationToken);
         return Ok(banners.Adapt<List<BannerDto>>());
     }
 
     [HttpGet("active")]
-    public async Task<ActionResult<IEnumerable<BannerDto>>> GetActive()
+    public async Task<ActionResult<IEnumerable<BannerDto>>> GetActive(CancellationToken cancellationToken = default)
     {
-        var banners = await _repository.GetActiveAsync();
+        var banners = await _repository.GetActiveAsync(cancellationToken);
         return Ok(banners.Adapt<List<BannerDto>>());
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<BannerDto>> GetById(int id)
+    public async Task<ActionResult<BannerDto>> GetById(int id, CancellationToken cancellationToken = default)
     {
         var banner = await _repository.GetByIdAsync(id);
         if (banner == null) return NotFound();
@@ -42,7 +42,7 @@ public class BannersController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BannerDto>> Create([FromBody] CreateBannerDto createDto)
+    public async Task<ActionResult<BannerDto>> Create([FromBody] CreateBannerDto createDto, CancellationToken cancellationToken = default)
     {
         var banner = createDto.Adapt<Banner>();
         var created = await _repository.AddAsync(banner);
@@ -51,7 +51,7 @@ public class BannersController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BannerDto>> Update(int id, [FromBody] UpdateBannerDto updateDto)
+    public async Task<ActionResult<BannerDto>> Update(int id, [FromBody] UpdateBannerDto updateDto, CancellationToken cancellationToken = default)
     {
         var banner = await _repository.GetByIdAsync(id);
         if (banner == null) return NotFound();
@@ -62,7 +62,7 @@ public class BannersController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
         var deleted = await _repository.DeleteAsync(id);
         if (!deleted) return NotFound();
@@ -71,7 +71,7 @@ public class BannersController : ControllerBase
 
     [HttpPost("{id}/image")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BannerDto>> UploadImage(int id, IFormFile file)
+    public async Task<ActionResult<BannerDto>> UploadImage(int id, IFormFile file, CancellationToken cancellationToken = default)
     {
         var banner = await _repository.GetByIdAsync(id);
         if (banner == null) return NotFound();

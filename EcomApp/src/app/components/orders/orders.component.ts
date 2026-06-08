@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { OrderService } from '../../services/order.service';
@@ -13,6 +14,7 @@ import { Order } from '../../models/order.model';
   styleUrl: './orders.component.scss'
 })
 export class OrdersComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly orderService = inject(OrderService);
   readonly notification = inject(NotificationService);
   protected readonly notifications = this.notification.notifications;
@@ -26,7 +28,7 @@ export class OrdersComponent implements OnInit {
 
   loadOrders(): void {
     this.loading.set(true);
-    this.orderService.getOrders().subscribe({
+    this.orderService.getOrders().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (orders) => {
         this.orders.set(orders);
         this.loading.set(false);

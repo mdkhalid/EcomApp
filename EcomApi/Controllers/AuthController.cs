@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<TokenResponseDto>> Register([FromBody] RegisterDto dto)
+    public async Task<ActionResult<TokenResponseDto>> Register([FromBody] RegisterDto dto, CancellationToken cancellationToken = default)
     {
         if (await _userRepository.EmailExistsAsync(dto.Email))
             return BadRequest(new { error = "Email is already registered." });
@@ -60,7 +60,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<TokenResponseDto>> Login([FromBody] LoginDto dto)
+    public async Task<ActionResult<TokenResponseDto>> Login([FromBody] LoginDto dto, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByEmailOrUsernameAsync(dto.EmailOrUsername);
         if (user == null)
@@ -130,7 +130,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    public async Task<ActionResult<TokenResponseDto>> Refresh([FromBody] RefreshTokenDto dto)
+    public async Task<ActionResult<TokenResponseDto>> Refresh([FromBody] RefreshTokenDto dto, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByRefreshTokenAsync(dto.Token);
         if (user == null)
@@ -145,7 +145,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var user = await _userRepository.GetByIdAsync(userId);
@@ -165,7 +165,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("change-password")]
     [Authorize]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var user = await _userRepository.GetByIdAsync(userId);
@@ -195,7 +195,7 @@ public class AuthController : ControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    public async Task<ActionResult<UserDto>> GetCurrentUser()
+    public async Task<ActionResult<UserDto>> GetCurrentUser(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var user = await _userRepository.GetByIdAsync(userId);
@@ -211,7 +211,8 @@ public class AuthController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
-        [FromQuery] string? role = null)
+        [FromQuery] string? role = null,
+        CancellationToken cancellationToken = default)
     {
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 20;
@@ -230,7 +231,7 @@ public class AuthController : ControllerBase
 
     [HttpPut("users/{id}/deactivate")]
     [Authorize(Roles = "Admin,SubAdmin")]
-    public async Task<IActionResult> DeactivateUser(int id)
+    public async Task<IActionResult> DeactivateUser(int id, CancellationToken cancellationToken = default)
     {
         var result = await _userRepository.DeactivateAsync(id);
         if (!result)
@@ -241,7 +242,7 @@ public class AuthController : ControllerBase
 
     [HttpPut("users/{id}/activate")]
     [Authorize(Roles = "Admin,SubAdmin")]
-    public async Task<IActionResult> ActivateUser(int id)
+    public async Task<IActionResult> ActivateUser(int id, CancellationToken cancellationToken = default)
     {
         var result = await _userRepository.ActivateAsync(id);
         if (!result)
@@ -252,7 +253,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("users/{id}/unlock")]
     [Authorize(Roles = "Admin,SubAdmin")]
-    public async Task<IActionResult> UnlockUser(int id)
+    public async Task<IActionResult> UnlockUser(int id, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByIdAsync(id);
         if (user == null)
@@ -270,7 +271,7 @@ public class AuthController : ControllerBase
 
     [HttpPut("profile")]
     [Authorize]
-    public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateProfileDto dto)
+    public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateProfileDto dto, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var user = await _userRepository.UpdateProfileAsync(userId, dto.FirstName, dto.LastName, dto.Phone, dto.Gender, dto.DateOfBirth);
@@ -280,7 +281,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("users")]
     [Authorize(Roles = "Admin,SubAdmin")]
-    public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto dto)
+    public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto dto, CancellationToken cancellationToken = default)
     {
         var currentUserEmail = User.FindFirstValue(ClaimTypes.Email)!;
         var currentUserRole = User.FindFirstValue(ClaimTypes.Role)!;
@@ -326,7 +327,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("users/{id}/change-password")]
     [Authorize(Roles = "Admin,SubAdmin")]
-    public async Task<IActionResult> ChangeUserPassword(int id, [FromBody] AdminChangePasswordDto dto)
+    public async Task<IActionResult> ChangeUserPassword(int id, [FromBody] AdminChangePasswordDto dto, CancellationToken cancellationToken = default)
     {
         var currentUserEmail = User.FindFirstValue(ClaimTypes.Email)!;
 
@@ -374,7 +375,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("profile/picture")]
     [Authorize]
-    public async Task<ActionResult<UserDto>> UploadProfilePicture(IFormFile file)
+    public async Task<ActionResult<UserDto>> UploadProfilePicture(IFormFile file, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -405,7 +406,7 @@ public class AuthController : ControllerBase
 
     [HttpDelete("profile/picture")]
     [Authorize]
-    public async Task<ActionResult<UserDto>> RemoveProfilePicture()
+    public async Task<ActionResult<UserDto>> RemoveProfilePicture(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var user = await _userRepository.UpdateProfilePictureAsync(userId, null);
@@ -415,7 +416,7 @@ public class AuthController : ControllerBase
 
     [HttpGet("addresses")]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<AddressDto>>> GetAddresses()
+    public async Task<ActionResult<IEnumerable<AddressDto>>> GetAddresses(CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var addresses = await _userRepository.GetAddressesAsync(userId);
@@ -424,7 +425,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("addresses")]
     [Authorize]
-    public async Task<ActionResult<AddressDto>> AddAddress([FromBody] CreateAddressDto dto)
+    public async Task<ActionResult<AddressDto>> AddAddress([FromBody] CreateAddressDto dto, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var address = dto.Adapt<Address>();
@@ -435,7 +436,7 @@ public class AuthController : ControllerBase
 
     [HttpPut("addresses/{id}")]
     [Authorize]
-    public async Task<ActionResult<AddressDto>> UpdateAddress(int id, [FromBody] UpdateAddressDto dto)
+    public async Task<ActionResult<AddressDto>> UpdateAddress(int id, [FromBody] UpdateAddressDto dto, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var address = await _userRepository.GetAddressByIdAsync(id, userId);
@@ -456,7 +457,7 @@ public class AuthController : ControllerBase
 
     [HttpDelete("addresses/{id}")]
     [Authorize]
-    public async Task<IActionResult> DeleteAddress(int id)
+    public async Task<IActionResult> DeleteAddress(int id, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var result = await _userRepository.DeleteAddressAsync(id, userId);

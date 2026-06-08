@@ -26,7 +26,8 @@ public class ReviewsController : ControllerBase
     public async Task<ActionResult> GetByProduct(
         int productId,
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 20;
@@ -58,7 +59,7 @@ public class ReviewsController : ControllerBase
 
     [HttpGet("product/{productId}/can-review")]
     [Authorize]
-    public async Task<ActionResult> CanReview(int productId)
+    public async Task<ActionResult> CanReview(int productId, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -74,7 +75,7 @@ public class ReviewsController : ControllerBase
     }
 
     [HttpGet("product/{productId}/rating")]
-    public async Task<ActionResult<ProductRatingDto>> GetProductRating(int productId)
+    public async Task<ActionResult<ProductRatingDto>> GetProductRating(int productId, CancellationToken cancellationToken = default)
     {
         var (averageRating, totalReviews) = await _repository.GetProductRatingAsync(productId);
         return Ok(new ProductRatingDto { AverageRating = averageRating, TotalReviews = totalReviews });
@@ -82,7 +83,7 @@ public class ReviewsController : ControllerBase
 
     [HttpPost("product/{productId}")]
     [Authorize]
-    public async Task<ActionResult<ReviewDto>> Create(int productId, [FromBody] CreateReviewDto dto)
+    public async Task<ActionResult<ReviewDto>> Create(int productId, [FromBody] CreateReviewDto dto, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -120,7 +121,7 @@ public class ReviewsController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var role = User.FindFirstValue(ClaimTypes.Role);

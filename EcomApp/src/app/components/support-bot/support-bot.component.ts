@@ -1,4 +1,5 @@
-import { Component, inject, signal, ElementRef, viewChild, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, ElementRef, viewChild, AfterViewChecked, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -13,6 +14,7 @@ import { SupportMessage } from '../../models/support.model';
   styleUrl: './support-bot.component.scss'
 })
 export class SupportBotComponent implements AfterViewChecked {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
   private readonly supportService = inject(SupportService);
 
@@ -44,7 +46,7 @@ export class SupportBotComponent implements AfterViewChecked {
       const convId = parseInt(existing, 10);
       if (!isNaN(convId)) {
         this.conversationId.set(convId);
-        this.supportService.getMessages(convId).subscribe({
+        this.supportService.getMessages(convId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: (msgs) => {
             this.messages.set(msgs);
             this.needsEscalation.set(msgs.some(m => m.sender === 'Bot' && m.content.includes('escalated')));
@@ -54,7 +56,7 @@ export class SupportBotComponent implements AfterViewChecked {
       }
     }
 
-    this.supportService.createConversation().subscribe({
+    this.supportService.createConversation().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (conv) => {
         this.conversationId.set(conv.id);
         localStorage.setItem('supportConversationId', conv.id.toString());
@@ -82,7 +84,7 @@ export class SupportBotComponent implements AfterViewChecked {
     };
     this.messages.update(msgs => [...msgs, optimisticMsg]);
 
-    this.supportService.sendMessage(convId, content).subscribe({
+    this.supportService.sendMessage(convId, content).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.messages.update(msgs => [
           ...msgs.filter(m => m.id !== optimisticMsg.id),

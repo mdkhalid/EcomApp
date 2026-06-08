@@ -25,7 +25,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<SearchResultDto<ProductDto>>> GetAll([FromQuery] SearchFilterDto filter)
+    public async Task<ActionResult<SearchResultDto<ProductDto>>> GetAll([FromQuery] SearchFilterDto filter, CancellationToken cancellationToken = default)
     {
         if (filter.PageNumber < 1) filter.PageNumber = 1;
         if (filter.PageSize < 1) filter.PageSize = 12;
@@ -75,7 +75,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("suggestions")]
-    public async Task<ActionResult<SearchSuggestionDto>> GetSuggestions([FromQuery] string query)
+    public async Task<ActionResult<SearchSuggestionDto>> GetSuggestions([FromQuery] string query, CancellationToken cancellationToken = default)
     {
         var suggestions = await _repository.GetSearchSuggestionsAsync(query);
         return Ok(new SearchSuggestionDto
@@ -86,28 +86,28 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("filters")]
-    public async Task<ActionResult<FilterMetadataDto>> GetFilters([FromQuery] SearchFilterDto filter)
+    public async Task<ActionResult<FilterMetadataDto>> GetFilters([FromQuery] SearchFilterDto filter, CancellationToken cancellationToken = default)
     {
         var metadata = await _repository.GetFilterMetadataAsync(filter);
         return Ok(metadata);
     }
 
     [HttpGet("brands")]
-    public async Task<ActionResult<List<string>>> GetBrands()
+    public async Task<ActionResult<List<string>>> GetBrands(CancellationToken cancellationToken = default)
     {
         var brands = await _repository.GetBrandsAsync();
         return Ok(brands);
     }
 
     [HttpGet("price-range")]
-    public async Task<ActionResult<PriceRangeDto>> GetPriceRange([FromQuery] string? category = null)
+    public async Task<ActionResult<PriceRangeDto>> GetPriceRange([FromQuery] string? category = null, CancellationToken cancellationToken = default)
     {
         var range = await _repository.GetPriceRangeAsync(category);
         return Ok(range);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<ProductDto>> GetById(int id)
+    public async Task<ActionResult<ProductDto>> GetById(int id, CancellationToken cancellationToken = default)
     {
         var product = await _repository.GetByIdAsync(id);
         if (product == null)
@@ -145,7 +145,7 @@ public class ProductsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto createDto)
+    public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto createDto, CancellationToken cancellationToken = default)
     {
         var product = createDto.Adapt<Product>();
         product.CreatedAt = DateTime.UtcNow;
@@ -156,7 +156,7 @@ public class ProductsController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductDto>> Update(int id, [FromBody] UpdateProductDto updateDto)
+    public async Task<ActionResult<ProductDto>> Update(int id, [FromBody] UpdateProductDto updateDto, CancellationToken cancellationToken = default)
     {
         var product = await _repository.GetByIdAsync(id);
         if (product == null)
@@ -169,7 +169,7 @@ public class ProductsController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
         var deleted = await _repository.DeleteAsync(id);
         if (!deleted)
@@ -178,7 +178,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id}/variants")]
-    public async Task<ActionResult<List<ProductVariantDto>>> GetVariants(int id)
+    public async Task<ActionResult<List<ProductVariantDto>>> GetVariants(int id, CancellationToken cancellationToken = default)
     {
         if (!await _context.Products.AnyAsync(p => p.Id == id))
             return NotFound();
@@ -200,7 +200,7 @@ public class ProductsController : ControllerBase
 
     [HttpPost("{id}/variants")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductVariantDto>> CreateVariant(int id, [FromBody] CreateProductVariantDto dto)
+    public async Task<ActionResult<ProductVariantDto>> CreateVariant(int id, [FromBody] CreateProductVariantDto dto, CancellationToken cancellationToken = default)
     {
         if (!await _context.Products.AnyAsync(p => p.Id == id))
             return NotFound();
@@ -214,7 +214,7 @@ public class ProductsController : ControllerBase
 
     [HttpPut("{id}/variants/{variantId}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductVariantDto>> UpdateVariant(int id, int variantId, [FromBody] CreateProductVariantDto dto)
+    public async Task<ActionResult<ProductVariantDto>> UpdateVariant(int id, int variantId, [FromBody] CreateProductVariantDto dto, CancellationToken cancellationToken = default)
     {
         var variant = await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == id);
         if (variant == null)
@@ -226,7 +226,7 @@ public class ProductsController : ControllerBase
 
     [HttpDelete("{id}/variants/{variantId}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> DeleteVariant(int id, int variantId)
+    public async Task<ActionResult> DeleteVariant(int id, int variantId, CancellationToken cancellationToken = default)
     {
         var variant = await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == id);
         if (variant == null)
@@ -240,7 +240,7 @@ public class ProductsController : ControllerBase
 
     [HttpPost("{id}/image")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductDto>> UploadImage(int id, IFormFile file)
+    public async Task<ActionResult<ProductDto>> UploadImage(int id, IFormFile file, CancellationToken cancellationToken = default)
     {
         var product = await _repository.GetByIdAsync(id);
         if (product == null)
@@ -281,7 +281,7 @@ public class ProductsController : ControllerBase
 
     [HttpPut("{id}/images/{imageId}/sort")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> UpdateImageSort(int id, int imageId, [FromBody] int sortOrder)
+    public async Task<ActionResult> UpdateImageSort(int id, int imageId, [FromBody] int sortOrder, CancellationToken cancellationToken = default)
     {
         var image = await _context.ProductImages.FirstOrDefaultAsync(i => i.Id == imageId && i.ProductId == id);
         if (image == null)
@@ -293,7 +293,7 @@ public class ProductsController : ControllerBase
 
     [HttpDelete("{id}/images/{imageId}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> DeleteImage(int id, int imageId)
+    public async Task<ActionResult> DeleteImage(int id, int imageId, CancellationToken cancellationToken = default)
     {
         var image = await _context.ProductImages.FirstOrDefaultAsync(i => i.Id == imageId && i.ProductId == id);
         if (image == null)

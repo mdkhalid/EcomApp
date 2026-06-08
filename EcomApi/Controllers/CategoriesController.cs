@@ -19,16 +19,16 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll(CancellationToken cancellationToken = default)
     {
-        var categories = await _repository.GetAllAsync();
+        var categories = await _repository.GetAllAsync(cancellationToken);
         return Ok(categories.Adapt<List<CategoryDto>>());
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<CategoryDto>> GetById(int id)
+    public async Task<ActionResult<CategoryDto>> GetById(int id, CancellationToken cancellationToken = default)
     {
-        var category = await _repository.GetByIdAsync(id);
+        var category = await _repository.GetByIdAsync(id, cancellationToken);
         if (category == null)
             return NotFound();
         return Ok(category.Adapt<CategoryDto>());
@@ -36,7 +36,7 @@ public class CategoriesController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<CategoryDto>> Create([FromBody] CreateCategoryDto createDto)
+    public async Task<ActionResult<CategoryDto>> Create([FromBody] CreateCategoryDto createDto, CancellationToken cancellationToken = default)
     {
         var category = createDto.Adapt<Category>();
         var created = await _repository.AddAsync(category);
@@ -45,7 +45,7 @@ public class CategoriesController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<CategoryDto>> Update(int id, [FromBody] UpdateCategoryDto updateDto)
+    public async Task<ActionResult<CategoryDto>> Update(int id, [FromBody] UpdateCategoryDto updateDto, CancellationToken cancellationToken = default)
     {
         var category = await _repository.GetByIdAsync(id);
         if (category == null)
@@ -57,9 +57,9 @@ public class CategoriesController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
-        var deleted = await _repository.DeleteAsync(id);
+        var deleted = await _repository.DeleteAsync(id, cancellationToken);
         if (!deleted)
             return NotFound();
         return NoContent();

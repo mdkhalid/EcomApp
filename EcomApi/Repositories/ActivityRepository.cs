@@ -13,13 +13,13 @@ public class ActivityRepository : IActivityRepository
         _context = context;
     }
 
-    public async Task LogAsync(UserActivity activity)
+    public async Task LogAsync(UserActivity activity, CancellationToken cancellationToken = default)
     {
         _context.UserActivities.Add(activity);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<List<UserActivity>> GetRecentByUserAsync(int userId, ActivityType? type = null, int limit = 20)
+    public async Task<List<UserActivity>> GetRecentByUserAsync(int userId, ActivityType? type = null, int limit = 20, CancellationToken cancellationToken = default)
     {
         var query = _context.UserActivities
             .AsNoTracking()
@@ -31,10 +31,10 @@ public class ActivityRepository : IActivityRepository
         return await query
             .OrderByDescending(a => a.CreatedAt)
             .Take(limit)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<UserActivity>> GetRecentBySessionAsync(string sessionId, ActivityType? type = null, int limit = 20)
+    public async Task<List<UserActivity>> GetRecentBySessionAsync(string sessionId, ActivityType? type = null, int limit = 20, CancellationToken cancellationToken = default)
     {
         var query = _context.UserActivities
             .AsNoTracking()
@@ -46,10 +46,10 @@ public class ActivityRepository : IActivityRepository
         return await query
             .OrderByDescending(a => a.CreatedAt)
             .Take(limit)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<int>> GetRecentProductIdsAsync(int userId, string? sessionId, int limit = 20)
+    public async Task<List<int>> GetRecentProductIdsAsync(int userId, string? sessionId, int limit = 20, CancellationToken cancellationToken = default)
     {
         var productIds = new List<int>();
 
@@ -61,7 +61,7 @@ public class ActivityRepository : IActivityRepository
                 .OrderByDescending(a => a.CreatedAt)
                 .Select(a => a.Data)
                 .Take(limit)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             productIds.AddRange(ids.Where(id => int.TryParse(id, out _)).Select(int.Parse));
         }
@@ -74,7 +74,7 @@ public class ActivityRepository : IActivityRepository
                 .OrderByDescending(a => a.CreatedAt)
                 .Select(a => a.Data)
                 .Take(limit)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             productIds.AddRange(sessionIds.Where(id => int.TryParse(id, out _)).Select(int.Parse));
         }
@@ -82,7 +82,7 @@ public class ActivityRepository : IActivityRepository
         return productIds.Distinct().Take(limit).ToList();
     }
 
-    public async Task<List<int>> GetRecommendedProductIdsAsync(int userId, int limit = 10)
+    public async Task<List<int>> GetRecommendedProductIdsAsync(int userId, int limit = 10, CancellationToken cancellationToken = default)
     {
         var viewedCategories = await _context.UserActivities
             .AsNoTracking()
@@ -90,7 +90,7 @@ public class ActivityRepository : IActivityRepository
             .OrderByDescending(a => a.CreatedAt)
             .Select(a => a.Data)
             .Take(50)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var productIds = viewedCategories
             .Where(id => int.TryParse(id, out _))
@@ -105,7 +105,7 @@ public class ActivityRepository : IActivityRepository
             .Where(p => productIds.Contains(p.Id) && p.IsActive)
             .Select(p => p.Category)
             .Distinct()
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (categories.Count == 0)
             return new List<int>();
@@ -117,12 +117,12 @@ public class ActivityRepository : IActivityRepository
             .ThenByDescending(p => p.Reviews.Count)
             .Take(limit)
             .Select(p => p.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return recommended;
     }
 
-    public async Task<List<int>> GetAlsoBoughtProductIdsAsync(int productId, int limit = 10)
+    public async Task<List<int>> GetAlsoBoughtProductIdsAsync(int productId, int limit = 10, CancellationToken cancellationToken = default)
     {
         var orderIds = await _context.OrderItems
             .AsNoTracking()
@@ -130,7 +130,7 @@ public class ActivityRepository : IActivityRepository
             .Select(oi => oi.OrderId)
             .Distinct()
             .Take(100)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (orderIds.Count == 0)
             return new List<int>();
@@ -143,12 +143,12 @@ public class ActivityRepository : IActivityRepository
             .OrderByDescending(x => x.Count)
             .Take(limit)
             .Select(x => x.ProductId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return alsoBought;
     }
 
-    public async Task<List<int>> GetFrequentlyBoughtTogetherAsync(int productId, int limit = 6)
+    public async Task<List<int>> GetFrequentlyBoughtTogetherAsync(int productId, int limit = 6, CancellationToken cancellationToken = default)
     {
         var orderIds = await _context.OrderItems
             .AsNoTracking()
@@ -156,7 +156,7 @@ public class ActivityRepository : IActivityRepository
             .Select(oi => oi.OrderId)
             .Distinct()
             .Take(100)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (orderIds.Count == 0)
             return new List<int>();
@@ -169,7 +169,7 @@ public class ActivityRepository : IActivityRepository
             .OrderByDescending(x => x.Count)
             .Take(limit)
             .Select(x => x.ProductId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return pairCounts;
     }

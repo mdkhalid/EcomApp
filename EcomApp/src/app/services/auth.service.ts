@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { API_URL } from '../utils/api-config';
 
 import { User, RegisterRequest, LoginRequest, TokenResponse, ChangePasswordRequest, Address, CreateAddressRequest, UpdateAddressRequest } from '../models/auth.model';
@@ -30,7 +31,6 @@ export class AuthService {
         const user = JSON.parse(userStr) as User;
         this.currentUserSignal.set(user);
         this.isAuthenticatedSignal.set(true);
-        console.log('Loaded user from storage:', user);
       } catch {
         this.logout();
       }
@@ -39,13 +39,15 @@ export class AuthService {
 
   register(data: RegisterRequest): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.apiUrl}/register`, data).pipe(
-      tap(response => this.handleLoginSuccess(response))
+      tap(response => this.handleLoginSuccess(response)),
+      catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
 
   login(data: LoginRequest): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.apiUrl}/login`, data).pipe(
-      tap(response => this.handleLoginSuccess(response))
+      tap(response => this.handleLoginSuccess(response)),
+      catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
 
@@ -58,7 +60,9 @@ export class AuthService {
   }
 
   changePassword(data: ChangePasswordRequest): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/change-password`, data);
+    return this.http.post<{ message: string }>(`${this.apiUrl}/change-password`, data).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   getProfile(): Observable<User> {
@@ -66,7 +70,8 @@ export class AuthService {
       tap(user => {
         this.currentUserSignal.set(user);
         localStorage.setItem('user', JSON.stringify(user));
-      })
+      }),
+      catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
 
@@ -75,7 +80,8 @@ export class AuthService {
       tap(user => {
         this.currentUserSignal.set(user);
         localStorage.setItem('user', JSON.stringify(user));
-      })
+      }),
+      catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
 
@@ -86,7 +92,8 @@ export class AuthService {
       tap(user => {
         this.currentUserSignal.set(user);
         localStorage.setItem('user', JSON.stringify(user));
-      })
+      }),
+      catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
 
@@ -95,24 +102,33 @@ export class AuthService {
       tap(user => {
         this.currentUserSignal.set(user);
         localStorage.setItem('user', JSON.stringify(user));
-      })
+      }),
+      catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
 
   getAddresses(): Observable<Address[]> {
-    return this.http.get<Address[]>(`${this.apiUrl}/addresses`);
+    return this.http.get<Address[]>(`${this.apiUrl}/addresses`).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   addAddress(data: CreateAddressRequest): Observable<Address> {
-    return this.http.post<Address>(`${this.apiUrl}/addresses`, data);
+    return this.http.post<Address>(`${this.apiUrl}/addresses`, data).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   updateAddress(id: number, data: UpdateAddressRequest): Observable<Address> {
-    return this.http.put<Address>(`${this.apiUrl}/addresses/${id}`, data);
+    return this.http.put<Address>(`${this.apiUrl}/addresses/${id}`, data).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   deleteAddress(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/addresses/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/addresses/${id}`).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
   }
 
   isAdmin(): boolean {
@@ -131,11 +147,9 @@ export class AuthService {
     localStorage.setItem('accessToken', response.accessToken);
     localStorage.setItem('refreshToken', response.refreshToken);
     const tokenPayload = this.decodeToken(response.accessToken);
-    console.log('JWT Token Payload:', tokenPayload);
     const role = tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
       || tokenPayload['role']
       || 'Customer';
-    console.log('Extracted role:', role);
     const user: User = {
       id: parseInt(tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']),
       email: tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'],

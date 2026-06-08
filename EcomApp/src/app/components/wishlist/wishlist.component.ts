@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { WishlistService } from '../../services/wishlist.service';
@@ -15,6 +16,7 @@ import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
   styleUrl: './wishlist.component.scss'
 })
 export class WishlistComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   readonly wishlistService = inject(WishlistService);
   private readonly cartService = inject(CartService);
   readonly notification = inject(NotificationService);
@@ -29,7 +31,7 @@ export class WishlistComponent implements OnInit {
 
   loadWishlist(): void {
     this.loading.set(true);
-    this.wishlistService.getWishlist().subscribe({
+    this.wishlistService.getWishlist().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.items.set(res.items);
         this.loading.set(false);
@@ -42,7 +44,7 @@ export class WishlistComponent implements OnInit {
   }
 
   removeItem(productId: number): void {
-    this.wishlistService.toggle(productId).subscribe({
+    this.wishlistService.toggle(productId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.notification.showSuccess(res.message);
         this.items.update(items => items.filter(i => i.productId !== productId));
@@ -52,7 +54,7 @@ export class WishlistComponent implements OnInit {
   }
 
   addToCart(productId: number): void {
-    this.cartService.addItem({ productId, quantity: 1 }).subscribe({
+    this.cartService.addItem({ productId, quantity: 1 }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notification.showSuccess('Added to cart');
         this.items.update(items => items.filter(i => i.productId !== productId));
@@ -62,6 +64,6 @@ export class WishlistComponent implements OnInit {
   }
 
   getFullImageUrl(path: string): string {
-    return `http://localhost:5068${path}`;
+    return buildImageUrl(path);
   }
 }

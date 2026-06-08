@@ -1,16 +1,4 @@
 import { Routes } from '@angular/router';
-import { ProductsComponent } from './components/products/products.component';
-import { CartComponent } from './components/cart/cart.component';
-import { CheckoutComponent } from './components/checkout/checkout.component';
-import { OrdersComponent } from './components/orders/orders.component';
-import { OrderDetailComponent } from './components/order-detail/order-detail.component';
-import { LoginComponent } from './components/login/login.component';
-import { RegisterComponent } from './components/register/register.component';
-import { AdminComponent } from './components/admin/admin.component';
-import { ProductDetailComponent } from './components/product-detail/product-detail.component';
-import { WishlistComponent } from './components/wishlist/wishlist.component';
-import { ProfileComponent } from './components/profile/profile.component';
-import { ReturnPolicyComponent } from './components/return-policy/return-policy.component';
 import { authGuard } from './guards/auth.guard';
 import { guestGuard } from './guards/guest.guard';
 import { customerGuard } from './guards/customer.guard';
@@ -18,17 +6,17 @@ import { adminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'products', pathMatch: 'full' },
-  { path: 'products', component: ProductsComponent },
-  { path: 'products/:id', component: ProductDetailComponent },
-  { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
-  { path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
-  { path: 'cart', component: CartComponent, canActivate: [customerGuard] },
-  { path: 'checkout', component: CheckoutComponent, canActivate: [customerGuard] },
-  { path: 'orders', component: OrdersComponent, canActivate: [customerGuard] },
-  { path: 'orders/:id', component: OrderDetailComponent, canActivate: [customerGuard] },
-  { path: 'wishlist', component: WishlistComponent, canActivate: [customerGuard] },
-  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
-  { path: 'return-policy', component: ReturnPolicyComponent },
-  { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
+  { path: 'products', loadComponent: () => import('./components/products/products.component').then(m => m.ProductsComponent) },
+  { path: 'products/:id', loadComponent: () => import('./components/product-detail/product-detail.component').then(m => m.ProductDetailComponent) },
+  { path: 'login', loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent), canActivate: [guestGuard] },
+  { path: 'register', loadComponent: () => import('./components/register/register.component').then(m => m.RegisterComponent), canActivate: [guestGuard] },
+  { path: 'cart', loadComponent: () => import('./components/cart/cart.component').then(m => m.CartComponent), canActivate: [customerGuard] },
+  { path: 'checkout', loadComponent: () => import('./components/checkout/checkout.component').then(m => m.CheckoutComponent), canActivate: [customerGuard] },
+  { path: 'orders', loadComponent: () => import('./components/orders/orders.component').then(m => m.OrdersComponent), canActivate: [customerGuard] },
+  { path: 'orders/:id', loadComponent: () => import('./components/order-detail/order-detail.component').then(m => m.OrderDetailComponent), canActivate: [customerGuard] },
+  { path: 'wishlist', loadComponent: () => import('./components/wishlist/wishlist.component').then(m => m.WishlistComponent), canActivate: [customerGuard] },
+  { path: 'profile', loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent), canActivate: [authGuard] },
+  { path: 'return-policy', loadComponent: () => import('./components/return-policy/return-policy.component').then(m => m.ReturnPolicyComponent) },
+  { path: 'admin', loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent), canActivate: [adminGuard] },
   { path: '**', redirectTo: '/products' }
 ];
