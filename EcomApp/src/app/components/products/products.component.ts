@@ -282,11 +282,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
   getPages(): number[] {
     const total = this.totalPages();
-    const current = this.pageNumber();
     const pages: number[] = [];
-    const start = Math.max(1, current - 2);
-    const end = Math.min(total, current + 2);
-    for (let i = start; i <= end; i++) pages.push(i);
+    for (let i = 1; i <= total; i++) pages.push(i);
     return pages;
   }
 
