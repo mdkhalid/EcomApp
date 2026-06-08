@@ -68,4 +68,25 @@ public class AnalyticsController : ControllerBase
     {
         return Ok(await _analytics.GetLowStockProductsAsync(threshold));
     }
+
+    [HttpGet("page-views")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<PageViewSummaryDto>> GetPageViews([FromQuery] string period = "7d")
+    {
+        return Ok(await _analytics.GetPageViewsAsync(period));
+    }
+
+    [HttpGet("top-pages")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<TopPageDto>>> GetTopPages([FromQuery] string period = "7d")
+    {
+        return Ok(await _analytics.GetTopPagesAsync(period));
+    }
+
+    [HttpGet("top-searches")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<TopSearchDto>>> GetTopSearches([FromQuery] string period = "7d")
+    {
+        return Ok(await _analytics.GetTopSearchesAsync(period));
+    }
 }

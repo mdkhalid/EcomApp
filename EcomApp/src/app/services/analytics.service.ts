@@ -8,8 +8,11 @@ import {
   CategoryBreakdown,
   LowStockProduct,
   OrderStatusBreakdown,
+  PageViewSummary,
   RevenueSummary,
-  TopProduct
+  TopPage,
+  TopProduct,
+  TopSearch
 } from '../models/analytics.model';
 
 @Injectable({
@@ -44,5 +47,20 @@ export class AnalyticsService {
   getLowStock(threshold = 10): Observable<LowStockProduct[]> {
     const params = new HttpParams().set('threshold', String(threshold));
     return this.http.get<LowStockProduct[]>(`${this.apiUrl}/low-stock`, { params });
+  }
+
+  getPageViews(period = '7d'): Observable<PageViewSummary> {
+    const params = new HttpParams().set('period', period);
+    return this.http.get<PageViewSummary>(`${this.apiUrl}/page-views`, { params });
+  }
+
+  getTopPages(period = '7d'): Observable<TopPage[]> {
+    const params = new HttpParams().set('period', period);
+    return this.http.get<TopPage[]>(`${this.apiUrl}/top-pages`, { params });
+  }
+
+  getTopSearches(period = '7d'): Observable<TopSearch[]> {
+    const params = new HttpParams().set('period', period);
+    return this.http.get<TopSearch[]>(`${this.apiUrl}/top-searches`, { params });
   }
 }

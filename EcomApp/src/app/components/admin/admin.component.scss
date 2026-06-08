@@ -302,6 +302,8 @@
 .kpi-pending { border-left-color: #FFB300; }
 .kpi-products { border-left-color: #7c4dff; }
 .kpi-users { border-left-color: #5d4037; }
+.kpi-views { border-left-color: #00bcd4; }
+.kpi-visitors { border-left-color: #ff5722; }
 
 .kpi-icon {
   font-size: 22px;
@@ -321,6 +323,8 @@
 .kpi-pending .kpi-icon { background: #fff8e1; color: #FFB300; }
 .kpi-products .kpi-icon { background: #f3e8fd; color: #7c4dff; }
 .kpi-users .kpi-icon { background: #efebe9; color: #5d4037; }
+.kpi-views .kpi-icon { background: #e0f7fa; color: #00bcd4; }
+.kpi-visitors .kpi-icon { background: #fbe9e7; color: #ff5722; }
 
 .kpi-info {
   display: flex;

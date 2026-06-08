@@ -50,6 +50,34 @@ public class LowStockProductDto
     public int Stock { get; set; }
 }
 
+public class PageViewPointDto
+{
+    public DateTime Date { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
+public class PageViewSummaryDto
+{
+    public string Period { get; set; } = "daily";
+    public int TotalViews { get; set; }
+    public int UniqueVisitors { get; set; }
+    public List<PageViewPointDto> Views { get; set; } = new();
+    public List<PageViewPointDto> UniqueVisitorsPoints { get; set; } = new();
+}
+
+public class TopPageDto
+{
+    public string Path { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
+public class TopSearchDto
+{
+    public string Keyword { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
 public class AnalyticsOverviewDto
 {
     public int TotalProducts { get; set; }
@@ -59,4 +87,6 @@ public class AnalyticsOverviewDto
     public List<OrderStatusBreakdownDto> OrderStatusBreakdown { get; set; } = new();
     public List<TopProductDto> TopProducts { get; set; } = new();
     public List<LowStockProductDto> LowStockProducts { get; set; } = new();
+    public int PageViewsToday { get; set; }
+    public int UniqueVisitorsToday { get; set; }
 }

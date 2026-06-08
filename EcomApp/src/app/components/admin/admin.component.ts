@@ -22,7 +22,7 @@ import { ReturnPolicy, UpdateReturnPolicy } from '../../models/return-policy.mod
 import { SupportService } from '../../services/support.service';
 import { SupportConversation } from '../../models/support.model';
 import { AdminNotificationService } from '../../services/admin-notification.service';
-import { AnalyticsOverview, CategoryBreakdown, OrderStatusBreakdown, RevenuePoint, RevenueSummary, TopProduct } from '../../models/analytics.model';
+import { AnalyticsOverview, CategoryBreakdown, OrderStatusBreakdown, PageViewSummary, RevenuePoint, RevenueSummary, TopPage, TopProduct, TopSearch } from '../../models/analytics.model';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { getFullImageUrl as buildImageUrl, API_URL } from '../../utils/api-config';
 
@@ -67,6 +67,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   topProductsCanvas = viewChild<ElementRef<HTMLCanvasElement>>('topProductsChart');
   categoryCanvas = viewChild<ElementRef<HTMLCanvasElement>>('categoryChart');
   orderStatusCanvas = viewChild<ElementRef<HTMLCanvasElement>>('orderStatusChart');
+  pageViewsCanvas = viewChild<ElementRef<HTMLCanvasElement>>('pageViewsChart');
 
   analyticsOverview = signal<AnalyticsOverview | null>(null);
   revenue = signal<RevenueSummary | null>(null);
@@ -76,10 +77,16 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   revenuePeriod = signal<'daily' | 'weekly' | 'monthly'>('monthly');
   analyticsLoading = signal(false);
 
+  pageViews = signal<PageViewSummary | null>(null);
+  topPages = signal<TopPage[]>([]);
+  topSearches = signal<TopSearch[]>([]);
+  visitorPeriod = signal<string>('7d');
+
   private revenueChart?: Chart;
   private topProductsChart?: Chart;
   private categoryChart?: Chart;
   private orderStatusChart?: Chart;
+  private pageViewsChart?: Chart;
 
   stats = signal({ totalProducts: 0, totalOrders: 0, totalUsers: 0, totalRevenue: 0 });
   products = signal<Product[]>([]);
@@ -231,6 +238,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
         this.notificationService.showError('Failed to load analytics');
       }
     });
+    this.loadVisitorAnalytics();
   }
 
   loadRevenue(): void {
@@ -271,6 +279,29 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadRevenue();
   }
 
+  loadVisitorAnalytics(): void {
+    this.analyticsService.getPageViews(this.visitorPeriod()).subscribe({
+      next: (data) => {
+        this.pageViews.set(data);
+        queueMicrotask(() => this.renderPageViewsChart());
+      },
+      error: () => this.notificationService.showError('Failed to load page views')
+    });
+    this.analyticsService.getTopPages(this.visitorPeriod()).subscribe({
+      next: (data) => this.topPages.set(data),
+      error: () => this.notificationService.showError('Failed to load top pages')
+    });
+    this.analyticsService.getTopSearches(this.visitorPeriod()).subscribe({
+      next: (data) => this.topSearches.set(data),
+      error: () => this.notificationService.showError('Failed to load top searches')
+    });
+  }
+
+  onVisitorPeriodChange(period: string): void {
+    this.visitorPeriod.set(period);
+    this.loadVisitorAnalytics();
+  }
+
   ngAfterViewInit(): void {
     if (this.activeTab() === 'analytics') {
       this.loadAnalytics();
@@ -282,6 +313,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     this.topProductsChart?.destroy();
     this.categoryChart?.destroy();
     this.orderStatusChart?.destroy();
+    this.pageViewsChart?.destroy();
     if (this._notifInterval) {
       clearInterval(this._notifInterval);
       this._notifInterval = null;
@@ -356,6 +388,69 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     };
     this.revenueChart = new Chart(canvas, config);
+  }
+
+  private renderPageViewsChart(): void {
+    const canvas = this.pageViewsCanvas()?.nativeElement;
+    if (!canvas) return;
+    const data = this.pageViews();
+    if (!data) return;
+
+    this.pageViewsChart?.destroy();
+    const config: ChartConfiguration<'line'> = {
+      type: 'line',
+      data: {
+        labels: data.views.map(p => p.label),
+        datasets: [{
+          label: 'Page Views',
+          data: data.views.map(p => p.count),
+          borderColor: '#2874F0',
+          backgroundColor: 'rgba(40, 116, 240, 0.12)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2
+        }, {
+          label: 'Unique Visitors',
+          data: data.uniqueVisitorsPoints.map(p => p.count),
+          borderColor: '#fb641b',
+          backgroundColor: 'rgba(251, 100, 27, 0.08)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          borderDash: [5, 5]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const v = ctx.parsed.y ?? 0;
+                if (ctx.dataset.label === 'Page Views') {
+                  return `Views: ${v.toLocaleString()}`;
+                }
+                return `Visitors: ${v.toLocaleString()}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    };
+    this.pageViewsChart = new Chart(canvas, config);
   }
 
   private renderTopProductsChart(): void {

@@ -31,6 +31,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ReturnPolicy> ReturnPolicies => Set<ReturnPolicy>();
     public DbSet<SupportConversation> SupportConversations => Set<SupportConversation>();
     public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+    public DbSet<PageView> PageViews => Set<PageView>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -335,6 +336,21 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.OrderId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PageView>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.Path);
+            entity.HasIndex(e => e.IpAddress);
+            entity.HasIndex(e => e.SessionId);
+            entity.Property(e => e.Path).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.IpAddress).HasMaxLength(45);
+            entity.Property(e => e.UserAgent).HasMaxLength(500);
+            entity.Property(e => e.SessionId).HasMaxLength(100);
+            entity.Property(e => e.Referrer).HasMaxLength(1000);
+            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

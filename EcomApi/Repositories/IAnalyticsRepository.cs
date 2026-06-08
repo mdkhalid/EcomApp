@@ -10,4 +10,7 @@ public interface IAnalyticsRepository
     Task<List<OrderStatusBreakdownDto>> GetOrderStatusBreakdownAsync();
     Task<List<LowStockProductDto>> GetLowStockProductsAsync(int threshold);
     Task<AnalyticsOverviewDto> GetOverviewAsync();
+    Task<PageViewSummaryDto> GetPageViewsAsync(string period);
+    Task<List<TopPageDto>> GetTopPagesAsync(string period);
+    Task<List<TopSearchDto>> GetTopSearchesAsync(string period);
 }

@@ -42,6 +42,30 @@ export interface LowStockProduct {
   stock: number;
 }
 
+export interface PageViewPoint {
+  date: string;
+  label: string;
+  count: number;
+}
+
+export interface PageViewSummary {
+  period: string;
+  totalViews: number;
+  uniqueVisitors: number;
+  views: PageViewPoint[];
+  uniqueVisitorsPoints: PageViewPoint[];
+}
+
+export interface TopPage {
+  path: string;
+  count: number;
+}
+
+export interface TopSearch {
+  keyword: string;
+  count: number;
+}
+
 export interface AnalyticsOverview {
   totalProducts: number;
   totalOrders: number;
@@ -50,4 +74,6 @@ export interface AnalyticsOverview {
   orderStatusBreakdown: OrderStatusBreakdown[];
   topProducts: TopProduct[];
   lowStockProducts: LowStockProduct[];
+  pageViewsToday: number;
+  uniqueVisitorsToday: number;
 }

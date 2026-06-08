@@ -194,6 +194,20 @@
               <span class="kpi-value">{{ analyticsOverview()?.pendingOrders ?? 0 }}</span>
             </div>
           </div>
+          <div class="kpi-card kpi-views">
+            <span class="material-icons kpi-icon">visibility</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Page Views Today</span>
+              <span class="kpi-value">{{ analyticsOverview()?.pageViewsToday ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-visitors">
+            <span class="material-icons kpi-icon">group</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Unique Visitors Today</span>
+              <span class="kpi-value">{{ analyticsOverview()?.uniqueVisitorsToday ?? 0 }}</span>
+            </div>
+          </div>
         </div>
       } @else {
         <div class="kpi-grid">
@@ -223,6 +237,20 @@
             <div class="kpi-info">
               <span class="kpi-label">Users</span>
               <span class="kpi-value">{{ analyticsOverview()?.totalUsers ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-views">
+            <span class="material-icons kpi-icon">visibility</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Page Views Today</span>
+              <span class="kpi-value">{{ analyticsOverview()?.pageViewsToday ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-visitors">
+            <span class="material-icons kpi-icon">group</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Unique Visitors Today</span>
+              <span class="kpi-value">{{ analyticsOverview()?.uniqueVisitorsToday ?? 0 }}</span>
             </div>
           </div>
         </div>
@@ -316,6 +344,79 @@
           </tbody>
         </table>
       </div>
+
+      @if (isSuperAdmin) {
+        <div class="admin-card">
+          <div class="card-header-row">
+            <h3>Visitor Trends</h3>
+            <div class="period-toggle">
+              <button [class.active]="visitorPeriod() === '24h'" (click)="onVisitorPeriodChange('24h')">24H</button>
+              <button [class.active]="visitorPeriod() === '7d'" (click)="onVisitorPeriodChange('7d')">7 Days</button>
+              <button [class.active]="visitorPeriod() === '30d'" (click)="onVisitorPeriodChange('30d')">30 Days</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas #pageViewsChart></canvas>
+          </div>
+          <div class="kpi-grid" style="margin-top: 16px;">
+            <div class="kpi-card kpi-views">
+              <span class="material-icons kpi-icon">visibility</span>
+              <div class="kpi-info">
+                <span class="kpi-label">Total Views (period)</span>
+                <span class="kpi-value">{{ pageViews()?.totalViews ?? 0 | number }}</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-visitors">
+              <span class="material-icons kpi-icon">group</span>
+              <div class="kpi-info">
+                <span class="kpi-label">Unique Visitors (period)</span>
+                <span class="kpi-value">{{ pageViews()?.uniqueVisitors ?? 0 | number }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="admin-card">
+            <h3>Top Pages</h3>
+            <table class="admin-table">
+              <thead>
+                <tr><th>#</th><th>Path</th><th>Visits</th></tr>
+              </thead>
+              <tbody>
+                @for (p of topPages(); track $index; let i = $index) {
+                  <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td style="word-break: break-all;">{{ p.path }}</td>
+                    <td>{{ p.count }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="text-muted">No data yet</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="admin-card">
+            <h3>Top Searches</h3>
+            <table class="admin-table">
+              <thead>
+                <tr><th>#</th><th>Keyword</th><th>Searches</th></tr>
+              </thead>
+              <tbody>
+                @for (s of topSearches(); track $index; let i = $index) {
+                  <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td><span class="category-tag">{{ s.keyword }}</span></td>
+                    <td>{{ s.count }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="text-muted">No searches yet</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     }
 
     @if (activeTab() === 'products') {

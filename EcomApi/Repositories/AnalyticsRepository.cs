@@ -226,11 +226,19 @@ public class AnalyticsRepository : IAnalyticsRepository
 
     public async Task<AnalyticsOverviewDto> GetOverviewAsync()
     {
+        var today = DateTime.UtcNow.Date;
         var totalProducts = await _context.Products.AsNoTracking().CountAsync();
         var totalOrders = await _context.Orders.AsNoTracking().CountAsync();
         var totalUsers = await _context.Users.AsNoTracking().CountAsync();
         var pendingOrders = await _context.Orders.AsNoTracking()
             .CountAsync(o => o.Status == OrderStatus.Pending);
+        var pageViewsToday = await _context.PageViews.AsNoTracking()
+            .CountAsync(pv => pv.CreatedAt >= today);
+        var uniqueVisitorsToday = await _context.PageViews.AsNoTracking()
+            .Where(pv => pv.CreatedAt >= today)
+            .Select(pv => pv.IpAddress)
+            .Distinct()
+            .CountAsync();
 
         return new AnalyticsOverviewDto
         {
@@ -240,7 +248,102 @@ public class AnalyticsRepository : IAnalyticsRepository
             PendingOrders = pendingOrders,
             OrderStatusBreakdown = await GetOrderStatusBreakdownAsync(),
             TopProducts = await GetTopProductsAsync(5),
-            LowStockProducts = await GetLowStockProductsAsync(10)
+            LowStockProducts = await GetLowStockProductsAsync(10),
+            PageViewsToday = pageViewsToday,
+            UniqueVisitorsToday = uniqueVisitorsToday
+        };
+    }
+
+    public async Task<PageViewSummaryDto> GetPageViewsAsync(string period)
+    {
+        period = (period ?? "7d").ToLowerInvariant();
+        int days;
+        switch (period)
+        {
+            case "24h": days = 1; break;
+            case "30d": days = 30; break;
+            default: days = 7; break;
+        }
+
+        var start = DateTime.UtcNow.Date.AddDays(-(days - 1));
+
+        var allViews = await _context.PageViews
+            .AsNoTracking()
+            .Where(pv => pv.CreatedAt >= start)
+            .Select(pv => new { pv.CreatedAt, pv.IpAddress })
+            .ToListAsync();
+
+        var points = Enumerable.Range(0, days).Select(i =>
+        {
+            var date = start.AddDays(i);
+            var dayViews = allViews.Where(v => v.CreatedAt.Date == date).ToList();
+            return new PageViewPointDto
+            {
+                Date = date,
+                Label = date.ToString("dd MMM"),
+                Count = dayViews.Count
+            };
+        }).ToList();
+
+        var uniquePoints = Enumerable.Range(0, days).Select(i =>
+        {
+            var date = start.AddDays(i);
+            var uniqueIps = allViews
+                .Where(v => v.CreatedAt.Date == date)
+                .Select(v => v.IpAddress)
+                .Distinct()
+                .Count();
+            return new PageViewPointDto
+            {
+                Date = date,
+                Label = date.ToString("dd MMM"),
+                Count = uniqueIps
+            };
+        }).ToList();
+
+        return new PageViewSummaryDto
+        {
+            Period = period,
+            TotalViews = allViews.Count,
+            UniqueVisitors = allViews.Select(v => v.IpAddress).Distinct().Count(),
+            Views = points,
+            UniqueVisitorsPoints = uniquePoints
+        };
+    }
+
+    public async Task<List<TopPageDto>> GetTopPagesAsync(string period)
+    {
+        var start = GetPeriodStart(period);
+        return await _context.PageViews
+            .AsNoTracking()
+            .Where(pv => pv.CreatedAt >= start)
+            .GroupBy(pv => pv.Path)
+            .Select(g => new TopPageDto { Path = g.Key, Count = g.Count() })
+            .OrderByDescending(dto => dto.Count)
+            .Take(20)
+            .ToListAsync();
+    }
+
+    public async Task<List<TopSearchDto>> GetTopSearchesAsync(string period)
+    {
+        var start = GetPeriodStart(period);
+        return await _context.UserActivities
+            .AsNoTracking()
+            .Where(ua => ua.Type == ActivityType.Search && ua.CreatedAt >= start)
+            .GroupBy(ua => ua.Data)
+            .Select(g => new TopSearchDto { Keyword = g.Key, Count = g.Count() })
+            .OrderByDescending(dto => dto.Count)
+            .Take(20)
+            .ToListAsync();
+    }
+
+    private static DateTime GetPeriodStart(string period)
+    {
+        return period switch
+        {
+            "24h" => DateTime.UtcNow.AddHours(-24),
+            "30d" => DateTime.UtcNow.Date.AddDays(-30),
+            _ => DateTime.UtcNow.Date.AddDays(-7)
         };
     }
 }
