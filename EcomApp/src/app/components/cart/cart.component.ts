@@ -106,6 +106,16 @@ export class CartComponent implements OnInit {
     return `http://localhost:5068${path}`;
   }
 
+  addToCart(productId: number): void {
+    this.cartService.addItem({ productId, quantity: 1 }).subscribe({
+      next: (cart) => {
+        this.cart.set(cart);
+        this.notification.showSuccess('Item added to cart');
+      },
+      error: () => this.notification.showError('Failed to add item')
+    });
+  }
+
   applyCoupon(): void {
     const code = this.couponCode().trim();
     if (!code) return;

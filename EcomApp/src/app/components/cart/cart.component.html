@@ -144,18 +144,20 @@
     </h2>
     <div class="cart-sug-grid">
       @for (s of suggestions(); track s.productId) {
-        <a routerLink="/products/{{ s.productId }}" class="cart-sug-card">
-          <div class="cart-sug-img">
-            @if (s.imageUrl) {
-              <img [src]="getFullImageUrl(s.imageUrl)" [alt]="s.name" />
-            } @else {
-              <div class="cart-sug-img-placeholder">
-                <span class="material-icons">image</span>
-              </div>
-            }
-          </div>
+        <div class="cart-sug-card">
+          <a routerLink="/products/{{ s.productId }}" class="cart-sug-img-link">
+            <div class="cart-sug-img">
+              @if (s.imageUrl) {
+                <img [src]="getFullImageUrl(s.imageUrl)" [alt]="s.name" />
+              } @else {
+                <div class="cart-sug-img-placeholder">
+                  <span class="material-icons">image</span>
+                </div>
+              }
+            </div>
+          </a>
           <div class="cart-sug-info">
-            <span class="cart-sug-name">{{ s.name }}</span>
+            <a routerLink="/products/{{ s.productId }}" class="cart-sug-name">{{ s.name }}</a>
             <span class="cart-sug-price">&#8377;{{ s.price.toLocaleString('en-IN') }}</span>
             @if (s.originalPrice && s.originalPrice > s.price) {
               <span class="cart-sug-original">&#8377;{{ s.originalPrice.toLocaleString('en-IN') }}</span>
@@ -163,8 +165,12 @@
             @if (s.averageRating > 0) {
               <span class="cart-sug-rating">{{ s.averageRating.toFixed(1) }} ★</span>
             }
+            <button class="cart-sug-add" (click)="addToCart(s.productId)">
+              <span class="material-icons">add_shopping_cart</span>
+              Add to Cart
+            </button>
           </div>
-        </a>
+        </div>
       }
     </div>
   </div>
