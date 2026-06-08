@@ -28,6 +28,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<AdminNotification> AdminNotifications => Set<AdminNotification>();
+    public DbSet<ReturnPolicy> ReturnPolicies => Set<ReturnPolicy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -267,6 +268,13 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<ReturnPolicy>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.PolicyText).IsRequired();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
         });
 
         modelBuilder.Entity<Coupon>(entity =>

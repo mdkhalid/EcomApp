@@ -4,9 +4,11 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../services/order.service';
 import { ReturnService } from '../../services/return.service';
+import { ReturnPolicyService } from '../../services/return-policy.service';
 import { NotificationService } from '../../services/notification.service';
 import { Order } from '../../models/order.model';
 import { ReturnRequest } from '../../models/return.model';
+import { ReturnPolicy } from '../../models/return-policy.model';
 import { OrderTrackingComponent } from '../order-tracking/order-tracking.component';
 
 @Component({
@@ -19,6 +21,7 @@ import { OrderTrackingComponent } from '../order-tracking/order-tracking.compone
 export class OrderDetailComponent implements OnInit {
   private readonly orderService = inject(OrderService);
   private readonly returnService = inject(ReturnService);
+  private readonly returnPolicyService = inject(ReturnPolicyService);
   private readonly route = inject(ActivatedRoute);
   readonly notification = inject(NotificationService);
   protected readonly notifications = this.notification.notifications;
@@ -27,6 +30,7 @@ export class OrderDetailComponent implements OnInit {
   loading = signal(true);
 
   returnRequest = signal<ReturnRequest | null>(null);
+  returnPolicy = signal<ReturnPolicy | null>(null);
   showReturnModal = signal(false);
   returnReason = signal('');
   returnComment = signal('');
@@ -38,6 +42,9 @@ export class OrderDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) {
+      this.returnPolicyService.get().subscribe({
+        next: (p) => this.returnPolicy.set(p)
+      });
       this.orderService.getById(id).subscribe({
         next: (order) => {
           this.order.set(order);

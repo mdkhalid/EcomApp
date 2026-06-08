@@ -14,6 +14,7 @@ public static class DbSeeder
         SeedEthnicWear(context);
         SeedAddresses(context);
         SeedCoupons(context);
+        SeedReturnPolicy(context);
     }
 
     private static void SeedUsers(ApplicationDbContext context)
@@ -467,6 +468,61 @@ public static class DbSeeder
         };
 
         context.Coupons.AddRange(coupons);
+        context.SaveChanges();
+    }
+
+    private static void SeedReturnPolicy(ApplicationDbContext context)
+    {
+        if (context.ReturnPolicies.Any()) return;
+
+        context.ReturnPolicies.Add(new()
+        {
+            ReturnWindowDays = 7,
+            IsActive = true,
+            PolicyText = @"## Return Policy
+
+At ShopKart, customer satisfaction is our priority. If you're not completely satisfied with your purchase, we're here to help.
+
+### Return Window
+You have **7 days** from the date of delivery to request a return. Items must be unused, in their original packaging, with all tags attached.
+
+### Conditions for Return
+- Products must be unworn, unwashed, and undamaged
+- All original tags and packaging must be intact
+- Shoes must be tried on a carpeted surface
+- For electronics, all accessories and manuals must be included
+- Customized or personalized items cannot be returned unless defective
+
+### Non-Returnable Items
+- Innerwear, lingerie, and swimwear
+- Perishable goods (food, flowers)
+- Personal care items (if seal is broken)
+- Digital downloads and gift cards
+- Made-to-order or customized products
+
+### How to Initiate a Return
+1. Go to **My Orders** from your account menu
+2. Find the order and click **Request Return**
+3. Select the reason and submit
+4. Once approved, you'll receive instructions for return shipping
+
+### Refund Process
+- **Approved returns** are processed within **5-7 business days** after we receive the item
+- Refunds are credited to the original payment method
+- For Cash on Delivery orders, refund will be processed to your bank account (details needed)
+
+### Exchanges
+We currently do not offer direct exchanges. You can return the item and place a new order.
+
+### Shipping Costs
+- Return shipping is **free** for defective or wrong items
+- For change-of-mind returns, a nominal shipping fee may be deducted from the refund
+
+If you have any questions, please contact our support team.",
+            UpdatedAt = DateTime.UtcNow,
+            UpdatedBy = "System"
+        });
+
         context.SaveChanges();
     }
 }

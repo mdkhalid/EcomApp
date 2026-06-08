@@ -135,6 +135,12 @@
         } @else {
           <div class="return-eligible">
             <p>This order is eligible for return.</p>
+            @if (returnPolicy()?.isActive && returnPolicy()?.returnWindowDays) {
+              <p class="return-window-info">
+                You can request a return within
+                <strong>{{ returnPolicy()?.returnWindowDays }} days</strong> of delivery.
+              </p>
+            }
             <button class="btn btn-primary" (click)="openReturnModal()">
               <span class="material-icons">assignment_return</span>
               Request Return

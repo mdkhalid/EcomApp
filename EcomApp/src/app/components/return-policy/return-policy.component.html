@@ -1,0 +1,34 @@
+<div class="policy-page">
+  @if (loading()) {
+    <div class="spinner"></div>
+  } @else if (error()) {
+    <div class="empty-state">
+      <span class="material-icons empty-icon">error_outline</span>
+      <h3>{{ error() }}</h3>
+    </div>
+  } @else {
+    <div class="policy-header">
+      <h1>Return Policy</h1>
+      @if (policy()?.isActive) {
+        <p class="policy-subtitle">
+          You can return items within <strong>{{ policy()?.returnWindowDays }} days</strong> of delivery.
+        </p>
+      } @else {
+        <p class="policy-subtitle policy-disabled">Returns are currently disabled.</p>
+      }
+    </div>
+
+    <div class="policy-card">
+      <div class="policy-content">{{ policy()?.policyText }}</div>
+    </div>
+
+    @if (policy()?.updatedAt) {
+      <p class="policy-meta">
+        Last updated: {{ policy()?.updatedAt | date:'medium' }}
+        @if (policy()?.updatedBy) {
+          <span> by {{ policy()?.updatedBy }}</span>
+        }
+      </p>
+    }
+  }
+</div>

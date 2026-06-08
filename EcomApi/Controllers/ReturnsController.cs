@@ -13,11 +13,13 @@ public class ReturnsController : ControllerBase
 {
     private readonly IReturnRepository _returnRepository;
     private readonly IOrderRepository _orderRepository;
+    private readonly IReturnPolicyRepository _returnPolicyRepository;
 
-    public ReturnsController(IReturnRepository returnRepository, IOrderRepository orderRepository)
+    public ReturnsController(IReturnRepository returnRepository, IOrderRepository orderRepository, IReturnPolicyRepository returnPolicyRepository)
     {
         _returnRepository = returnRepository;
         _orderRepository = orderRepository;
+        _returnPolicyRepository = returnPolicyRepository;
     }
 
     [HttpPost]
@@ -38,6 +40,14 @@ public class ReturnsController : ControllerBase
 
         if (order.Status != OrderStatus.Delivered)
             return BadRequest(new { error = "You can only request a return for delivered orders." });
+
+        var policy = await _returnPolicyRepository.GetAsync();
+        if (policy != null && policy.IsActive && policy.ReturnWindowDays > 0 && order.ActualDeliveryDate.HasValue)
+        {
+            var daysSinceDelivery = (DateTime.UtcNow - order.ActualDeliveryDate.Value).TotalDays;
+            if (daysSinceDelivery > policy.ReturnWindowDays)
+                return BadRequest(new { error = $"Return window has expired. You can return within {policy.ReturnWindowDays} days of delivery." });
+        }
 
         var hasPending = await _returnRepository.HasPendingReturnAsync(dto.OrderId, userId);
         if (hasPending)

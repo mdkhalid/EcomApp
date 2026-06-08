@@ -88,6 +88,9 @@
     <button [class.active]="activeTab() === 'returns'" (click)="setTab('returns')">
       <span class="material-icons">assignment_return</span> Returns
     </button>
+    <button [class.active]="activeTab() === 'returnpolicy'" (click)="setTab('returnpolicy')">
+      <span class="material-icons">policy</span> Return Policy
+    </button>
   </div>
 
   @if (isLoading()) {
@@ -1059,6 +1062,48 @@
             }
           </tbody>
         </table>
+      </div>
+    }
+
+    @if (activeTab() === 'returnpolicy') {
+      <div class="admin-card">
+        <h3>Return Policy Settings</h3>
+        <div class="return-policy-form">
+          <div class="form-row">
+            <div class="form-group" style="flex: 0 0 200px;">
+              <label>Return Window (Days)</label>
+              <input type="number" [value]="returnPolicyForm().returnWindowDays"
+                (change)="returnPolicyForm.set({...returnPolicyForm(), returnWindowDays: +$any($event.target).value})"
+                min="0" max="90" class="filter-select" />
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end; padding-bottom: 4px;">
+              <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" [checked]="returnPolicyForm().isActive"
+                  (change)="returnPolicyForm.set({...returnPolicyForm(), isActive: $any($event.target).checked})" />
+                Returns Active
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Policy Content</label>
+            <textarea [value]="returnPolicyForm().policyText"
+              (input)="returnPolicyForm.set({...returnPolicyForm(), policyText: $any($event.target).value})"
+              rows="20" style="width: 100%; font-family: monospace; font-size: 13px; line-height: 1.6;"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn-save" (click)="saveReturnPolicy()" [disabled]="returnPolicySaving()">
+              {{ returnPolicySaving() ? 'Saving...' : 'Save Return Policy' }}
+            </button>
+            @if (returnPolicyData()?.updatedAt) {
+              <span class="policy-last-updated">
+                Last updated: {{ returnPolicyData()?.updatedAt | date:'medium' }}
+                @if (returnPolicyData()?.updatedBy) {
+                  <span> by {{ returnPolicyData()?.updatedBy }}</span>
+                }
+              </span>
+            }
+          </div>
+        </div>
       </div>
     }
 

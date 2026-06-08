@@ -10,6 +10,7 @@ import { AdminComponent } from './components/admin/admin.component';
 import { ProductDetailComponent } from './components/product-detail/product-detail.component';
 import { WishlistComponent } from './components/wishlist/wishlist.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { ReturnPolicyComponent } from './components/return-policy/return-policy.component';
 import { authGuard } from './guards/auth.guard';
 import { guestGuard } from './guards/guest.guard';
 import { customerGuard } from './guards/customer.guard';
@@ -27,6 +28,7 @@ export const routes: Routes = [
   { path: 'orders/:id', component: OrderDetailComponent, canActivate: [customerGuard] },
   { path: 'wishlist', component: WishlistComponent, canActivate: [customerGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  { path: 'return-policy', component: ReturnPolicyComponent },
   { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
   { path: '**', redirectTo: '/products' }
 ];
