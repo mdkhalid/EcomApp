@@ -553,28 +553,45 @@
   font-weight: 500;
 }
 
-.cart-sug-add {
+.add-cart-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  margin-top: auto;
-  padding: 6px 10px;
-  border: 1px solid #2874f0;
-  background: #fff;
-  color: #2874f0;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--flipkart-blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  margin-top: var(--space-sm);
+  font-family: inherit;
+
+  .material-icons { font-size: 18px; }
+
+  &:hover:not(:disabled) {
+    background: var(--flipkart-blue-dark);
+    box-shadow: 0 2px 8px rgba(40, 116, 240, 0.3);
+  }
+
+  &:disabled {
+    background: #E0E0E0;
+    color: #999;
+    cursor: not-allowed;
+  }
+}
+
+.cart-sug-info .add-cart-btn {
+  margin-top: auto;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--font-size-xs);
+  gap: 4px;
 
   .material-icons { font-size: 14px; }
-
-  &:hover {
-    background: #2874f0;
-    color: #fff;
-  }
 }
 
 @media (max-width: 768px) {

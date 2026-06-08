@@ -165,8 +165,8 @@
             @if (s.averageRating > 0) {
               <span class="cart-sug-rating">{{ s.averageRating.toFixed(1) }} ★</span>
             }
-            <button class="cart-sug-add" (click)="addToCart(s.productId)">
-              <span class="material-icons">add_shopping_cart</span>
+            <button class="add-cart-btn" (click)="addToCart(s.productId)">
+              <span class="material-icons">shopping_cart</span>
               Add to Cart
             </button>
           </div>

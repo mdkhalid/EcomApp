@@ -501,14 +501,14 @@
 }
 
 /* Action Buttons */
-.pd-add-cart-btn {
+.add-cart-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
   width: 100%;
   padding: var(--space-md);
-  background: var(--flipkart-orange);
+  background: var(--flipkart-blue);
   color: white;
   border: none;
   border-radius: var(--radius-sm);
@@ -523,8 +523,8 @@
   .material-icons { font-size: 20px; }
 
   &:hover:not(:disabled) {
-    background: #e55a14;
-    box-shadow: 0 2px 8px rgba(251, 100, 27, 0.3);
+    background: var(--flipkart-blue-dark);
+    box-shadow: 0 2px 8px rgba(40, 116, 240, 0.3);
   }
 
   &:disabled {
