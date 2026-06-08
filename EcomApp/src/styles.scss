@@ -192,8 +192,8 @@ ul, ol {
   .material-icons { font-size: 18px; }
 
   &:hover:not(:disabled) {
-    background: var(--flipkart-blue-dark);
-    box-shadow: 0 2px 8px rgba(40, 116, 240, 0.3);
+    background: var(--flipkart-orange);
+    box-shadow: 0 2px 8px rgba(251, 100, 27, 0.3);
   }
 
   &.btn-disabled,
