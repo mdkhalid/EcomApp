@@ -51,6 +51,10 @@ export class App implements OnInit, OnDestroy {
     { initialValue: this.router.url }
   );
   protected readonly isAdminRoute = computed(() => this.currentUrl().startsWith('/admin'));
+  protected readonly isAuthRoute = computed(() => {
+    const url = this.currentUrl();
+    return url === '/login' || url === '/register';
+  });
 
   ngOnInit(): void {
     this.categoryService.getAll().subscribe(data => this.categories.set(data));

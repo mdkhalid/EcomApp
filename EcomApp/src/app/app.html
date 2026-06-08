@@ -1,4 +1,5 @@
 <!-- ===== TOP HEADER ===== -->
+@if (!isAuthRoute()) {
 <header class="header">
   <div class="header-inner">
     <!-- Left: Logo -->
@@ -200,9 +201,10 @@
     </div>
   </div>
 </header>
+}
 
 <!-- ===== CATEGORIES NAV BAR ===== -->
-@if (!isAdminRoute()) {
+@if (!isAdminRoute() && !isAuthRoute()) {
   <nav class="category-bar">
     <div class="category-bar-inner">
       @for (cat of categories(); track cat.id) {
@@ -222,8 +224,8 @@
   <router-outlet />
 </main>
 
-<!-- ===== SUPPORT BOT (not on admin pages) ===== -->
-@if (!isAdminRoute()) {
+<!-- ===== SUPPORT BOT (not on admin/auth pages) ===== -->
+@if (!isAdminRoute() && !isAuthRoute()) {
   <app-support-bot />
 }
 
