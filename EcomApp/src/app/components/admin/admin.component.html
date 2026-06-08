@@ -455,13 +455,13 @@
           <tbody>
             @for (product of getFilteredProducts(); track product.id) {
               <tr>
-                <td>
-                  @if (product.imageUrl) {
-                    <img [src]="getFullImageUrl(product.imageUrl)" class="table-thumb" />
-                  } @else {
-                    <div class="table-thumb-placeholder"><span class="material-icons">image</span></div>
-                  }
-                </td>
+                  <td>
+                    @if (product.images.length) {
+                      <img [src]="getFullImageUrl(product.images[0].imageUrl)" class="table-thumb" />
+                    } @else {
+                      <div class="table-thumb-placeholder"><span class="material-icons">image</span></div>
+                    }
+                  </td>
                 <td>#{{ product.id }}</td>
                 <td class="product-name-cell">{{ product.name }}</td>
                 <td><span class="brand-tag">{{ product.brand || '—' }}</span></td>

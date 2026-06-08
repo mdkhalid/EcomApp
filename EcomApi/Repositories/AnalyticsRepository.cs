@@ -218,7 +218,10 @@ public class AnalyticsRepository : IAnalyticsRepository
                 ProductId = p.Id,
                 ProductName = p.Name,
                 Category = p.Category,
-                ImageUrl = p.ImageUrl,
+                ImageUrl = p.ProductImages
+                    .OrderBy(pi => pi.SortOrder)
+                    .Select(pi => pi.ImageUrl)
+                    .FirstOrDefault(),
                 Stock = p.Stock
             })
             .ToListAsync();

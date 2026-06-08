@@ -12,7 +12,6 @@ public class ProductDto
     public int Stock { get; set; }
     public string Category { get; set; } = string.Empty;
     public string? Brand { get; set; }
-    public string? ImageUrl { get; set; }
     public bool IsActive { get; set; }
     public double AverageRating { get; set; }
     public int TotalReviews { get; set; }
@@ -105,7 +104,4 @@ public class UpdateProductDto
 
     [StringLength(100)]
     public string? Brand { get; set; }
-
-    [StringLength(500)]
-    public string? ImageUrl { get; set; }
 }

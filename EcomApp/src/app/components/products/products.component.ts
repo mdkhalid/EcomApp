@@ -125,14 +125,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   private imageCycles = new Map<number, { index: number; intervalId: ReturnType<typeof setInterval> }>();
 
   getProductImages(product: Product): string[] {
-    const urls: string[] = [];
-    if (product.imageUrl) urls.push(product.imageUrl);
-    if (product.images?.length) {
-      for (const img of product.images) {
-        if (img.imageUrl && img.imageUrl !== product.imageUrl) urls.push(img.imageUrl);
-      }
-    }
-    return urls;
+    return product.images?.map(i => i.imageUrl).filter(u => !!u) ?? [];
   }
 
   getCurrentImageIndex(productId: number): number {

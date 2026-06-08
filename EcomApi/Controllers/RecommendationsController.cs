@@ -37,6 +37,7 @@ public class RecommendationsController : ControllerBase
         var products = await _context.Products
             .AsNoTracking()
             .Include(p => p.Reviews)
+            .Include(p => p.ProductImages)
             .Where(p => productIds.Contains(p.Id) && p.IsActive)
             .ToListAsync();
 
@@ -61,6 +62,7 @@ public class RecommendationsController : ControllerBase
             var trending = await _context.Products
                 .AsNoTracking()
                 .Include(p => p.Reviews)
+                .Include(p => p.ProductImages)
                 .Where(p => p.IsActive)
                 .OrderByDescending(p => p.Reviews.Average(r => (double?)r.Rating) ?? 0)
                 .ThenByDescending(p => p.Reviews.Count)
@@ -73,6 +75,7 @@ public class RecommendationsController : ControllerBase
         var products = await _context.Products
             .AsNoTracking()
             .Include(p => p.Reviews)
+            .Include(p => p.ProductImages)
             .Where(p => productIds.Contains(p.Id) && p.IsActive)
             .ToListAsync();
 
@@ -96,6 +99,7 @@ public class RecommendationsController : ControllerBase
         var products = await _context.Products
             .AsNoTracking()
             .Include(p => p.Reviews)
+            .Include(p => p.ProductImages)
             .Where(p => productIds.Contains(p.Id) && p.IsActive)
             .ToListAsync();
 
@@ -119,6 +123,7 @@ public class RecommendationsController : ControllerBase
         var products = await _context.Products
             .AsNoTracking()
             .Include(p => p.Reviews)
+            .Include(p => p.ProductImages)
             .Where(p => productIds.Contains(p.Id) && p.IsActive)
             .ToListAsync();
 
@@ -137,6 +142,7 @@ public class RecommendationsController : ControllerBase
         var products = await _context.Products
             .AsNoTracking()
             .Include(p => p.Reviews)
+            .Include(p => p.ProductImages)
             .Where(p => p.IsActive)
             .OrderByDescending(p => p.Reviews.Average(r => (double?)r.Rating) ?? 0)
             .ThenByDescending(p => p.Reviews.Count)
@@ -152,7 +158,10 @@ public class RecommendationsController : ControllerBase
         {
             ProductId = p.Id,
             Name = p.Name,
-            ImageUrl = p.ImageUrl,
+            ImageUrl = p.ProductImages
+                .OrderBy(pi => pi.SortOrder)
+                .Select(pi => pi.ImageUrl)
+                .FirstOrDefault(),
             Price = p.Price,
             OriginalPrice = p.OriginalPrice,
             DiscountPercent = p.DiscountPercent,

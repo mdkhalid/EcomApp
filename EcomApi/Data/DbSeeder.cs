@@ -1,5 +1,6 @@
 using EcomApi.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace EcomApi.Data;
 
@@ -191,6 +192,69 @@ public static class DbSeeder
         context.SaveChanges();
     }
 
+    private static readonly Dictionary<string, string> ProductImageUrls = new()
+    {
+        ["Camera"] = "/uploads/Camera.jpg",
+        ["Keyboard"] = "/uploads/Keyboard.jpg",
+        ["Gaming Keyboard"] = "/uploads/Keyboard1.jpg",
+        ["MacBook Pro"] = "/uploads/Macbook.jpg",
+        ["MacBook Air"] = "/uploads/Macbook1.jpg",
+        ["Headphones"] = "/uploads/headphone.jpg",
+        ["Wireless Earbuds"] = "/uploads/headphone1.jpg",
+        ["VR Headset"] = "/uploads/goggle.jpg",
+        ["T-Shirt"] = "/uploads/tshirt.jpg",
+        ["Polo T-Shirt"] = "/uploads/tshirt1.jpg",
+        ["Designer T-Shirt"] = "/uploads/tshirt2.jpg",
+        ["Winter Gloves"] = "/uploads/Gloves.jpg",
+        ["Running Shoes"] = "/uploads/shoes.jpg",
+        ["Casual Sneakers"] = "/uploads/shoes1.jpg",
+        ["Sports Shoes"] = "/uploads/shoes2.jpg",
+        ["Coffee"] = "/uploads/Coffee.jpg",
+        ["Watering Can"] = "/uploads/Watering_Can.jpg",
+        ["Garden Manure"] = "/uploads/Manure.jpeg",
+        ["Backpack"] = "/uploads/Bag.jpg",
+        ["Tote Bag"] = "/uploads/Jhola.jpg",
+        ["Analog Watch"] = "/uploads/watcht.jpg",
+        ["Digital Watch"] = "/uploads/watcht1.jpg",
+        ["Smart Watch"] = "/uploads/watcht2.jpg",
+        ["Handbag"] = "/uploads/Perse.jpg",
+        ["Baby Cream"] = "/uploads/Baby_Cream.jpg",
+        ["Baby Powder"] = "/uploads/Baby_Powder.jpg",
+        ["Baby Shampoo"] = "/uploads/Baby_Shampoo.jpg",
+        ["Baby Wipes"] = "/uploads/Baby_Wipes.jpg",
+        ["Baby Care Set"] = "/uploads/Baby_care_products.jpg",
+        ["Diapers"] = "/uploads/Diapers.jpg",
+        ["Beard Oil"] = "/uploads/Beard_Oil.jpg",
+        ["Face Cream"] = "/uploads/Face_Cream.jpg",
+        ["Baby Oil"] = "/uploads/Johnson's_Baby_Oil.jpg",
+        ["Face Wash"] = "/uploads/Lakme_Facewash.jpg",
+        ["Lip Balm"] = "/uploads/Lip_Balm.jpg",
+        ["Men's Face Wash"] = "/uploads/Men's_Face_Wash.jpg",
+        ["Moisturizer"] = "/uploads/Moisturizer.jpg",
+        ["Fresh Apples"] = "/uploads/Apple.jpg",
+        ["Coca Cola"] = "/uploads/Coke.jpg",
+        ["Orange Juice"] = "/uploads/OrangeDrink.jpg",
+        ["Sprite"] = "/uploads/Sprite.jpg",
+        ["Atta"] = "/uploads/atta.jpg",
+        ["Maggi Noodles"] = "/uploads/maggi.jpg",
+        ["Fresh Oranges"] = "/uploads/Oranges.jpg",
+        ["Potato Chips"] = "/uploads/chip.png",
+        ["Cough Syrup"] = "/uploads/CUFRIL-D_cough_syrup.jpg",
+        ["Cetirizine"] = "/uploads/Cetirizine.jpg",
+        ["Cold Medicine"] = "/uploads/Cheston_Cold.jpg",
+        ["Dolo 650"] = "/uploads/Dolo.jpg",
+        ["Gelusil"] = "/uploads/Gelusil.jfif",
+        ["Gelusil Plus"] = "/uploads/Gelusil_1.jpg",
+        ["Medicine Kit"] = "/uploads/Medicines.jpg",
+        ["Metolar XR 50"] = "/uploads/Metolar_XR_50.jpg",
+        ["Pencil Set"] = "/uploads/Pencils.jpg",
+        ["Pen Set"] = "/uploads/Pens.jpg",
+        ["Push Pins"] = "/uploads/Pins.jpg",
+        ["Paper Puncher"] = "/uploads/Puncher.jpg",
+        ["Stapler"] = "/uploads/Stapler.jpg",
+        ["Sticky Notes"] = "/uploads/Sticky_Notes.jpg"
+    };
+
     private static void SeedProducts(ApplicationDbContext context)
     {
         var existingNames = context.Products.Select(p => p.Name).ToHashSet();
@@ -198,81 +262,81 @@ public static class DbSeeder
         var products = new List<Product>
         {
             // Electronics
-            new() { Name = "Camera", Description = "Digital camera with high resolution", Price = 499.99m, Stock = 15, Category = "Electronics", ImageUrl = "/uploads/Camera.jpg" },
-            new() { Name = "Keyboard", Description = "Mechanical keyboard", Price = 89.99m, Stock = 25, Category = "Electronics", ImageUrl = "/uploads/Keyboard.jpg" },
-            new() { Name = "Gaming Keyboard", Description = "RGB gaming keyboard", Price = 129.99m, Stock = 20, Category = "Electronics", ImageUrl = "/uploads/Keyboard1.jpg" },
-            new() { Name = "MacBook Pro", Description = "Apple MacBook Pro laptop", Price = 1999.99m, Stock = 10, Category = "Electronics", ImageUrl = "/uploads/Macbook.jpg" },
-            new() { Name = "MacBook Air", Description = "Apple MacBook Air laptop", Price = 1499.99m, Stock = 12, Category = "Electronics", ImageUrl = "/uploads/Macbook1.jpg" },
-            new() { Name = "Headphones", Description = "Over-ear headphones", Price = 79.99m, Stock = 30, Category = "Electronics", ImageUrl = "/uploads/headphone.jpg" },
-            new() { Name = "Wireless Earbuds", Description = "Bluetooth wireless earbuds", Price = 49.99m, Stock = 50, Category = "Electronics", ImageUrl = "/uploads/headphone1.jpg" },
-            new() { Name = "VR Headset", Description = "Virtual reality headset", Price = 299.99m, Stock = 10, Category = "Electronics", ImageUrl = "/uploads/goggle.jpg" },
+            new() { Name = "Camera", Description = "Digital camera with high resolution", Price = 499.99m, Stock = 15, Category = "Electronics" },
+            new() { Name = "Keyboard", Description = "Mechanical keyboard", Price = 89.99m, Stock = 25, Category = "Electronics" },
+            new() { Name = "Gaming Keyboard", Description = "RGB gaming keyboard", Price = 129.99m, Stock = 20, Category = "Electronics" },
+            new() { Name = "MacBook Pro", Description = "Apple MacBook Pro laptop", Price = 1999.99m, Stock = 10, Category = "Electronics" },
+            new() { Name = "MacBook Air", Description = "Apple MacBook Air laptop", Price = 1499.99m, Stock = 12, Category = "Electronics" },
+            new() { Name = "Headphones", Description = "Over-ear headphones", Price = 79.99m, Stock = 30, Category = "Electronics" },
+            new() { Name = "Wireless Earbuds", Description = "Bluetooth wireless earbuds", Price = 49.99m, Stock = 50, Category = "Electronics" },
+            new() { Name = "VR Headset", Description = "Virtual reality headset", Price = 299.99m, Stock = 10, Category = "Electronics" },
 
             // Clothing
-            new() { Name = "T-Shirt", Description = "Cotton casual t-shirt", Price = 19.99m, Stock = 100, Category = "Clothing", ImageUrl = "/uploads/tshirt.jpg" },
-            new() { Name = "Polo T-Shirt", Description = "Premium polo t-shirt", Price = 29.99m, Stock = 80, Category = "Clothing", ImageUrl = "/uploads/tshirt1.jpg" },
-            new() { Name = "Designer T-Shirt", Description = "Designer brand t-shirt", Price = 39.99m, Stock = 60, Category = "Clothing", ImageUrl = "/uploads/tshirt2.jpg" },
-            new() { Name = "Winter Gloves", Description = "Warm winter gloves", Price = 24.99m, Stock = 40, Category = "Clothing", ImageUrl = "/uploads/Gloves.jpg" },
+            new() { Name = "T-Shirt", Description = "Cotton casual t-shirt", Price = 19.99m, Stock = 100, Category = "Clothing" },
+            new() { Name = "Polo T-Shirt", Description = "Premium polo t-shirt", Price = 29.99m, Stock = 80, Category = "Clothing" },
+            new() { Name = "Designer T-Shirt", Description = "Designer brand t-shirt", Price = 39.99m, Stock = 60, Category = "Clothing" },
+            new() { Name = "Winter Gloves", Description = "Warm winter gloves", Price = 24.99m, Stock = 40, Category = "Clothing" },
 
             // Footwear
-            new() { Name = "Running Shoes", Description = "Comfortable running shoes", Price = 79.99m, Stock = 25, Category = "Footwear", ImageUrl = "/uploads/shoes.jpg" },
-            new() { Name = "Casual Sneakers", Description = "Stylish casual sneakers", Price = 69.99m, Stock = 30, Category = "Footwear", ImageUrl = "/uploads/shoes1.jpg" },
-            new() { Name = "Sports Shoes", Description = "High-performance sports shoes", Price = 89.99m, Stock = 20, Category = "Footwear", ImageUrl = "/uploads/shoes2.jpg" },
+            new() { Name = "Running Shoes", Description = "Comfortable running shoes", Price = 79.99m, Stock = 25, Category = "Footwear" },
+            new() { Name = "Casual Sneakers", Description = "Stylish casual sneakers", Price = 69.99m, Stock = 30, Category = "Footwear" },
+            new() { Name = "Sports Shoes", Description = "High-performance sports shoes", Price = 89.99m, Stock = 20, Category = "Footwear" },
 
             // Home
-            new() { Name = "Coffee", Description = "Premium coffee beans", Price = 14.99m, Stock = 50, Category = "Home", ImageUrl = "/uploads/Coffee.jpg" },
-            new() { Name = "Watering Can", Description = "Garden watering can", Price = 12.99m, Stock = 35, Category = "Home", ImageUrl = "/uploads/Watering_Can.jpg" },
-            new() { Name = "Garden Manure", Description = "Organic garden manure", Price = 9.99m, Stock = 100, Category = "Home", ImageUrl = "/uploads/Manure.jpeg" },
+            new() { Name = "Coffee", Description = "Premium coffee beans", Price = 14.99m, Stock = 50, Category = "Home" },
+            new() { Name = "Watering Can", Description = "Garden watering can", Price = 12.99m, Stock = 35, Category = "Home" },
+            new() { Name = "Garden Manure", Description = "Organic garden manure", Price = 9.99m, Stock = 100, Category = "Home" },
 
             // Accessories
-            new() { Name = "Backpack", Description = "Travel backpack", Price = 59.99m, Stock = 35, Category = "Accessories", ImageUrl = "/uploads/Bag.jpg" },
-            new() { Name = "Tote Bag", Description = "Canvas tote bag", Price = 19.99m, Stock = 50, Category = "Accessories", ImageUrl = "/uploads/Jhola.jpg" },
-            new() { Name = "Analog Watch", Description = "Classic analog watch", Price = 149.99m, Stock = 15, Category = "Accessories", ImageUrl = "/uploads/watcht.jpg" },
-            new() { Name = "Digital Watch", Description = "Digital sports watch", Price = 79.99m, Stock = 25, Category = "Accessories", ImageUrl = "/uploads/watcht1.jpg" },
-            new() { Name = "Smart Watch", Description = "Smart watch with fitness tracking", Price = 199.99m, Stock = 12, Category = "Accessories", ImageUrl = "/uploads/watcht2.jpg" },
-            new() { Name = "Handbag", Description = "Women's handbag", Price = 49.99m, Stock = 20, Category = "Accessories", ImageUrl = "/uploads/Perse.jpg" },
+            new() { Name = "Backpack", Description = "Travel backpack", Price = 59.99m, Stock = 35, Category = "Accessories" },
+            new() { Name = "Tote Bag", Description = "Canvas tote bag", Price = 19.99m, Stock = 50, Category = "Accessories" },
+            new() { Name = "Analog Watch", Description = "Classic analog watch", Price = 149.99m, Stock = 15, Category = "Accessories" },
+            new() { Name = "Digital Watch", Description = "Digital sports watch", Price = 79.99m, Stock = 25, Category = "Accessories" },
+            new() { Name = "Smart Watch", Description = "Smart watch with fitness tracking", Price = 199.99m, Stock = 12, Category = "Accessories" },
+            new() { Name = "Handbag", Description = "Women's handbag", Price = 49.99m, Stock = 20, Category = "Accessories" },
 
             // Beauty
-            new() { Name = "Baby Cream", Description = "Gentle baby cream", Price = 8.99m, Stock = 60, Category = "Beauty", ImageUrl = "/uploads/Baby_Cream.jpg" },
-            new() { Name = "Baby Powder", Description = "Baby powder", Price = 5.99m, Stock = 80, Category = "Beauty", ImageUrl = "/uploads/Baby_Powder.jpg" },
-            new() { Name = "Baby Shampoo", Description = "Tear-free baby shampoo", Price = 7.99m, Stock = 50, Category = "Beauty", ImageUrl = "/uploads/Baby_Shampoo.jpg" },
-            new() { Name = "Baby Wipes", Description = "Soft baby wipes", Price = 4.99m, Stock = 100, Category = "Beauty", ImageUrl = "/uploads/Baby_Wipes.jpg" },
-            new() { Name = "Baby Care Set", Description = "Complete baby care set", Price = 24.99m, Stock = 30, Category = "Beauty", ImageUrl = "/uploads/Baby_care_products.jpg" },
-            new() { Name = "Diapers", Description = "Baby diapers pack", Price = 19.99m, Stock = 100, Category = "Beauty", ImageUrl = "/uploads/Diapers.jpg" },
-            new() { Name = "Beard Oil", Description = "Men's beard oil", Price = 12.99m, Stock = 40, Category = "Beauty", ImageUrl = "/uploads/Beard_Oil.jpg" },
-            new() { Name = "Face Cream", Description = "Moisturizing face cream", Price = 14.99m, Stock = 45, Category = "Beauty", ImageUrl = "/uploads/Face_Cream.jpg" },
-            new() { Name = "Baby Oil", Description = "Johnson's baby oil", Price = 6.99m, Stock = 70, Category = "Beauty", ImageUrl = "/uploads/Johnson's_Baby_Oil.jpg" },
-            new() { Name = "Face Wash", Description = "Lakme face wash", Price = 9.99m, Stock = 55, Category = "Beauty", ImageUrl = "/uploads/Lakme_Facewash.jpg" },
-            new() { Name = "Lip Balm", Description = "Moisturizing lip balm", Price = 3.99m, Stock = 90, Category = "Beauty", ImageUrl = "/uploads/Lip_Balm.jpg" },
-            new() { Name = "Men's Face Wash", Description = "Men's face wash", Price = 11.99m, Stock = 45, Category = "Beauty", ImageUrl = "/uploads/Men's_Face_Wash.jpg" },
-            new() { Name = "Moisturizer", Description = "Body moisturizer", Price = 13.99m, Stock = 50, Category = "Beauty", ImageUrl = "/uploads/Moisturizer.jpg" },
+            new() { Name = "Baby Cream", Description = "Gentle baby cream", Price = 8.99m, Stock = 60, Category = "Beauty" },
+            new() { Name = "Baby Powder", Description = "Baby powder", Price = 5.99m, Stock = 80, Category = "Beauty" },
+            new() { Name = "Baby Shampoo", Description = "Tear-free baby shampoo", Price = 7.99m, Stock = 50, Category = "Beauty" },
+            new() { Name = "Baby Wipes", Description = "Soft baby wipes", Price = 4.99m, Stock = 100, Category = "Beauty" },
+            new() { Name = "Baby Care Set", Description = "Complete baby care set", Price = 24.99m, Stock = 30, Category = "Beauty" },
+            new() { Name = "Diapers", Description = "Baby diapers pack", Price = 19.99m, Stock = 100, Category = "Beauty" },
+            new() { Name = "Beard Oil", Description = "Men's beard oil", Price = 12.99m, Stock = 40, Category = "Beauty" },
+            new() { Name = "Face Cream", Description = "Moisturizing face cream", Price = 14.99m, Stock = 45, Category = "Beauty" },
+            new() { Name = "Baby Oil", Description = "Johnson's baby oil", Price = 6.99m, Stock = 70, Category = "Beauty" },
+            new() { Name = "Face Wash", Description = "Lakme face wash", Price = 9.99m, Stock = 55, Category = "Beauty" },
+            new() { Name = "Lip Balm", Description = "Moisturizing lip balm", Price = 3.99m, Stock = 90, Category = "Beauty" },
+            new() { Name = "Men's Face Wash", Description = "Men's face wash", Price = 11.99m, Stock = 45, Category = "Beauty" },
+            new() { Name = "Moisturizer", Description = "Body moisturizer", Price = 13.99m, Stock = 50, Category = "Beauty" },
 
             // Grocery
-            new() { Name = "Fresh Apples", Description = "Fresh red apples (1kg)", Price = 4.99m, Stock = 100, Category = "Grocery", ImageUrl = "/uploads/Apple.jpg" },
-            new() { Name = "Coca Cola", Description = "Coca Cola 500ml", Price = 1.99m, Stock = 200, Category = "Grocery", ImageUrl = "/uploads/Coke.jpg" },
-            new() { Name = "Orange Juice", Description = "Fresh orange juice 1L", Price = 3.99m, Stock = 80, Category = "Grocery", ImageUrl = "/uploads/OrangeDrink.jpg" },
-            new() { Name = "Sprite", Description = "Sprite 500ml", Price = 1.99m, Stock = 200, Category = "Grocery", ImageUrl = "/uploads/Sprite.jpg" },
-            new() { Name = "Atta", Description = "Whole wheat flour 5kg", Price = 8.99m, Stock = 60, Category = "Grocery", ImageUrl = "/uploads/atta.jpg" },
-            new() { Name = "Maggi Noodles", Description = "Maggi instant noodles", Price = 0.99m, Stock = 300, Category = "Grocery", ImageUrl = "/uploads/maggi.jpg" },
-            new() { Name = "Fresh Oranges", Description = "Fresh oranges (1kg)", Price = 3.99m, Stock = 120, Category = "Grocery", ImageUrl = "/uploads/Oranges.jpg" },
-            new() { Name = "Potato Chips", Description = "Crispy potato chips", Price = 2.49m, Stock = 150, Category = "Grocery", ImageUrl = "/uploads/chip.png" },
+            new() { Name = "Fresh Apples", Description = "Fresh red apples (1kg)", Price = 4.99m, Stock = 100, Category = "Grocery" },
+            new() { Name = "Coca Cola", Description = "Coca Cola 500ml", Price = 1.99m, Stock = 200, Category = "Grocery" },
+            new() { Name = "Orange Juice", Description = "Fresh orange juice 1L", Price = 3.99m, Stock = 80, Category = "Grocery" },
+            new() { Name = "Sprite", Description = "Sprite 500ml", Price = 1.99m, Stock = 200, Category = "Grocery" },
+            new() { Name = "Atta", Description = "Whole wheat flour 5kg", Price = 8.99m, Stock = 60, Category = "Grocery" },
+            new() { Name = "Maggi Noodles", Description = "Maggi instant noodles", Price = 0.99m, Stock = 300, Category = "Grocery" },
+            new() { Name = "Fresh Oranges", Description = "Fresh oranges (1kg)", Price = 3.99m, Stock = 120, Category = "Grocery" },
+            new() { Name = "Potato Chips", Description = "Crispy potato chips", Price = 2.49m, Stock = 150, Category = "Grocery" },
 
             // Medicine
-            new() { Name = "Cough Syrup", Description = "CUFRIL-D cough syrup", Price = 5.99m, Stock = 50, Category = "Medicine", ImageUrl = "/uploads/CUFRIL-D_cough_syrup.jpg" },
-            new() { Name = "Cetirizine", Description = "Cetirizine allergy tablets", Price = 3.99m, Stock = 100, Category = "Medicine", ImageUrl = "/uploads/Cetirizine.jpg" },
-            new() { Name = "Cold Medicine", Description = "Cheston Cold tablets", Price = 4.99m, Stock = 80, Category = "Medicine", ImageUrl = "/uploads/Cheston_Cold.jpg" },
-            new() { Name = "Dolo 650", Description = "Dolo 650 paracetamol", Price = 2.99m, Stock = 150, Category = "Medicine", ImageUrl = "/uploads/Dolo.jpg" },
-            new() { Name = "Gelusil", Description = "Gelusil antacid", Price = 3.49m, Stock = 60, Category = "Medicine", ImageUrl = "/uploads/Gelusil.jfif" },
-            new() { Name = "Gelusil Plus", Description = "Gelusil Plus antacid", Price = 4.49m, Stock = 55, Category = "Medicine", ImageUrl = "/uploads/Gelusil_1.jpg" },
-            new() { Name = "Medicine Kit", Description = "First aid medicine kit", Price = 19.99m, Stock = 30, Category = "Medicine", ImageUrl = "/uploads/Medicines.jpg" },
-            new() { Name = "Metolar XR 50", Description = "Metolar XR 50 tablets", Price = 8.99m, Stock = 40, Category = "Medicine", ImageUrl = "/uploads/Metolar_XR_50.jpg" },
+            new() { Name = "Cough Syrup", Description = "CUFRIL-D cough syrup", Price = 5.99m, Stock = 50, Category = "Medicine" },
+            new() { Name = "Cetirizine", Description = "Cetirizine allergy tablets", Price = 3.99m, Stock = 100, Category = "Medicine" },
+            new() { Name = "Cold Medicine", Description = "Cheston Cold tablets", Price = 4.99m, Stock = 80, Category = "Medicine" },
+            new() { Name = "Dolo 650", Description = "Dolo 650 paracetamol", Price = 2.99m, Stock = 150, Category = "Medicine" },
+            new() { Name = "Gelusil", Description = "Gelusil antacid", Price = 3.49m, Stock = 60, Category = "Medicine" },
+            new() { Name = "Gelusil Plus", Description = "Gelusil Plus antacid", Price = 4.49m, Stock = 55, Category = "Medicine" },
+            new() { Name = "Medicine Kit", Description = "First aid medicine kit", Price = 19.99m, Stock = 30, Category = "Medicine" },
+            new() { Name = "Metolar XR 50", Description = "Metolar XR 50 tablets", Price = 8.99m, Stock = 40, Category = "Medicine" },
 
             // Stationery
-            new() { Name = "Pencil Set", Description = "Pencil set (12 pcs)", Price = 3.99m, Stock = 100, Category = "Stationery", ImageUrl = "/uploads/Pencils.jpg" },
-            new() { Name = "Pen Set", Description = "Ball pen set (10 pcs)", Price = 4.99m, Stock = 80, Category = "Stationery", ImageUrl = "/uploads/Pens.jpg" },
-            new() { Name = "Push Pins", Description = "Colored push pins (50 pcs)", Price = 2.49m, Stock = 120, Category = "Stationery", ImageUrl = "/uploads/Pins.jpg" },
-            new() { Name = "Paper Puncher", Description = "Heavy duty paper puncher", Price = 7.99m, Stock = 40, Category = "Stationery", ImageUrl = "/uploads/Puncher.jpg" },
-            new() { Name = "Stapler", Description = "Desktop stapler", Price = 5.99m, Stock = 50, Category = "Stationery", ImageUrl = "/uploads/Stapler.jpg" },
-            new() { Name = "Sticky Notes", Description = "Sticky notes pack", Price = 2.99m, Stock = 100, Category = "Stationery", ImageUrl = "/uploads/Sticky_Notes.jpg" }
+            new() { Name = "Pencil Set", Description = "Pencil set (12 pcs)", Price = 3.99m, Stock = 100, Category = "Stationery" },
+            new() { Name = "Pen Set", Description = "Ball pen set (10 pcs)", Price = 4.99m, Stock = 80, Category = "Stationery" },
+            new() { Name = "Push Pins", Description = "Colored push pins (50 pcs)", Price = 2.49m, Stock = 120, Category = "Stationery" },
+            new() { Name = "Paper Puncher", Description = "Heavy duty paper puncher", Price = 7.99m, Stock = 40, Category = "Stationery" },
+            new() { Name = "Stapler", Description = "Desktop stapler", Price = 5.99m, Stock = 50, Category = "Stationery" },
+            new() { Name = "Sticky Notes", Description = "Sticky notes pack", Price = 2.99m, Stock = 100, Category = "Stationery" }
         };
 
         var newProducts = products.Where(p => !existingNames.Contains(p.Name)).ToList();
@@ -281,6 +345,24 @@ public static class DbSeeder
             context.Products.AddRange(newProducts);
             context.SaveChanges();
         }
+
+        // Seed primary ProductImage for each product that doesn't have one
+        var allProducts = context.Products.Include(p => p.ProductImages).ToList();
+        foreach (var product in allProducts)
+        {
+            if (product.ProductImages.Any()) continue;
+            if (ProductImageUrls.TryGetValue(product.Name, out var url))
+            {
+                context.ProductImages.Add(new ProductImage
+                {
+                    ProductId = product.Id,
+                    ImageUrl = url,
+                    SortOrder = 1,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+        context.SaveChanges();
 
         // Ensure all existing products are active
         var inactiveProducts = context.Products.Where(p => !p.IsActive).ToList();
@@ -292,25 +374,6 @@ public static class DbSeeder
             }
             context.SaveChanges();
         }
-
-        // Fix broken image URLs (wrong extensions)
-        var imageUrlFixes = new Dictionary<string, string>
-        {
-            { "/uploads/headphone.jpt", "/uploads/headphone.jpg" },
-            { "/uploads/headphone1.jpt", "/uploads/headphone1.jpg" },
-            { "/uploads/goggle.jpt", "/uploads/goggle.jpg" },
-            { "/uploads/Coke.jpt", "/uploads/Coke.jpg" }
-        };
-
-        foreach (var (wrongUrl, correctUrl) in imageUrlFixes)
-        {
-            var productsToFix = context.Products.Where(p => p.ImageUrl == wrongUrl).ToList();
-            foreach (var product in productsToFix)
-            {
-                product.ImageUrl = correctUrl;
-            }
-        }
-        context.SaveChanges();
     }
 
     private static void SeedEthnicWear(ApplicationDbContext context)
@@ -367,13 +430,21 @@ public static class DbSeeder
                 Stock = 20,
                 Category = "Clothing",
                 Brand = brands[i % brands.Length],
-                ImageUrl = $"/uploads/{img1}.jpg",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
             context.Products.Add(product);
             context.SaveChanges();
+
+            var primaryImage = new ProductImage
+            {
+                ProductId = product.Id,
+                ImageUrl = $"/uploads/{img1}.jpg",
+                SortOrder = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.ProductImages.Add(primaryImage);
 
             var galleryImage = new ProductImage
             {

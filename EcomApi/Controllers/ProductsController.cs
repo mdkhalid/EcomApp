@@ -276,12 +276,6 @@ public class ProductsController : ControllerBase
         _context.ProductImages.Add(productImage);
         await _context.SaveChangesAsync();
 
-        if (product.ImageUrl == null)
-        {
-            product.ImageUrl = productImage.ImageUrl;
-            await _repository.UpdateAsync(product);
-        }
-
         return CreatedAtAction(nameof(GetById), new { id });
     }
 
@@ -311,17 +305,6 @@ public class ProductsController : ControllerBase
 
         _context.ProductImages.Remove(image);
         await _context.SaveChangesAsync();
-
-        var product = await _repository.GetByIdAsync(id);
-        if (product != null && product.ImageUrl == image.ImageUrl)
-        {
-            var nextImage = await _context.ProductImages
-                .Where(i => i.ProductId == id)
-                .OrderBy(i => i.SortOrder)
-                .FirstOrDefaultAsync();
-            product.ImageUrl = nextImage?.ImageUrl;
-            await _repository.UpdateAsync(product);
-        }
 
         return NoContent();
     }

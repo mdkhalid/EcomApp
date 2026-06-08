@@ -45,11 +45,7 @@ export class ProductDetailComponent implements OnInit {
   get images(): { url: string; id: number }[] {
     const p = this.product();
     if (!p) return [];
-    const images: { url: string; id: number }[] = p.images.map(i => ({ url: i.imageUrl, id: i.id }));
-    if (p.imageUrl && !images.some(i => i.url === p.imageUrl)) {
-      images.unshift({ url: p.imageUrl, id: 0 });
-    }
-    return images;
+    return p.images.map(i => ({ url: i.imageUrl, id: i.id }));
   }
   get currentImage(): string {
     const imgs = this.images;

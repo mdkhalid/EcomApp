@@ -10,7 +10,6 @@ public class Product
     public int Stock { get; set; }
     public string Category { get; set; } = string.Empty;
     public string? Brand { get; set; }
-    public string? ImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

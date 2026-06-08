@@ -60,7 +60,10 @@ public class OrderRepository : IOrderRepository
             {
                 ProductId = ci.ProductId,
                 ProductName = ci.Product.Name,
-                ProductImage = ci.Product.ImageUrl,
+                ProductImage = ci.Product.ProductImages
+                    .OrderBy(pi => pi.SortOrder)
+                    .Select(pi => pi.ImageUrl)
+                    .FirstOrDefault() ?? "",
                 VariantName = ci.VariantName,
                 Quantity = ci.Quantity,
                 UnitPrice = ci.UnitPrice,

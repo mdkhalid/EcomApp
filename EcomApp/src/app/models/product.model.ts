@@ -7,7 +7,6 @@ export interface Product {
   stock: number;
   category: string;
   brand?: string;
-  imageUrl?: string;
   isActive: boolean;
   averageRating: number;
   totalReviews: number;
@@ -57,7 +56,6 @@ export interface UpdateProduct {
   stock: number;
   category: string;
   brand?: string;
-  imageUrl?: string;
 }
 
 export interface SearchFilter {

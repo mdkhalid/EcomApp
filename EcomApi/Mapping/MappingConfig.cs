@@ -25,7 +25,10 @@ public static class MappingConfig
 
         TypeAdapterConfig<CartItem, CartItemDto>.NewConfig()
             .Map(dest => dest.ProductName, src => src.Product.Name)
-            .Map(dest => dest.ProductImage, src => src.Product.ImageUrl)
+            .Map(dest => dest.ProductImage, src => src.Product.ProductImages
+                .OrderBy(pi => pi.SortOrder)
+                .Select(pi => pi.ImageUrl)
+                .FirstOrDefault() ?? "")
             .Map(dest => dest.VariantName, src => src.VariantName)
             .Map(dest => dest.ProductVariantId, src => src.ProductVariantId)
             .Compile();
