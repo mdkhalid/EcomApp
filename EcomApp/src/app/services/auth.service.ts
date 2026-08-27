@@ -113,6 +113,18 @@ export class AuthService {
     );
   }
 
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { email }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  resetPassword(data: { email: string; token: string; newPassword: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, data).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
   addAddress(data: CreateAddressRequest): Observable<Address> {
     return this.http.post<Address>(`${this.apiUrl}/addresses`, data).pipe(
       catchError(err => { console.error(err); return throwError(() => err); })

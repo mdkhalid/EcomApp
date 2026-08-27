@@ -160,8 +160,12 @@ Read via `IOptions<SmtpSettings>` with env override. SMS/WhatsApp creds added th
 **Phase 3 — Wire transactional emails**
 - [ ] Welcome on register; Confirmation on order; Shipped/Delivered on status. COMMIT.
 
-**Phase 4 — Frontend**
-- [ ] `forgot-password` + `reset-password` pages + login link + services. COMMIT.
+**Phase 4 — Frontend — DONE ✅**
+- [x] `AuthService.forgotPassword()` + `resetPassword()`.
+- [x] `forgot-password` page (email request, generic success message).
+- [x] `reset-password` page (reads `token`+`email` from query params, validates, confirms match).
+- [x] Routes `/forgot-password`, `/reset-password` (guest-guarded).
+- [x] Login page "Forgot password?" link. All URLs use `environment.apiUrl` (no hard-coded host). COMMITTED.
 
 **Phase 5 — Test & polish**
 - [ ] Backend unit tests (token gen/validate/expiry, dispatch).
