@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using EcomApi.DTOs;
 using EcomApi.Models;
 using EcomApi.Repositories;
@@ -18,17 +20,23 @@ public class AuthController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly ILogger<AuthController> _logger;
+    private readonly IEmailService _emailService;
+    private readonly ISettingsProvider _settings;
 
     public AuthController(
         IUserRepository userRepository,
         ITokenService tokenService,
         IPasswordHasher<User> passwordHasher,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        IEmailService emailService,
+        ISettingsProvider settings)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
         _passwordHasher = passwordHasher;
         _logger = logger;
+        _emailService = emailService;
+        _settings = settings;
     }
 
     [HttpPost("register")]
@@ -464,6 +472,61 @@ public class AuthController : ControllerBase
         if (!result)
             return NotFound();
         return NoContent();
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
+        if (user != null)
+        {
+            var tokenBytes = RandomNumberGenerator.GetBytes(32);
+            var token = Convert.ToHexString(tokenBytes);
+            var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+
+            user.PasswordResetTokenHash = hash;
+            user.PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(30);
+            await _userRepository.UpdateAsync(user);
+
+            var clientBase = await _settings.GetRawAsync("Client:BaseUrl", cancellationToken) ?? "http://localhost:4200";
+            var link = $"{clientBase.TrimEnd('/')}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
+            var name = user.FirstName ?? user.Username;
+            await _emailService.SendAsync(user.Email, "Reset your password - Ecom", EmailTemplates.PasswordReset(name, link));
+        }
+
+        // Identical response regardless of whether the account exists (no enumeration)
+        return Ok(new { message = "If the account exists, a password reset link has been sent to your email." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8)
+            return BadRequest(new { error = "Password must be at least 8 characters." });
+
+        var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
+        if (user == null || string.IsNullOrEmpty(user.PasswordResetTokenHash) ||
+            user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry < DateTime.UtcNow)
+        {
+            return BadRequest(new { error = "Invalid or expired token." });
+        }
+
+        var incomingHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(dto.Token)));
+        if (!string.Equals(incomingHash, user.PasswordResetTokenHash, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Invalid or expired token." });
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
+        user.PasswordResetTokenHash = null;
+        user.PasswordResetTokenExpiry = null;
+        user.FailedLoginAttempts = 0;
+        user.LockoutEnd = null;
+        user.LockoutReason = null;
+
+        foreach (var rt in user.RefreshTokens.Where(r => r.IsActive))
+            rt.RevokedAt = DateTime.UtcNow;
+
+        await _userRepository.UpdateAsync(user);
+        return Ok(new { message = "Password reset successful. Please log in." });
     }
 
     private async Task<ActionResult<TokenResponseDto>> GenerateTokenResponse(User user)

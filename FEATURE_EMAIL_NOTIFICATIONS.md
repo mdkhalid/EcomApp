@@ -150,10 +150,12 @@ Read via `IOptions<SmtpSettings>` with env override. SMS/WhatsApp creds added th
 - [x] `NotificationService` routes through `EmailTemplates`; branches to Shipped/Delivered templates on status.
 - [x] `EmailChannel` sends real emails (MailKit), config-driven via `ISettingsProvider`. COMMITTED.
 
-**Phase 2 — Password reset backend**
-- [ ] User fields + migration.
-- [ ] `forgot-password` / `reset-password` endpoints.
-- [ ] Rate-limit. COMMIT.
+**Phase 2 — Password reset backend — DONE ✅**
+- [x] `User`: `PasswordResetTokenHash` + `PasswordResetTokenExpiry`; migration `AddPasswordReset`.
+- [x] DTOs `ForgotPasswordDto`, `ResetPasswordDto`.
+- [x] `AuthController.ForgotPassword` — generic response (no enumeration), crypto token (hash stored, 30-min expiry), email via `EmailTemplates.PasswordReset` + `Client:BaseUrl` link.
+- [x] `AuthController.ResetPassword` — validates hashed token, sets new password, revokes refresh tokens, single-use.
+- [x] Global rate limiter (30/min/IP) already covers `forgot-password`. COMMITTED.
 
 **Phase 3 — Wire transactional emails**
 - [ ] Welcome on register; Confirmation on order; Shipped/Delivered on status. COMMIT.

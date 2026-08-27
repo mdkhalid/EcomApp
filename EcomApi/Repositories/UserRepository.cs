@@ -27,6 +27,7 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .AsNoTracking()
+            .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Email == email && u.IsActive, cancellationToken);
     }
 
