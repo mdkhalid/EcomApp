@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { OrderService } from '../../services/order.service';
 import { NotificationService } from '../../services/notification.service';
 import { Order } from '../../models/order.model';
+import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
 
 @Component({
   selector: 'app-orders',
@@ -24,6 +25,10 @@ export class OrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadOrders();
+  }
+
+  getFullImageUrl(path: string): string {
+    return buildImageUrl(path);
   }
 
   loadOrders(): void {

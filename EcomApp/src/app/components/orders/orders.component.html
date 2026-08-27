@@ -39,7 +39,7 @@
               @for (item of order.items.slice(0, 3); track item.id) {
                 <div class="order-item-thumb">
                   @if (item.productImage) {
-                    <img [src]="'http://localhost:5068' + item.productImage" [alt]="item.productName" />
+                    <img [src]="getFullImageUrl(item.productImage)" [alt]="item.productName" />
                   } @else {
                     <div class="thumb-placeholder">
                       <span class="material-icons">image</span>

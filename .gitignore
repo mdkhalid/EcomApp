@@ -49,5 +49,11 @@ Images/
 .deepseek/
 .openclaude/
 
+# Local secrets / per-machine config (NEVER commit)
+appsettings.Production.json
+*.Production.json
+.env
+secrets/
+
 # Local
 suggestion.md
