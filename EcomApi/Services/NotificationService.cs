@@ -1,6 +1,8 @@
 using EcomApi.Data;
 using EcomApi.Models;
+using EcomApi.Services.NotificationChannels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace EcomApi.Services;
 
@@ -19,24 +21,45 @@ public class NotificationService : INotificationService
 {
     private readonly ILogger<NotificationService> _logger;
     private readonly ApplicationDbContext _context;
+    private readonly IEnumerable<INotificationChannel> _channels;
+    private readonly ISettingsProvider _settings;
 
-    public NotificationService(ILogger<NotificationService> logger, ApplicationDbContext context)
+    public NotificationService(
+        ILogger<NotificationService> logger,
+        ApplicationDbContext context,
+        IEnumerable<INotificationChannel> channels,
+        ISettingsProvider settings)
     {
         _logger = logger;
         _context = context;
+        _channels = channels;
+        _settings = settings;
     }
 
-    private async Task CreateAdminNotification(string message, string type, int? orderId = null)
+    private async Task Dispatch(NotificationMessage message, CancellationToken cancellationToken = default)
     {
-        _context.AdminNotifications.Add(new AdminNotification
+        foreach (var channel in _channels)
         {
-            Message = message,
-            Type = type,
-            OrderId = orderId,
-            IsRead = false,
-            CreatedAt = DateTime.UtcNow
-        });
-        await _context.SaveChangesAsync();
+            var enabled = channel.ChannelType switch
+            {
+                NotificationChannelType.Email => await _settings.GetAsync("Notification:Email:Enabled", true, cancellationToken),
+                NotificationChannelType.Sms => await _settings.GetAsync("Notification:Sms:Enabled", false, cancellationToken),
+                NotificationChannelType.WhatsApp => await _settings.GetAsync("Notification:WhatsApp:Enabled", false, cancellationToken),
+                _ => true
+            };
+
+            if (!enabled) continue;
+
+            try
+            {
+                await channel.SendAsync(message, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Notification channel {Channel} failed for message type {Type}.",
+                    channel.ChannelType, message.Type);
+            }
+        }
     }
 
     public async Task SendOrderStatusUpdateAsync(Order order, OrderStatus previousStatus)
@@ -44,52 +67,41 @@ public class NotificationService : INotificationService
         _logger.LogInformation("Order {OrderId} status changed from {Previous} to {Current}",
             order.Id, previousStatus, order.Status);
 
-        await CreateAdminNotification(
-            $"Order #{order.Id} status updated from {previousStatus} to {order.Status}",
-            "status_update", order.Id);
+        var message = new NotificationMessage
+        {
+            Type = NotificationType.OrderStatusUpdate,
+            Email = order.CustomerEmail,
+            Phone = order.CustomerPhone,
+            Subject = $"Order #{order.Id} - Status Updated to {order.Status}",
+            HtmlBody = GetStatusEmailBody(order, previousStatus),
+            TextBody = GetStatusSmsMessage(order, previousStatus),
+            AdminMessage = $"Order #{order.Id} status updated from {previousStatus} to {order.Status}",
+            AdminType = "status_update",
+            OrderId = order.Id
+        };
 
-        // ============================================
-        // SMS Notification ( uncomment when ready )
-        // ============================================
-        // if (!string.IsNullOrEmpty(order.CustomerPhone))
-        // {
-        //     var message = GetStatusSmsMessage(order, previousStatus);
-        //     await _smsService.SendAsync(order.CustomerPhone, message);
-        // }
-
-        // ============================================
-        // Email Notification ( uncomment when ready )
-        // ============================================
-        // if (!string.IsNullOrEmpty(order.CustomerEmail))
-        // {
-        //     var subject = $"Order #{order.Id} - Status Updated to {order.Status}";
-        //     var body = GetStatusEmailBody(order, previousStatus);
-        //     await _emailService.SendAsync(order.CustomerEmail, subject, body);
-        // }
-
-        await Task.CompletedTask;
+        await Dispatch(message);
     }
 
     public async Task SendOrderConfirmationAsync(Order order)
     {
-        _logger.LogInformation("Order {OrderId} confirmation sent to {Email}",
+        _logger.LogInformation("Order {OrderId} confirmation dispatched to {Email}",
             order.Id, order.CustomerEmail);
 
-        await CreateAdminNotification(
-            $"New order #{order.Id} placed — ₹{order.TotalAmount:N2} by {order.ShippingName}",
-            "new_order", order.Id);
+        var message = new NotificationMessage
+        {
+            Type = NotificationType.OrderConfirmation,
+            Email = order.CustomerEmail,
+            Phone = order.CustomerPhone,
+            Subject = $"Order #{order.Id} Confirmed - Thank you for your purchase!",
+            HtmlBody = GetConfirmationEmailBody(order),
+            TextBody = $"Your order #{order.Id} for ₹{order.TotalAmount:N2} is confirmed. We'll notify you when it ships.",
+            AdminMessage = $"New order #{order.Id} placed — ₹{order.TotalAmount:N2} by {order.ShippingName}",
+            AdminType = "new_order",
+            OrderId = order.Id
+        };
 
-        // ============================================
-        // Email Confirmation ( uncomment when ready )
-        // ============================================
-        // if (!string.IsNullOrEmpty(order.CustomerEmail))
-        // {
-        //     var subject = $"Order #{order.Id} Confirmed - Thank you for your purchase!";
-        //     var body = GetConfirmationEmailBody(order);
-        //     await _emailService.SendAsync(order.CustomerEmail, subject, body);
-        // }
-
-        await Task.CompletedTask;
+        await Dispatch(message);
     }
 
     public async Task SendTrackingUpdateAsync(Order order)
@@ -97,66 +109,66 @@ public class NotificationService : INotificationService
         _logger.LogInformation("Tracking update for Order {OrderId}: {TrackingNumber} via {Carrier}",
             order.Id, order.TrackingNumber, order.Carrier);
 
-        await CreateAdminNotification(
-            $"Order #{order.Id} tracking updated — {order.Carrier}: {order.TrackingNumber}",
-            "tracking_update", order.Id);
+        var message = new NotificationMessage
+        {
+            Type = NotificationType.TrackingUpdate,
+            Email = order.CustomerEmail,
+            Phone = order.CustomerPhone,
+            Subject = $"Order #{order.Id} Shipped - Tracking Info",
+            HtmlBody = GetTrackingEmailBody(order),
+            TextBody = $"Your order #{order.Id} has been shipped! Track: {order.Carrier} - {order.TrackingNumber}",
+            AdminMessage = $"Order #{order.Id} tracking updated — {order.Carrier}: {order.TrackingNumber}",
+            AdminType = "tracking_update",
+            OrderId = order.Id
+        };
 
-        // ============================================
-        // SMS with Tracking ( uncomment when ready )
-        // ============================================
-        // if (!string.IsNullOrEmpty(order.CustomerPhone))
-        // {
-        //     var message = $"Your order #{order.Id} has been shipped! Track: {order.Carrier} - {order.TrackingNumber}";
-        //     await _smsService.SendAsync(order.CustomerPhone, message);
-        // }
-
-        // ============================================
-        // Email with Tracking ( uncomment when ready )
-        // ============================================
-        // if (!string.IsNullOrEmpty(order.CustomerEmail))
-        // {
-        //     var subject = $"Order #{order.Id} Shipped - Tracking Info";
-        //     var body = GetTrackingEmailBody(order);
-        //     await _emailService.SendAsync(order.CustomerEmail, subject, body);
-        // }
-
-        await Task.CompletedTask;
+        await Dispatch(message);
     }
 
-    // ============================================
-    // Email Templates ( uncomment when ready )
-    // ============================================
+    private string GetConfirmationEmailBody(Order order)
+    {
+        return $"""
+            <h2>Order Confirmed!</h2>
+            <p>Thank you for your order #{order.Id}.</p>
+            <p><strong>Total:</strong> ₹{order.TotalAmount:N2}</p>
+            <p><strong>Shipping to:</strong> {order.ShippingName}, {order.ShippingAddress}, {order.ShippingCity} {order.ShippingZip}</p>
+            <p>We'll notify you when your order ships.</p>
+            """;
+    }
 
-    // private string GetConfirmationEmailBody(Order order)
-    // {
-    //     return $"""
-    //         <h2>Order Confirmed!</h2>
-    //         <p>Thank you for your order #{order.Id}.</p>
-    //         <p><strong>Total:</strong> ₹{order.TotalAmount:N2}</p>
-    //         <p><strong>Shipping to:</strong> {order.ShippingName}, {order.ShippingAddress}, {order.ShippingCity} {order.ShippingZip}</p>
-    //         <p>We'll notify you when your order ships.</p>
-    //     """;
-    // }
+    private string GetStatusEmailBody(Order order, OrderStatus previousStatus)
+    {
+        var eta = order.EstimatedDeliveryDate.HasValue
+            ? $"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>"
+            : "";
+        return $"""
+            <h2>Order #{order.Id} Status Update</h2>
+            <p>Your order status has been updated from <strong>{previousStatus}</strong> to <strong>{order.Status}</strong>.</p>
+            {eta}
+            """;
+    }
 
-    // private string GetStatusEmailBody(Order order, OrderStatus previousStatus)
-    // {
-    //     return $"""
-    //         <h2>Order #{order.Id} Status Update</h2>
-    //         <p>Your order status has been updated from <strong>{previousStatus}</strong> to <strong>{order.Status}</strong>.</p>
-    //         {($"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>" if order.EstimatedDeliveryDate.HasValue else "")}
-    //     """;
-    // }
+    private string GetTrackingEmailBody(Order order)
+    {
+        var eta = order.EstimatedDeliveryDate.HasValue
+            ? $"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>"
+            : "";
+        return $"""
+            <h2>Your Order Has Shipped!</h2>
+            <p>Order #{order.Id} has been shipped.</p>
+            <p><strong>Carrier:</strong> {order.Carrier}</p>
+            <p><strong>Tracking Number:</strong> {order.TrackingNumber}</p>
+            {eta}
+            """;
+    }
 
-    // private string GetTrackingEmailBody(Order order)
-    // {
-    //     return $"""
-    //         <h2>Your Order Has Shipped!</h2>
-    //         <p>Order #{order.Id} has been shipped.</p>
-    //         <p><strong>Carrier:</strong> {order.Carrier}</p>
-    //         <p><strong>Tracking Number:</strong> {order.TrackingNumber}</p>
-    //         {($"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>" if order.EstimatedDeliveryDate.HasValue else "")}
-    //     """;
-    // }
+    private string GetStatusSmsMessage(Order order, OrderStatus previousStatus)
+    {
+        return $"Order #{order.Id}: Status updated to {order.Status}. " +
+               (order.EstimatedDeliveryDate.HasValue
+                   ? $"Expected delivery: {order.EstimatedDeliveryDate:dd MMM}."
+                   : "");
+    }
 
     public async Task<int> GetUnreadNotificationCountAsync()
     {
@@ -188,12 +200,4 @@ public class NotificationService : INotificationService
             .Where(n => !n.IsRead)
             .ExecuteUpdateAsync(setters => setters.SetProperty(n => n.IsRead, true));
     }
-
-    // private string GetStatusSmsMessage(Order order, OrderStatus previousStatus)
-    // {
-    //     return $"Order #{order.Id}: Status updated to {order.Status}. " +
-    //            (order.EstimatedDeliveryDate.HasValue
-    //                ? $"Expected delivery: {order.EstimatedDeliveryDate:dd MMM}."
-    //                : "");
-    // }
 }

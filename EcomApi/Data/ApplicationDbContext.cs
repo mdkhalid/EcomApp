@@ -32,10 +32,20 @@ public class ApplicationDbContext : DbContext
     public DbSet<SupportConversation> SupportConversations => Set<SupportConversation>();
     public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
     public DbSet<PageView> PageViews => Set<PageView>();
+    public DbSet<Setting> Settings => Set<Setting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Setting>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Key).IsUnique();
+            entity.Property(e => e.Key).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Group).HasMaxLength(50);
+            entity.Property(e => e.Description).HasMaxLength(200);
+        });
 
         modelBuilder.Entity<User>(entity =>
         {

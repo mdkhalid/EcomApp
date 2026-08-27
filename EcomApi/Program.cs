@@ -4,6 +4,7 @@ using EcomApi.Mapping;
 using EcomApi.Middleware;
 using EcomApi.Repositories;
 using EcomApi.Services;
+using EcomApi.Services.NotificationChannels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -71,6 +72,20 @@ builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+// Settings (admin-configurable, DB-backed with config fallback)
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<ISettingRepository, SettingRepository>();
+builder.Services.AddScoped<ISettingsProvider, SettingsProvider>();
+
+// Email + multi-channel notifications (Strategy pattern)
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ISmsProvider, NullSmsProvider>();
+builder.Services.AddScoped<IWhatsAppProvider, NullWhatsAppProvider>();
+builder.Services.AddScoped<INotificationChannel, EmailChannel>();
+builder.Services.AddScoped<INotificationChannel, InAppChannel>();
+builder.Services.AddScoped<INotificationChannel, SmsChannel>();
+builder.Services.AddScoped<INotificationChannel, WhatsAppChannel>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
