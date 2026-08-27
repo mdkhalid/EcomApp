@@ -67,13 +67,20 @@ public class NotificationService : INotificationService
         _logger.LogInformation("Order {OrderId} status changed from {Previous} to {Current}",
             order.Id, previousStatus, order.Status);
 
+        var (subject, html) = order.Status switch
+        {
+            OrderStatus.Shipped => ($"Order #{order.Id} Shipped", EmailTemplates.OrderShipped(order)),
+            OrderStatus.Delivered => ($"Order #{order.Id} Delivered", EmailTemplates.OrderDelivered(order)),
+            _ => ($"Order #{order.Id} - Status Updated to {order.Status}", EmailTemplates.OrderStatusUpdate(order, previousStatus))
+        };
+
         var message = new NotificationMessage
         {
             Type = NotificationType.OrderStatusUpdate,
             Email = order.CustomerEmail,
             Phone = order.CustomerPhone,
-            Subject = $"Order #{order.Id} - Status Updated to {order.Status}",
-            HtmlBody = GetStatusEmailBody(order, previousStatus),
+            Subject = subject,
+            HtmlBody = html,
             TextBody = GetStatusSmsMessage(order, previousStatus),
             AdminMessage = $"Order #{order.Id} status updated from {previousStatus} to {order.Status}",
             AdminType = "status_update",
@@ -94,7 +101,7 @@ public class NotificationService : INotificationService
             Email = order.CustomerEmail,
             Phone = order.CustomerPhone,
             Subject = $"Order #{order.Id} Confirmed - Thank you for your purchase!",
-            HtmlBody = GetConfirmationEmailBody(order),
+            HtmlBody = EmailTemplates.OrderConfirmation(order),
             TextBody = $"Your order #{order.Id} for ₹{order.TotalAmount:N2} is confirmed. We'll notify you when it ships.",
             AdminMessage = $"New order #{order.Id} placed — ₹{order.TotalAmount:N2} by {order.ShippingName}",
             AdminType = "new_order",
@@ -115,7 +122,7 @@ public class NotificationService : INotificationService
             Email = order.CustomerEmail,
             Phone = order.CustomerPhone,
             Subject = $"Order #{order.Id} Shipped - Tracking Info",
-            HtmlBody = GetTrackingEmailBody(order),
+            HtmlBody = EmailTemplates.Tracking(order),
             TextBody = $"Your order #{order.Id} has been shipped! Track: {order.Carrier} - {order.TrackingNumber}",
             AdminMessage = $"Order #{order.Id} tracking updated — {order.Carrier}: {order.TrackingNumber}",
             AdminType = "tracking_update",
@@ -123,43 +130,6 @@ public class NotificationService : INotificationService
         };
 
         await Dispatch(message);
-    }
-
-    private string GetConfirmationEmailBody(Order order)
-    {
-        return $"""
-            <h2>Order Confirmed!</h2>
-            <p>Thank you for your order #{order.Id}.</p>
-            <p><strong>Total:</strong> ₹{order.TotalAmount:N2}</p>
-            <p><strong>Shipping to:</strong> {order.ShippingName}, {order.ShippingAddress}, {order.ShippingCity} {order.ShippingZip}</p>
-            <p>We'll notify you when your order ships.</p>
-            """;
-    }
-
-    private string GetStatusEmailBody(Order order, OrderStatus previousStatus)
-    {
-        var eta = order.EstimatedDeliveryDate.HasValue
-            ? $"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>"
-            : "";
-        return $"""
-            <h2>Order #{order.Id} Status Update</h2>
-            <p>Your order status has been updated from <strong>{previousStatus}</strong> to <strong>{order.Status}</strong>.</p>
-            {eta}
-            """;
-    }
-
-    private string GetTrackingEmailBody(Order order)
-    {
-        var eta = order.EstimatedDeliveryDate.HasValue
-            ? $"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>"
-            : "";
-        return $"""
-            <h2>Your Order Has Shipped!</h2>
-            <p>Order #{order.Id} has been shipped.</p>
-            <p><strong>Carrier:</strong> {order.Carrier}</p>
-            <p><strong>Tracking Number:</strong> {order.TrackingNumber}</p>
-            {eta}
-            """;
     }
 
     private string GetStatusSmsMessage(Order order, OrderStatus previousStatus)

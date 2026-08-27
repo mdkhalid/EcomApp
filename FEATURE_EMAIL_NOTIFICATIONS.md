@@ -145,9 +145,10 @@ Read via `IOptions<SmtpSettings>` with env override. SMS/WhatsApp creds added th
 - [x] Register pipeline in `Program.cs`; refactor `NotificationService` to `Dispatch` with admin-toggleable channels.
 - [x] `dotnet build` clean + migration generated. COMMITTED.
 
-**Phase 1 — Email templates & send**
-- [ ] `EmailTemplates` (5 templates + order builder).
-- [ ] `EmailChannel` sends real emails. COMMIT.
+**Phase 1 — Email templates & send — DONE ✅**
+- [x] `Services/EmailTemplates.cs` — Welcome, OrderConfirmation, OrderStatusUpdate, OrderShipped, OrderDelivered, Tracking, PasswordReset (centralized, branded wrapper).
+- [x] `NotificationService` routes through `EmailTemplates`; branches to Shipped/Delivered templates on status.
+- [x] `EmailChannel` sends real emails (MailKit), config-driven via `ISettingsProvider`. COMMITTED.
 
 **Phase 2 — Password reset backend**
 - [ ] User fields + migration.
