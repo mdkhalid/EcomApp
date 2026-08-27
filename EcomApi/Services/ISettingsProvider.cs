@@ -39,6 +39,8 @@ public class SettingsProvider : ISettingsProvider
             return cached;
 
         var fromDb = await _repository.GetByKeyAsync(key, cancellationToken);
+        // An explicitly-empty DB value (row exists, Value=="") is returned as-is and does NOT
+        // fall back to configuration. Only a missing DB row falls through to appsettings/env.
         var value = fromDb?.Value ?? _configuration[key];
 
         _cache.Set(CacheKey(key), value, new MemoryCacheEntryOptions

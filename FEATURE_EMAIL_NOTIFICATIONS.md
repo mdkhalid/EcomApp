@@ -1,6 +1,6 @@
 # Feature: Multi-Channel Notification System (Email + SMS/WhatsApp) & Password Reset
 
-**Status:** Phases 0–4 COMPLETE & pushed to GitHub. Remaining: Phase 5 (automated tests — optional).
+**Status:** Phases 0–5 COMPLETE & pushed to GitHub. Notification delivery runs on a background queue (HTTP requests no longer block on email/SMS I/O).
 **Priority:** Critical (unblocks real-world usage)
 **Stack impact:** Backend (MailKit + channel pipeline + new endpoints + migration), Frontend (2 new pages), Config (gitignored SMTP/secrets)
 
@@ -167,10 +167,14 @@ Read via `IOptions<SmtpSettings>` with env override. SMS/WhatsApp creds added th
 - [x] Routes `/forgot-password`, `/reset-password` (guest-guarded).
 - [x] Login page "Forgot password?" link. All URLs use `environment.apiUrl` (no hard-coded host). COMMITTED.
 
-**Phase 5 — Test & polish**
-- [ ] Backend unit tests (token gen/validate/expiry, dispatch).
-- [ ] Frontend happy/error paths.
-- [ ] Verify no hard-coded `localhost`. Rebuild both. COMMIT.
+**Phase 5 — Test & polish - DONE ✅**
+- [x] Backend unit tests (`EcomApi.Tests`): `PasswordResetToken` (gen/hash/validate/expiry), `SettingsProvider` (DB value, default, bool conversion, caching), `NotificationDispatcher` (enabled-only routing, disabled skip, per-channel fault isolation). 13 tests, all passing.
+- [x] Password-reset token logic extracted to `Services/PasswordResetToken.cs` (pure, testable) and used by `AuthController`.
+- [x] Notification delivery moved off the request path: `INotificationQueue` (Channel) + `NotificationBackgroundService` + `NotificationDispatcher` (per-scope). `NotificationService` now enqueues; requests return immediately.
+- [x] `AdminSettingsController.Update` hardened: validates all keys before applying (no partial updates) and never overwrites a real secret with the `"********"` mask returned by GET.
+- [x] Removed redundant manual password-length check (covered by `ResetPasswordDto` DataAnnotations).
+- [x] SCSS de-duplicated into `src/app/shared/styles/_auth-form.scss` (imported by both auth pages).
+- [x] Frontend happy/error paths implemented; no hard-coded host (uses `environment.apiUrl`). Rebuilt both. COMMITTED.
 
 ---
 

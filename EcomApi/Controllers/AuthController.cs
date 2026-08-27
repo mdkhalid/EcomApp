@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using EcomApi.DTOs;
 using EcomApi.Models;
 using EcomApi.Repositories;
@@ -485,9 +483,8 @@ public class AuthController : ControllerBase
         var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
         if (user != null)
         {
-            var tokenBytes = RandomNumberGenerator.GetBytes(32);
-            var token = Convert.ToHexString(tokenBytes);
-            var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+            var token = PasswordResetToken.GenerateToken();
+            var hash = PasswordResetToken.HashToken(token);
 
             user.PasswordResetTokenHash = hash;
             user.PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(30);
@@ -506,19 +503,11 @@ public class AuthController : ControllerBase
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8)
-            return BadRequest(new { error = "Password must be at least 8 characters." });
-
         var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
-        if (user == null || string.IsNullOrEmpty(user.PasswordResetTokenHash) ||
-            user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry < DateTime.UtcNow)
+        if (user == null || !PasswordResetToken.IsValid(dto.Token, user.PasswordResetTokenHash, user.PasswordResetTokenExpiry))
         {
             return BadRequest(new { error = "Invalid or expired token." });
         }
-
-        var incomingHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(dto.Token)));
-        if (!string.Equals(incomingHash, user.PasswordResetTokenHash, StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { error = "Invalid or expired token." });
 
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
         user.PasswordResetTokenHash = null;

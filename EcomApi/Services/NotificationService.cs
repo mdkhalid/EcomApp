@@ -1,6 +1,5 @@
 using EcomApi.Data;
 using EcomApi.Models;
-using EcomApi.Services.NotificationChannels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -22,48 +21,19 @@ public class NotificationService : INotificationService
 {
     private readonly ILogger<NotificationService> _logger;
     private readonly ApplicationDbContext _context;
-    private readonly IEnumerable<INotificationChannel> _channels;
-    private readonly ISettingsProvider _settings;
+    private readonly INotificationQueue _queue;
 
     public NotificationService(
         ILogger<NotificationService> logger,
         ApplicationDbContext context,
-        IEnumerable<INotificationChannel> channels,
-        ISettingsProvider settings)
+        INotificationQueue queue)
     {
         _logger = logger;
         _context = context;
-        _channels = channels;
-        _settings = settings;
+        _queue = queue;
     }
 
-    private async Task Dispatch(NotificationMessage message, CancellationToken cancellationToken = default)
-    {
-        foreach (var channel in _channels)
-        {
-            var enabled = channel.ChannelType switch
-            {
-                NotificationChannelType.Email => await _settings.GetAsync("Notification:Email:Enabled", true, cancellationToken),
-                NotificationChannelType.Sms => await _settings.GetAsync("Notification:Sms:Enabled", false, cancellationToken),
-                NotificationChannelType.WhatsApp => await _settings.GetAsync("Notification:WhatsApp:Enabled", false, cancellationToken),
-                _ => true
-            };
-
-            if (!enabled) continue;
-
-            try
-            {
-                await channel.SendAsync(message, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Notification channel {Channel} failed for message type {Type}.",
-                    channel.ChannelType, message.Type);
-            }
-        }
-    }
-
-    public async Task SendOrderStatusUpdateAsync(Order order, OrderStatus previousStatus)
+    public Task SendOrderStatusUpdateAsync(Order order, OrderStatus previousStatus)
     {
         _logger.LogInformation("Order {OrderId} status changed from {Previous} to {Current}",
             order.Id, previousStatus, order.Status);
@@ -88,12 +58,12 @@ public class NotificationService : INotificationService
             OrderId = order.Id
         };
 
-        await Dispatch(message);
+        return _queue.EnqueueAsync(message);
     }
 
-    public async Task SendOrderConfirmationAsync(Order order)
+    public Task SendOrderConfirmationAsync(Order order)
     {
-        _logger.LogInformation("Order {OrderId} confirmation dispatched to {Email}",
+        _logger.LogInformation("Order {OrderId} confirmation queued for {Email}",
             order.Id, order.CustomerEmail);
 
         var message = new NotificationMessage
@@ -109,12 +79,12 @@ public class NotificationService : INotificationService
             OrderId = order.Id
         };
 
-        await Dispatch(message);
+        return _queue.EnqueueAsync(message);
     }
 
-    public async Task SendWelcomeAsync(User user)
+    public Task SendWelcomeAsync(User user)
     {
-        _logger.LogInformation("Welcome email dispatched to {Email}", user.Email);
+        _logger.LogInformation("Welcome email queued for {Email}", user.Email);
 
         var message = new NotificationMessage
         {
@@ -125,12 +95,12 @@ public class NotificationService : INotificationService
             TextBody = $"Welcome to Ecom, {user.Username}!"
         };
 
-        await Dispatch(message);
+        return _queue.EnqueueAsync(message);
     }
 
-    public async Task SendTrackingUpdateAsync(Order order)
+    public Task SendTrackingUpdateAsync(Order order)
     {
-        _logger.LogInformation("Tracking update for Order {OrderId}: {TrackingNumber} via {Carrier}",
+        _logger.LogInformation("Tracking update queued for Order {OrderId}: {TrackingNumber} via {Carrier}",
             order.Id, order.TrackingNumber, order.Carrier);
 
         var message = new NotificationMessage
@@ -146,10 +116,10 @@ public class NotificationService : INotificationService
             OrderId = order.Id
         };
 
-        await Dispatch(message);
+        return _queue.EnqueueAsync(message);
     }
 
-    private string GetStatusSmsMessage(Order order, OrderStatus previousStatus)
+    private static string GetStatusSmsMessage(Order order, OrderStatus previousStatus)
     {
         return $"Order #{order.Id}: Status updated to {order.Status}. " +
                (order.EstimatedDeliveryDate.HasValue

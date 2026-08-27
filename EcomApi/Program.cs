@@ -87,6 +87,11 @@ builder.Services.AddScoped<INotificationChannel, InAppChannel>();
 builder.Services.AddScoped<INotificationChannel, SmsChannel>();
 builder.Services.AddScoped<INotificationChannel, WhatsAppChannel>();
 
+// Notification queue + background delivery (keeps HTTP requests off the email/SMS I/O path)
+builder.Services.AddSingleton<INotificationQueue, NotificationQueue>();
+builder.Services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
+builder.Services.AddHostedService<NotificationBackgroundService>();
+
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {

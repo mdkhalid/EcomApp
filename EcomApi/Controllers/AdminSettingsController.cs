@@ -42,11 +42,23 @@ public class AdminSettingsController : ControllerBase
         [FromBody] List<SettingUpdateDto> updates,
         CancellationToken cancellationToken = default)
     {
+        if (updates == null || updates.Count == 0)
+            return BadRequest(new { error = "No settings provided." });
+
+        // Validate every key first so a bad key doesn't apply a partial update.
         foreach (var update in updates)
         {
-            var descriptor = SettingsCatalog.Find(update.Key);
-            if (descriptor == null)
+            if (SettingsCatalog.Find(update.Key) == null)
                 return BadRequest(new { error = $"Unknown setting key: {update.Key}" });
+        }
+
+        foreach (var update in updates)
+        {
+            var descriptor = SettingsCatalog.Find(update.Key)!;
+
+            // GET returns sensitive values as "********"; never overwrite a real
+            // secret with that placeholder when the admin re-saves without changing it.
+            if (descriptor.IsSensitive && update.Value == "********") continue;
 
             await _settings.UpsertAsync(update.Key, update.Value, cancellationToken);
             await _settings.InvalidateAsync(update.Key, cancellationToken);
