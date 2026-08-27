@@ -22,6 +22,7 @@ public class AuthController : ControllerBase
     private readonly ILogger<AuthController> _logger;
     private readonly IEmailService _emailService;
     private readonly ISettingsProvider _settings;
+    private readonly INotificationService _notificationService;
 
     public AuthController(
         IUserRepository userRepository,
@@ -29,7 +30,8 @@ public class AuthController : ControllerBase
         IPasswordHasher<User> passwordHasher,
         ILogger<AuthController> logger,
         IEmailService emailService,
-        ISettingsProvider settings)
+        ISettingsProvider settings,
+        INotificationService notificationService)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
@@ -37,6 +39,7 @@ public class AuthController : ControllerBase
         _logger = logger;
         _emailService = emailService;
         _settings = settings;
+        _notificationService = notificationService;
     }
 
     [HttpPost("register")]
@@ -63,6 +66,8 @@ public class AuthController : ControllerBase
 
         user = await _userRepository.CreateAsync(user);
         _logger.LogInformation("User registered: {Email}", user.Email);
+
+        await _notificationService.SendWelcomeAsync(user);
 
         return await GenerateTokenResponse(user);
     }

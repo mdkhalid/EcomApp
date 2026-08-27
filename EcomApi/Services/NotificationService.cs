@@ -11,6 +11,7 @@ public interface INotificationService
     Task SendOrderStatusUpdateAsync(Order order, OrderStatus previousStatus);
     Task SendOrderConfirmationAsync(Order order);
     Task SendTrackingUpdateAsync(Order order);
+    Task SendWelcomeAsync(User user);
     Task<int> GetUnreadNotificationCountAsync();
     Task<List<AdminNotification>> GetNotificationsAsync(int page = 1, int pageSize = 20);
     Task MarkNotificationReadAsync(int id);
@@ -106,6 +107,22 @@ public class NotificationService : INotificationService
             AdminMessage = $"New order #{order.Id} placed — ₹{order.TotalAmount:N2} by {order.ShippingName}",
             AdminType = "new_order",
             OrderId = order.Id
+        };
+
+        await Dispatch(message);
+    }
+
+    public async Task SendWelcomeAsync(User user)
+    {
+        _logger.LogInformation("Welcome email dispatched to {Email}", user.Email);
+
+        var message = new NotificationMessage
+        {
+            Type = NotificationType.Welcome,
+            Email = user.Email,
+            Subject = "Welcome to Ecom!",
+            HtmlBody = EmailTemplates.Welcome(user.FirstName ?? user.Username, user.Email),
+            TextBody = $"Welcome to Ecom, {user.Username}!"
         };
 
         await Dispatch(message);
