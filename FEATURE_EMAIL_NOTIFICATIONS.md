@@ -1,6 +1,6 @@
 # Feature: Multi-Channel Notification System (Email + SMS/WhatsApp) & Password Reset
 
-**Status:** Phase 0 COMPLETE — foundation + admin-configurable settings pipeline in place. Next: Phase 1 (email templates & real sends).
+**Status:** Phases 0–4 COMPLETE & pushed to GitHub. Remaining: Phase 5 (automated tests — optional).
 **Priority:** Critical (unblocks real-world usage)
 **Stack impact:** Backend (MailKit + channel pipeline + new endpoints + migration), Frontend (2 new pages), Config (gitignored SMTP/secrets)
 
