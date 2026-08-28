@@ -172,12 +172,20 @@ public class OrdersController : ControllerBase
         if (!Enum.TryParse<OrderStatus>(dto.Status, true, out var status))
             return BadRequest(new { error = $"Invalid status. Valid values: {string.Join(", ", Enum.GetNames<OrderStatus>())}" });
 
-        var order = await _orderRepository.UpdateStatusAsync(id, status, dto.Note, dto.Location);
+        // Capture the current (previous) status BEFORE the update so the
+        // notification email says "changed from X to Y" correctly.
+        var existing = await _orderRepository.GetByIdAsync(id, cancellationToken);
+        if (existing == null)
+            return NotFound();
+
+        var previousStatus = existing.Status;
+
+        var order = await _orderRepository.UpdateStatusAsync(id, status, dto.Note, dto.Location, cancellationToken);
         if (order == null)
             return NotFound();
 
-        // Send status update notification
-        await _notificationService.SendOrderStatusUpdateAsync(order, status);
+        // Send status update notification with the correct previous status.
+        await _notificationService.SendOrderStatusUpdateAsync(order, previousStatus);
 
         return Ok(MapOrder(order));
     }

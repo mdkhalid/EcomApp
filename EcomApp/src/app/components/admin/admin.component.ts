@@ -23,6 +23,8 @@ import { ReturnPolicy, UpdateReturnPolicy } from '../../models/return-policy.mod
 import { SupportService } from '../../services/support.service';
 import { SupportConversation } from '../../models/support.model';
 import { AdminNotificationService } from '../../services/admin-notification.service';
+import { AdminSettingsService } from '../../services/admin-settings.service';
+import { AdminSetting, SettingUpdate } from '../../models/admin-settings.model';
 import { AnalyticsOverview, CategoryBreakdown, OrderStatusBreakdown, PageViewSummary, RevenuePoint, RevenueSummary, TopPage, TopProduct, TopSearch } from '../../models/analytics.model';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { getFullImageUrl as buildImageUrl, API_URL } from '../../utils/api-config';
@@ -56,10 +58,11 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly supportService = inject(SupportService);
   private readonly analyticsService = inject(AnalyticsService);
   readonly notifService = inject(AdminNotificationService);
+  private readonly adminSettingsService = inject(AdminSettingsService);
   private readonly apiUrl = API_URL;
   private _notifInterval: ReturnType<typeof setInterval> | null = null;
 
-  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy' | 'support'>('dashboard');
+  activeTab = signal<'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy' | 'support' | 'settings'>('dashboard');
 
   get isSuperAdmin(): boolean {
     return this.authService.isSuperAdmin();
@@ -90,6 +93,14 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
   private orderStatusChart?: Chart;
   private pageViewsChart?: Chart;
 
+  // ── Admin Settings ───────────────────────────────────────────────────────
+  settingsList = signal<AdminSetting[]>([]);
+  settingsLoading = signal(false);
+  settingsSaving = signal(false);
+  /** Working copy of values the admin is editing — keyed by setting key */
+  settingsDraft = signal<Record<string, string>>({});
+
+  // ── Dashboard stats ──────────────────────────────────────────────────────
   stats = signal({ totalProducts: 0, totalOrders: 0, totalUsers: 0, totalRevenue: 0 });
   products = signal<Product[]>([]);
   orders = signal<Order[]>([]);
@@ -178,7 +189,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     this._notifInterval = setInterval(() => this.notifService.loadCount(), 30000);
   }
 
-  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy' | 'support'): void {
+  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'categories' | 'banners' | 'coupons' | 'returns' | 'analytics' | 'returnpolicy' | 'support' | 'settings'): void {
     this.activeTab.set(tab);
     if (tab === 'orders') this.loadOrders();
     if (tab === 'users') { this.loadUsers(); this.loadRoles(); }
@@ -190,6 +201,7 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
     if (tab === 'analytics') this.loadAnalytics();
     if (tab === 'returnpolicy') this.loadReturnPolicy();
     if (tab === 'support') this.loadSupportConversations();
+    if (tab === 'settings') this.loadSettings();
   }
 
   loadDashboard(): void {
@@ -1575,4 +1587,65 @@ export class AdminComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
   }
+
+  // ── Admin Settings ─────────────────────────────────────────────────────
+
+  loadSettings(): void {
+    this.settingsLoading.set(true);
+    this.adminSettingsService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (settings) => {
+        this.settingsList.set(settings);
+        // Initialise the draft with current values (sensitive ones show as "********")
+        const draft: Record<string, string> = {};
+        for (const s of settings) {
+          draft[s.key] = s.value ?? '';
+        }
+        this.settingsDraft.set(draft);
+        this.settingsLoading.set(false);
+      },
+      error: () => {
+        this.notificationService.showError('Failed to load settings.');
+        this.settingsLoading.set(false);
+      }
+    });
+  }
+
+  /** Return all groups present in the current settings list */
+  getSettingGroups(): string[] {
+    const groups = new Set(this.settingsList().map(s => s.group));
+    return Array.from(groups);
+  }
+
+  /** Filter settings by group */
+  getSettingsByGroup(group: string): AdminSetting[] {
+    return this.settingsList().filter(s => s.group === group);
+  }
+
+  /** Update the draft value for a single key */
+  onSettingChange(key: string, value: string): void {
+    this.settingsDraft.update(draft => ({ ...draft, [key]: value }));
+  }
+
+  saveSettings(): void {
+    const draft = this.settingsDraft();
+    const updates: SettingUpdate[] = this.settingsList().map(s => ({
+      key: s.key,
+      value: draft[s.key] ?? ''
+    }));
+
+    this.settingsSaving.set(true);
+    this.adminSettingsService.update(updates).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Settings saved successfully.');
+        this.settingsSaving.set(false);
+        // Reload to get the server-authoritative view (sensitive fields masked again)
+        this.loadSettings();
+      },
+      error: (err) => {
+        this.notificationService.showError(err.error?.error || 'Failed to save settings.');
+        this.settingsSaving.set(false);
+      }
+    });
+  }
 }
+

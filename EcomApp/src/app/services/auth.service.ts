@@ -113,6 +113,27 @@ export class AuthService {
     );
   }
 
+  /** Call the backend refresh endpoint and rotate stored tokens.
+   *  Returns the new TokenResponse so the interceptor can replay the original request. */
+  refresh(): Observable<TokenResponse> {
+    const token = localStorage.getItem('refreshToken');
+    if (!token) {
+      this.logout();
+      return throwError(() => new Error('No refresh token available.'));
+    }
+    return this.http.post<TokenResponse>(`${this.apiUrl}/refresh`, { token }).pipe(
+      tap(response => {
+        localStorage.setItem('accessToken', response.accessToken);
+        localStorage.setItem('refreshToken', response.refreshToken);
+      }),
+      catchError(err => {
+        // Refresh itself failed (expired / revoked) → force logout
+        this.logout();
+        return throwError(() => err);
+      })
+    );
+  }
+
   forgotPassword(email: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { email }).pipe(
       catchError(err => { console.error(err); return throwError(() => err); })

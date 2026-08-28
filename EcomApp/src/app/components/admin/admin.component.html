@@ -97,6 +97,9 @@
         <span class="escalation-badge">{{ supportTotal() }}</span>
       }
     </button>
+    <button [class.active]="activeTab() === 'settings'" (click)="setTab('settings')">
+      <span class="material-icons">settings</span> Settings
+    </button>
   </div>
 
   @if (isLoading()) {
@@ -1396,5 +1399,116 @@
         <button class="btn-cancel" (click)="closeCouponModal()">Cancel</button>
       </div>
     </div>
+  </div>
+}
+
+@if (activeTab() === 'settings') {
+  <div class="settings-panel">
+    <div class="settings-header">
+      <h3><span class="material-icons">settings</span> Application Settings</h3>
+      <p class="settings-subtitle">
+        Changes take effect within ~1 minute (cached). Sensitive values are masked —
+        leave a masked field unchanged to keep the current secret.
+      </p>
+    </div>
+
+    @if (settingsLoading()) {
+      <div class="loading-state"><div class="spinner"></div></div>
+    } @else {
+      @for (group of getSettingGroups(); track group) {
+        <div class="settings-group">
+          <h4 class="settings-group-title">
+            <span class="material-icons">
+              @switch (group) {
+                @case ('Email') { email }
+                @case ('Notifications') { notifications }
+                @default { tune }
+              }
+            </span>
+            {{ group }}
+          </h4>
+
+          <div class="settings-rows">
+            @for (setting of getSettingsByGroup(group); track setting.key) {
+              <div class="setting-row">
+                <div class="setting-meta">
+                  <label class="setting-label">{{ setting.description }}</label>
+                  <code class="setting-key">{{ setting.key }}</code>
+                  @if (setting.defaultValue) {
+                    <span class="setting-default">default: {{ setting.defaultValue }}</span>
+                  }
+                </div>
+                <div class="setting-control">
+                  @if (setting.key === 'Smtp:EnableSsl' || setting.key.includes(':Enabled')) {
+                    <!-- Boolean toggle -->
+                    <label class="toggle-switch">
+                      <input
+                        type="checkbox"
+                        [checked]="settingsDraft()[setting.key] === 'true'"
+                        (change)="onSettingChange(setting.key, $any($event.target).checked ? 'true' : 'false')"
+                      />
+                      <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">
+                      {{ settingsDraft()[setting.key] === 'true' ? 'Enabled' : 'Disabled' }}
+                    </span>
+                  } @else if (setting.isSensitive) {
+                    <!-- Password field for sensitive values -->
+                    <input
+                      type="password"
+                      class="setting-input"
+                      [value]="settingsDraft()[setting.key]"
+                      (input)="onSettingChange(setting.key, $any($event.target).value)"
+                      placeholder="Enter new value to change…"
+                      autocomplete="new-password"
+                    />
+                    <small class="setting-hint sensitive-hint">
+                      <span class="material-icons" style="font-size:14px;vertical-align:middle">lock</span>
+                      Stored encrypted. Leave as-is to keep the current value.
+                    </small>
+                  } @else if (setting.key === 'Smtp:Port') {
+                    <!-- Numeric input for port -->
+                    <input
+                      type="number"
+                      class="setting-input setting-input-sm"
+                      [value]="settingsDraft()[setting.key]"
+                      (input)="onSettingChange(setting.key, $any($event.target).value)"
+                      min="1"
+                      max="65535"
+                    />
+                  } @else {
+                    <!-- General text input -->
+                    <input
+                      type="text"
+                      class="setting-input"
+                      [value]="settingsDraft()[setting.key]"
+                      (input)="onSettingChange(setting.key, $any($event.target).value)"
+                      [placeholder]="setting.defaultValue || 'Enter value…'"
+                    />
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="settings-actions">
+        <button
+          class="btn-save"
+          (click)="saveSettings()"
+          [disabled]="settingsSaving()"
+        >
+          @if (settingsSaving()) {
+            <span class="material-icons spin">autorenew</span> Saving…
+          } @else {
+            <span class="material-icons">save</span> Save Settings
+          }
+        </button>
+        <button class="btn-cancel" (click)="loadSettings()" [disabled]="settingsSaving()">
+          <span class="material-icons">refresh</span> Reset
+        </button>
+      </div>
+    }
   </div>
 }
