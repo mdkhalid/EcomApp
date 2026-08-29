@@ -1,0 +1,14 @@
+<div class="verify-container">
+  @if (status() === 'verifying') {
+    <h2>Verifying your email…</h2>
+    <p>Please wait a moment.</p>
+  } @else if (status() === 'success') {
+    <h2>Email verified 🎉</h2>
+    <p>Your email address has been confirmed. You can now enjoy the full Ecom experience.</p>
+    <a routerLink="/products" class="btn">Continue shopping</a>
+  } @else {
+    <h2>Verification failed</h2>
+    <p>This verification link is invalid or has expired. Please request a new one from your profile.</p>
+    <a routerLink="/login" class="btn">Back to login</a>
+  }
+</div>

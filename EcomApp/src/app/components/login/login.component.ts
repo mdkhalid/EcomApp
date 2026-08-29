@@ -23,6 +23,9 @@ export class LoginComponent {
 
   loginData: LoginRequest = { emailOrUsername: '', password: '' };
   isLoading = false;
+  awaitingTwoFactor = signal(false);
+  pendingTwoFactorToken = '';
+  twoFactorCode = '';
   lockoutMessage = signal<string | null>(null);
   lockoutCountdown = signal<number>(0);
   private lockoutTimer: ReturnType<typeof setInterval> | null = null;
@@ -36,22 +39,14 @@ export class LoginComponent {
     this.clearLockout();
     this.isLoading = true;
     this.authService.login(this.loginData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
+      next: (response: any) => {
         this.isLoading = false;
-        this.notificationService.showSuccess('Login successful!');
-        if (!this.authService.isAdmin()) {
-          this.cartService.mergeCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-            next: () => this.cartService.getCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe()
-          });
+        if (response?.requiresTwoFactor) {
+          this.pendingTwoFactorToken = response.twoFactorToken;
+          this.awaitingTwoFactor.set(true);
+          return;
         }
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'];
-        if (returnUrl && returnUrl !== '/admin') {
-          this.router.navigate([returnUrl]);
-        } else if (this.authService.isAdmin()) {
-          this.router.navigate(['/admin']);
-        } else {
-          this.router.navigate(['/products']);
-        }
+        this.onLoginSuccess();
       },
       error: (err) => {
         this.isLoading = false;
@@ -63,6 +58,44 @@ export class LoginComponent {
         }
       }
     });
+  }
+
+  submitTwoFactor(): void {
+    if (!this.twoFactorCode?.trim()) {
+      this.notificationService.showError('Please enter the 6-digit code');
+      return;
+    }
+    this.isLoading = true;
+    this.authService.validateTwoFactor({ twoFactorToken: this.pendingTwoFactorToken, code: this.twoFactorCode })
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.onLoginSuccess();
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.twoFactorCode = '';
+          const message = err.error?.error || 'Invalid verification code.';
+          this.notificationService.showError(message);
+        }
+      });
+  }
+
+  private onLoginSuccess(): void {
+    this.notificationService.showSuccess('Login successful!');
+    if (!this.authService.isAdmin()) {
+      this.cartService.mergeCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => this.cartService.getCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe()
+      });
+    }
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+    if (returnUrl && this.isSafeRedirect(returnUrl)) {
+      this.router.navigate([returnUrl]);
+    } else if (this.authService.isAdmin()) {
+      this.router.navigate(['/admin']);
+    } else {
+      this.router.navigate(['/products']);
+    }
   }
 
   private startLockoutCountdown(remainingSeconds: number, message: string): void {
@@ -98,5 +131,9 @@ export class LoginComponent {
 
   ngOnDestroy(): void {
     this.clearLockout();
+  }
+
+  private isSafeRedirect(url: string): boolean {
+    return url.startsWith('/') && !url.startsWith('//') && !url.includes('://');
   }
 }

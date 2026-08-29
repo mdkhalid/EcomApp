@@ -1,5 +1,6 @@
 using EcomApi.Data;
 using EcomApi.Models;
+using EcomApi.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,10 +49,11 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
+        var tokenHash = PasswordResetToken.HashToken(token);
         return await _context.Users
             .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u =>
-                u.RefreshTokens.Any(rt => rt.Token == token && rt.IsActive), cancellationToken);
+                u.RefreshTokens.Any(rt => rt.TokenHash == tokenHash && rt.IsActive), cancellationToken);
     }
 
     public async Task<User> CreateAsync(User user, CancellationToken cancellationToken = default)
@@ -232,6 +234,13 @@ public class UserRepository : IUserRepository
         _context.Addresses.Remove(address);
         await _context.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<int> ClearRecoveryCodesAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.RecoveryCodes
+            .Where(r => r.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     public async Task UnsetDefaultAddressesAsync(int userId, CancellationToken cancellationToken = default)

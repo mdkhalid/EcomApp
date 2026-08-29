@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace EcomApi.Models;
 
 public class User
@@ -22,6 +24,12 @@ public class User
     public string? LockoutReason { get; set; }
     public string? PasswordResetTokenHash { get; set; }
     public DateTime? PasswordResetTokenExpiry { get; set; }
+    public bool EmailVerified { get; set; } = false;
+    public string? EmailVerificationTokenHash { get; set; }
+    public DateTime? EmailVerificationTokenExpiry { get; set; }
+
+    public bool TwoFactorEnabled { get; set; } = false;
+    public string? TwoFactorSecretEncrypted { get; set; }
 
     public bool IsLockedOut => LockoutEnd.HasValue && LockoutEnd.Value > DateTime.UtcNow;
 
@@ -29,6 +37,18 @@ public class User
     public List<Order> Orders { get; set; } = new();
     public List<RefreshToken> RefreshTokens { get; set; } = new();
     public List<Address> Addresses { get; set; } = new();
+    public List<RecoveryCode> RecoveryCodes { get; set; } = new();
+}
+
+public class RecoveryCode
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+    public string CodeHash { get; set; } = string.Empty;
+    public bool IsUsed { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UsedAt { get; set; }
 }
 
 public class RefreshToken
@@ -36,7 +56,9 @@ public class RefreshToken
     public int Id { get; set; }
     public int UserId { get; set; }
     public User User { get; set; } = null!;
+    [NotMapped]
     public string Token { get; set; } = string.Empty;
+    public string? TokenHash { get; set; }
     public string IpAddress { get; set; } = string.Empty;
     public string? UserAgent { get; set; }
     public DateTime ExpiresAt { get; set; }

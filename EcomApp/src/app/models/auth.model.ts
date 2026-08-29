@@ -17,6 +17,8 @@ export interface User {
   lockoutEnd?: string;
   lockoutReason?: string;
   isLockedOut?: boolean;
+  emailVerified?: boolean;
+  twoFactorEnabled?: boolean;
   addresses?: Address[];
 }
 
@@ -71,12 +73,18 @@ export interface TokenResponse {
   refreshToken: string;
   expiresAt: string;
   tokenType: string;
+  emailVerified: boolean;
 }
 
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
   confirmNewPassword: string;
+}
+
+export interface TwoFactorChallenge {
+  requiresTwoFactor: boolean;
+  twoFactorToken: string;
 }
 
 export interface CreateUserRequest {

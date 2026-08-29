@@ -17,13 +17,15 @@ public class OrdersController : ControllerBase
     private readonly ICartRepository _cartRepository;
     private readonly INotificationService _notificationService;
     private readonly IInvoiceService _invoiceService;
+    private readonly IUserRepository _userRepository;
 
-    public OrdersController(IOrderRepository orderRepository, ICartRepository cartRepository, INotificationService notificationService, IInvoiceService invoiceService)
+    public OrdersController(IOrderRepository orderRepository, ICartRepository cartRepository, INotificationService notificationService, IInvoiceService invoiceService, IUserRepository userRepository)
     {
         _orderRepository = orderRepository;
         _cartRepository = cartRepository;
         _notificationService = notificationService;
         _invoiceService = invoiceService;
+        _userRepository = userRepository;
     }
 
     private string GetUserIdOrSession()
@@ -61,6 +63,11 @@ public class OrdersController : ControllerBase
         var role = User.FindFirstValue(ClaimTypes.Role);
         if (role == "Admin")
             return Forbid();
+
+        var user = await _userRepository.GetByIdAsync(int.Parse(userIdClaim), cancellationToken);
+        if (user != null && !user.EmailVerified)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email address before placing an order.", code = "EMAIL_NOT_VERIFIED" });
 
         var identifier = $"user:{userIdClaim}";
         var order = await _orderRepository.CreateFromCartAsync(identifier, createDto);

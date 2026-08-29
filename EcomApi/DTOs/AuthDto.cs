@@ -49,6 +49,53 @@ public class RefreshTokenDto
     public string Token { get; set; } = string.Empty;
 }
 
+public class VerifyEmailDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Token { get; set; } = string.Empty;
+}
+
+public class ResendVerificationDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+}
+
+public class ValidateTwoFactorDto
+{
+    [Required]
+    public string TwoFactorToken { get; set; } = string.Empty;
+
+    [Required]
+    public string Code { get; set; } = string.Empty;
+}
+
+public class SetupTwoFactorResponseDto
+{
+    public string Secret { get; set; } = string.Empty;
+    public string OtpAuthUri { get; set; } = string.Empty;
+}
+
+public class VerifyTwoFactorDto
+{
+    [Required]
+    public string Code { get; set; } = string.Empty;
+}
+
+public class DisableTwoFactorDto
+{
+    [Required]
+    public string Password { get; set; } = string.Empty;
+
+    [Required]
+    public string Code { get; set; } = string.Empty;
+}
+
 public class ForgotPasswordDto
 {
     [Required]
@@ -91,6 +138,7 @@ public class TokenResponseDto
     public string RefreshToken { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }
     public string TokenType { get; set; } = "Bearer";
+    public bool EmailVerified { get; set; }
 }
 
 public class UserDto
@@ -113,5 +161,7 @@ public class UserDto
     public DateTime? LockoutEnd { get; set; }
     public string? LockoutReason { get; set; }
     public bool IsLockedOut { get; set; }
+    public bool EmailVerified { get; set; }
+    public bool TwoFactorEnabled { get; set; }
     public List<AddressDto> Addresses { get; set; } = new();
 }

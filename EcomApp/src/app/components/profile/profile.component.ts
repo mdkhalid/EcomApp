@@ -59,6 +59,15 @@ export class ProfileComponent implements OnInit {
   addressSaving = signal(false);
   addressDeleting = signal<number | null>(null);
 
+  // Two-factor authentication
+  twoFactorSetup = signal<{ secret: string; otpAuthUri: string } | null>(null);
+  twoFactorCode = '';
+  twoFactorConfirmBusy = signal(false);
+  recoveryCodes = signal<string[]>([]);
+  disablePassword = '';
+  disableCode = '';
+  twoFactorBusy = signal(false);
+
   // Profile completion
   profileCompletion = signal(0);
 
@@ -218,6 +227,88 @@ export class ProfileComponent implements OnInit {
       error: () => {
         this.changingPassword.set(false);
         this.notification.showError('Failed to change password. Check your current password.');
+      }
+    });
+  }
+
+  // Two-factor authentication
+  startTwoFactorSetup(): void {
+    this.twoFactorBusy.set(true);
+    this.authService.setupTwoFactor().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        this.twoFactorSetup.set(data);
+        this.twoFactorCode = '';
+        this.twoFactorBusy.set(false);
+      },
+      error: () => {
+        this.twoFactorBusy.set(false);
+        this.notification.showError('Failed to start 2FA setup');
+      }
+    });
+  }
+
+  confirmTwoFactorSetup(): void {
+    if (!this.twoFactorCode?.trim()) {
+      this.notification.showError('Please enter the code from your authenticator app');
+      return;
+    }
+    this.twoFactorConfirmBusy.set(true);
+    this.authService.verifyTwoFactor(this.twoFactorCode).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res) => {
+        this.twoFactorConfirmBusy.set(false);
+        this.recoveryCodes.set(res.recoveryCodes);
+        this.twoFactorSetup.set(null);
+        this.twoFactorCode = '';
+        this.loadProfile();
+        this.notification.showSuccess('Two-factor authentication enabled');
+      },
+      error: (err) => {
+        this.twoFactorConfirmBusy.set(false);
+        this.twoFactorCode = '';
+        this.notification.showError(err.error?.error || 'Invalid code. Please try again.');
+      }
+    });
+  }
+
+  cancelTwoFactorSetup(): void {
+    this.twoFactorSetup.set(null);
+    this.twoFactorCode = '';
+  }
+
+  disableTwoFactor(): void {
+    if (!this.disablePassword || !this.disableCode) {
+      this.notification.showError('Please enter your password and current 2FA code');
+      return;
+    }
+    this.twoFactorBusy.set(true);
+    this.authService.disableTwoFactor({ password: this.disablePassword, code: this.disableCode })
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => {
+          this.twoFactorBusy.set(false);
+          this.disablePassword = '';
+          this.disableCode = '';
+          this.recoveryCodes.set([]);
+          this.loadProfile();
+          this.notification.showSuccess('Two-factor authentication disabled');
+        },
+        error: (err) => {
+          this.twoFactorBusy.set(false);
+          this.notification.showError(err.error?.error || 'Failed to disable 2FA');
+        }
+      });
+  }
+
+  regenerateRecoveryCodes(): void {
+    this.twoFactorBusy.set(true);
+    this.authService.regenerateRecoveryCodes().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res) => {
+        this.twoFactorBusy.set(false);
+        this.recoveryCodes.set(res.recoveryCodes);
+        this.notification.showSuccess('Recovery codes regenerated');
+      },
+      error: () => {
+        this.twoFactorBusy.set(false);
+        this.notification.showError('Failed to regenerate recovery codes');
       }
     });
   }

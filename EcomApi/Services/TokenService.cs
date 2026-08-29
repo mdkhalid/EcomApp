@@ -53,10 +53,12 @@ public class TokenService : ITokenService
 
     public RefreshToken GenerateRefreshToken(int userId, string ipAddress, string? userAgent)
     {
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         var refreshToken = new RefreshToken
         {
             UserId = userId,
-            Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+            Token = token,
+            TokenHash = PasswordResetToken.HashToken(token),
             IpAddress = ipAddress,
             UserAgent = userAgent,
             ExpiresAt = DateTime.UtcNow.AddDays(double.Parse(
@@ -66,9 +68,71 @@ public class TokenService : ITokenService
         return refreshToken;
     }
 
+    /// <summary>Validates a 2FA challenge token and returns the embedded user id, or null if invalid/expired.</summary>
+    public int? GetUserIdFromTwoFactorToken(string token)
+    {
+        var jwtSettings = _configuration.GetSection("Jwt");
+        var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
+        var handler = new JwtSecurityTokenHandler();
+
+        try
+        {
+            var principal = handler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = "2fa-challenge",
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ClockSkew = TimeSpan.Zero
+            }, out _);
+
+            var uid = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(uid, out var id) ? id : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public DateTime GetAccessTokenExpiry()
     {
         var minutes = double.Parse(_configuration.GetSection("Jwt")["AccessTokenExpirationMinutes"]!);
         return DateTime.UtcNow.AddMinutes(minutes);
+    }
+
+    /// <summary>
+    /// Short-lived token (5 min) issued after a correct password when 2FA is
+    /// required. It carries the user id but NOT the normal API audience, so it
+    /// cannot be used as an access token — only to complete the 2FA challenge.
+    /// </summary>
+    public string GenerateTwoFactorToken(User user)
+    {
+        var jwtSettings = _configuration.GetSection("Jwt");
+        var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Email, user.Email),
+            new("2fa_challenge", "true")
+        };
+
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(5),
+            Issuer = jwtSettings["Issuer"],
+            Audience = "2fa-challenge",
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var handler = new JwtSecurityTokenHandler();
+        return handler.WriteToken(handler.CreateToken(descriptor));
     }
 }

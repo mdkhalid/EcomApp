@@ -44,9 +44,13 @@ export class AuthService {
     );
   }
 
-  login(data: LoginRequest): Observable<TokenResponse> {
-    return this.http.post<TokenResponse>(`${this.apiUrl}/login`, data).pipe(
-      tap(response => this.handleLoginSuccess(response)),
+  login(data: LoginRequest): Observable<TokenResponse | TwoFactorChallenge> {
+    return this.http.post<TokenResponse | TwoFactorChallenge>(`${this.apiUrl}/login`, data).pipe(
+      tap(response => {
+        const challenge = response as Partial<TwoFactorChallenge>;
+        if (challenge.requiresTwoFactor) return;
+        this.handleLoginSuccess(response as TokenResponse);
+      }),
       catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
@@ -140,6 +144,49 @@ export class AuthService {
     );
   }
 
+  verifyEmail(data: { email: string; token: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/verify-email`, data).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  resendVerification(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/resend-verification`, { email }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  validateTwoFactor(data: { twoFactorToken: string; code: string }): Observable<TokenResponse> {
+    return this.http.post<TokenResponse>(`${this.apiUrl}/2fa/validate`, data).pipe(
+      tap(response => this.handleLoginSuccess(response)),
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  setupTwoFactor(): Observable<{ secret: string; otpAuthUri: string }> {
+    return this.http.post<{ secret: string; otpAuthUri: string }>(`${this.apiUrl}/2fa/setup`, {}).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  verifyTwoFactor(code: string): Observable<{ recoveryCodes: string[] }> {
+    return this.http.post<{ recoveryCodes: string[] }>(`${this.apiUrl}/2fa/verify`, { code }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  disableTwoFactor(data: { password: string; code: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/2fa/disable`, data).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  regenerateRecoveryCodes(): Observable<{ recoveryCodes: string[] }> {
+    return this.http.post<{ recoveryCodes: string[] }>(`${this.apiUrl}/2fa/recovery-codes`, {}).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
   resetPassword(data: { email: string; token: string; newPassword: string }): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, data).pipe(
       catchError(err => { console.error(err); return throwError(() => err); })
@@ -190,6 +237,7 @@ export class AuthService {
       role: role,
       firstName: tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'],
       lastName: tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'],
+      emailVerified: response.emailVerified,
       createdAt: new Date().toISOString()
     };
     this.currentUserSignal.set(user);

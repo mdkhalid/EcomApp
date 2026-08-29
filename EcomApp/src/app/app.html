@@ -1,3 +1,14 @@
+<!-- ===== EMAIL VERIFICATION BANNER ===== -->
+@if (showVerifyBanner()) {
+  <div class="verify-banner">
+    <span class="material-icons">mark_email_unread</span>
+    <span>Please verify your email address to unlock checkout.</span>
+    <button type="button" class="verify-banner__resend" (click)="resendVerification()" [disabled]="resendingVerification()">
+      {{ resendingVerification() ? 'Sending…' : 'Resend verification' }}
+    </button>
+  </div>
+}
+
 <!-- ===== TOP HEADER ===== -->
 @if (!isAuthRoute()) {
 <header class="header">

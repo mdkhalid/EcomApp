@@ -77,6 +77,13 @@ public static class EmailTemplates
         <p>This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.</p>
         """);
 
+    public static string VerifyEmail(string name, string verifyLink) => Wrap("Verify your email", $"""
+        <h2>Confirm your email{(!string.IsNullOrWhiteSpace(name) ? $", {name}" : "")}</h2>
+        <p>Thanks for signing up! Please confirm this email address belongs to you.</p>
+        <p><a href="{verifyLink}" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Verify Email</a></p>
+        <p>This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
+        """);
+
     private static string EstimatedDelivery(Order order) =>
         order.EstimatedDeliveryDate.HasValue
             ? $"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>"

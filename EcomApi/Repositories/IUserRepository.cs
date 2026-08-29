@@ -27,4 +27,5 @@ public interface IUserRepository
     Task<Address> UpdateAddressAsync(Address address, CancellationToken cancellationToken = default);
     Task<bool> DeleteAddressAsync(int addressId, int userId, CancellationToken cancellationToken = default);
     Task UnsetDefaultAddressesAsync(int userId, CancellationToken cancellationToken = default);
+    Task<int> ClearRecoveryCodesAsync(int userId, CancellationToken cancellationToken = default);
 }

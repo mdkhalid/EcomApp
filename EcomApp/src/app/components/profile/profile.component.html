@@ -160,10 +160,77 @@
               <label>Confirm New Password</label>
               <input type="password" [(ngModel)]="passwordForm().confirmNewPassword" name="confirmNewPassword" required placeholder="Confirm new password" />
             </div>
-            <button type="submit" class="btn-primary" [disabled]="changingPassword()">
-              {{ changingPassword() ? 'Changing...' : 'Change Password' }}
-            </button>
+          <button type="submit" class="btn-primary" [disabled]="changingPassword()">
+            {{ changingPassword() ? 'Changing...' : 'Change Password' }}
+          </button>
           </form>
+        </div>
+
+        <!-- Two-Factor Authentication -->
+        <div class="profile-card">
+          <h2>Two-Factor Authentication</h2>
+
+          @if (!user()?.twoFactorEnabled && !twoFactorSetup()) {
+            <p>Add an extra layer of security by requiring a code from your authenticator app at login.</p>
+            <button class="btn-primary" (click)="startTwoFactorSetup()" [disabled]="twoFactorBusy()">
+              {{ twoFactorBusy() ? 'Setting up...' : 'Enable 2FA' }}
+            </button>
+          }
+
+          @if (twoFactorSetup(); as setup) {
+            <p>Scan this QR code (or enter the key manually) in your authenticator app, then enter the 6-digit code.</p>
+            <div class="two-factor-key">
+              <code>{{ setup.secret }}</code>
+            </div>
+            <p class="two-factor-uri"><small>{{ setup.otpAuthUri }}</small></p>
+            <div class="form-group">
+              <label>Verification Code</label>
+              <input type="text" inputmode="numeric" maxlength="6" [(ngModel)]="twoFactorCode" name="twoFactorCode" placeholder="123456" />
+            </div>
+            <div class="two-factor-actions">
+              <button class="btn-primary" (click)="confirmTwoFactorSetup()" [disabled]="twoFactorConfirmBusy()">
+                {{ twoFactorConfirmBusy() ? 'Verifying...' : 'Confirm & Enable' }}
+              </button>
+              <button class="btn-secondary" (click)="cancelTwoFactorSetup()">Cancel</button>
+            </div>
+          }
+
+          @if (user()?.twoFactorEnabled) {
+            <p class="two-factor-enabled"><span class="material-icons">verified</span> Two-factor authentication is enabled.</p>
+
+            @if (recoveryCodes().length > 0) {
+              <div class="recovery-codes">
+                <h3>Save these recovery codes</h3>
+                <p>Each code can be used once if you lose access to your authenticator.</p>
+                <ul>
+                  @for (code of recoveryCodes(); track code) {
+                    <li><code>{{ code }}</code></li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <div class="two-factor-actions">
+              <button class="btn-secondary" (click)="regenerateRecoveryCodes()" [disabled]="twoFactorBusy()">
+                {{ twoFactorBusy() ? 'Working...' : 'Regenerate recovery codes' }}
+              </button>
+            </div>
+
+            <div class="disable-2fa">
+              <h3>Disable 2FA</h3>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" [(ngModel)]="disablePassword" name="disablePassword" placeholder="Your password" />
+              </div>
+              <div class="form-group">
+                <label>Current 2FA Code</label>
+                <input type="text" inputmode="numeric" maxlength="6" [(ngModel)]="disableCode" name="disableCode" placeholder="123456" />
+              </div>
+              <button class="btn-danger" (click)="disableTwoFactor()" [disabled]="twoFactorBusy()">
+                {{ twoFactorBusy() ? 'Working...' : 'Disable 2FA' }}
+              </button>
+            </div>
+          }
         </div>
       </div>
     </div>

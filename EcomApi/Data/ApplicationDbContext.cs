@@ -10,6 +10,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<RecoveryCode> RecoveryCodes => Set<RecoveryCode>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
@@ -65,16 +66,28 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
             entity.Property(e => e.Gender).HasMaxLength(20);
             entity.Property(e => e.LockoutReason).HasMaxLength(200);
+            entity.Property(e => e.TwoFactorSecretEncrypted).HasMaxLength(500);
             entity.Ignore(e => e.IsLockedOut);
+        });
+
+        modelBuilder.Entity<RecoveryCode>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.Property(e => e.CodeHash).IsRequired().HasMaxLength(64);
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.RecoveryCodes)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => e.TokenHash);
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.ExpiresAt);
-            entity.Property(e => e.Token).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.TokenHash).HasMaxLength(64);
             entity.Property(e => e.IpAddress).HasMaxLength(45);
             entity.Property(e => e.UserAgent).HasMaxLength(500);
             entity.HasOne(e => e.User)

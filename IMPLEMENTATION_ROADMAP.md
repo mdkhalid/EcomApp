@@ -55,7 +55,7 @@ The codebase has matured significantly since the June audit. These are verified 
 
 > Goal: nothing ships to real users until this phase is green. Every item reuses existing patterns.
 
-### 1.1 Security headers middleware — fixes G7
+### 1.1 Security headers middleware — fixes G7 ✅ Done (2026-08-29)
 - New `SecurityHeadersMiddleware` (or `app.Use(async ...)` in `Program.cs`) setting:
   - `Content-Security-Policy` (start with `default-src 'self'; img-src 'self' data: https:;` — inline styles needed for Angular, so allow `style-src 'self' 'unsafe-inline'` initially)
   - `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
@@ -63,14 +63,14 @@ The codebase has matured significantly since the June audit. These are verified 
 - Static assets (uploads) must also pass through the header middleware — register it before `UseStaticFiles()`.
 - **Test:** `curl -I` every route class (API, uploads, SPA fallback) and assert headers present.
 
-### 1.2 Hash refresh tokens at rest — fixes G8
+### 1.2 Hash refresh tokens at rest — fixes G8 ✅ Done (2026-08-29)
 - Add migration `HashRefreshTokens`: new column `TokenHash` (nullable first).
 - On issue: store `SHA256(token)` (reuse the exact pattern from `PasswordResetToken.cs` — it already does gen/hash/validate and has tests).
 - On lookup: hash incoming token, query by hash. Keep lookup indexed.
 - Migration backfill: existing plain tokens can't be hashed retroactively (hash is one-way) → invalidate all existing refresh tokens once (force re-login; acceptable one-time cost). Then drop the plain column.
 - **Test:** unit test mirroring `PasswordResetTokenTests`.
 
-### 1.3 Email verification on signup — fixes G3
+### 1.3 Email verification on signup — fixes G3 ✅ Done (2026-08-29)
 - `User`: `EmailVerified` (bool, default false), `EmailVerificationTokenHash`, `EmailVerificationTokenExpiry`.
 - Endpoints: `POST /api/auth/verify-email` (token+email), `POST /api/auth/resend-verification` (rate-limited, generic response).
 - Reuse `PasswordResetToken` service for token lifecycle; reuse `EmailTemplates` for a new `VerifyEmail` template (add `{{VerifyUrl}}` placeholder, same branded wrapper).
@@ -79,7 +79,7 @@ The codebase has matured significantly since the June audit. These are verified 
 - Frontend: `verify-email` page (guest-guarded), banner on profile, resend button.
 - **Security:** same no-enumeration rule as forgot-password; single-use tokens; 24h expiry.
 
-### 1.4 TOTP 2FA for Admin/SubAdmin — fixes G2
+### 1.4 TOTP 2FA for Admin/SubAdmin — fixes G2 ✅ Done (2026-08-29)
 - Packages: `Otp.NET` (backend), `qrcode` (frontend).
 - `User`: `TwoFactorSecret` (encrypted at rest via ASP.NET DataProtection), `TwoFactorEnabled`, plus `RecoveryCode` entity (hashed, 10 codes).
 - Endpoints: `/api/auth/2fa/setup` (returns secret+OTP-auth URI), `/2fa/verify` (enables), `/2fa/disable` (requires password+TOTP), `/2fa/recovery-codes`.
@@ -88,7 +88,7 @@ The codebase has matured significantly since the June audit. These are verified 
 - Frontend: 6-digit input component on login, setup section in profile with QR code.
 - **Test:** TOTP generation/validation pure class + unit tests (mirror `PasswordResetToken` pattern).
 
-### 1.5 Config-driven CORS + open-redirect fix + claims normalization — fixes G12, G15, G16
+### 1.5 Config-driven CORS + open-redirect fix + claims normalization — fixes G12, G15, G16 ✅ Done (2026-08-29)
 - CORS origins from config (`Cors:AllowedOrigins` array; add a `Setting` descriptor for runtime edit).
 - Validate `returnUrl`: must be a relative local URL (`Uri.IsWellFormedUriString` + starts with `/` and not `//`).
 - `JwtBearerOptions.MapInboundClaims = false` (or map to short claim names) so `ClaimTypes.NameIdentifier` lookups are predictable; introduce a `CurrentUser` service/extension to kill the repeated `int.Parse(...!)` pattern (30+ call sites) in the same pass.
@@ -266,7 +266,7 @@ Phase 4  Growth features           ← any order; 4.1 ships in a day
 ## Progress Tracker
 
 - [x] Phase 0 — (pre-existing) notification system, password reset, settings, environment files, HSTS
-- [ ] Phase 1 — Security hardening & trust
+- [x] Phase 1 — Security hardening & trust (2026-08-29: 1.1 security headers, 1.2 hashed refresh tokens, 1.3 email verification + checkout gate, 1.4 TOTP 2FA, 1.5 config CORS + open-redirect fix + claims normalization)
 - [ ] Phase 2 — Payments & checkout money-movement
 - [ ] Phase 3 — DevOps, testing & refactor
 - [ ] Phase 4 — Growth & engagement features

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil, of, filter, map, startWith } from 'rxjs';
 import { AuthService } from './services/auth.service';
+import { NotificationService } from './services/notification.service';
 import { CartService } from './services/cart.service';
 import { CategoryService } from './services/category.service';
 import { Category } from './models/category.model';
@@ -22,6 +23,7 @@ import { ActivityService } from './services/activity.service';
 export class App implements OnInit, OnDestroy {
   protected readonly title = signal('ShopKart');
   protected readonly authService = inject(AuthService);
+  protected readonly notificationService = inject(NotificationService);
   protected readonly cartService = inject(CartService);
   protected readonly router = inject(Router);
   protected readonly categoryService = inject(CategoryService);
@@ -51,6 +53,27 @@ export class App implements OnInit, OnDestroy {
     { initialValue: this.router.url }
   );
   protected readonly isAdminRoute = computed(() => this.currentUrl().startsWith('/admin'));
+  protected readonly showVerifyBanner = computed(() => {
+    const user = this.authService.currentUser();
+    return this.authService.isAuthenticated() && !!user && user.emailVerified !== true;
+  });
+  protected resendingVerification = signal(false);
+
+  protected resendVerification(): void {
+    const email = this.authService.currentUser()?.email;
+    if (!email) return;
+    this.resendingVerification.set(true);
+    this.authService.resendVerification(email).subscribe({
+      next: () => {
+        this.resendingVerification.set(false);
+        this.notificationService.showSuccess('Verification link sent to your email.');
+      },
+      error: () => {
+        this.resendingVerification.set(false);
+        this.notificationService.showSuccess('Verification link sent to your email.');
+      }
+    });
+  }
   protected readonly isAuthRoute = computed(() => {
     const url = this.currentUrl();
     return url === '/login' || url === '/register';

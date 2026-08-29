@@ -23,41 +23,63 @@
         </div>
       }
 
-      <form (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <span class="material-icons form-icon">person</span>
-          <input
-            type="text"
-            [(ngModel)]="loginData.emailOrUsername"
-            name="emailOrUsername"
-            placeholder="Enter Email or Username"
-            required
-          />
-        </div>
+      @if (!awaitingTwoFactor()) {
+        <form (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <span class="material-icons form-icon">person</span>
+            <input
+              type="text"
+              [(ngModel)]="loginData.emailOrUsername"
+              name="emailOrUsername"
+              placeholder="Enter Email or Username"
+              required
+            />
+          </div>
 
-        <div class="form-group">
-          <span class="material-icons form-icon">lock</span>
-          <input
-            type="password"
-            [(ngModel)]="loginData.password"
-            name="password"
-            placeholder="Enter Password"
-            required
-          />
-        </div>
+          <div class="form-group">
+            <span class="material-icons form-icon">lock</span>
+            <input
+              type="password"
+              [(ngModel)]="loginData.password"
+              name="password"
+              placeholder="Enter Password"
+              required
+            />
+          </div>
 
-        <button type="submit" class="btn-login-submit" [disabled]="isLoading">
-          {{ isLoading ? 'Logging in...' : 'Login' }}
-        </button>
+          <button type="submit" class="btn-login-submit" [disabled]="isLoading">
+            {{ isLoading ? 'Logging in...' : 'Login' }}
+          </button>
 
-        <p class="forgot-password-link">
-          <a routerLink="/forgot-password">Forgot password?</a>
-        </p>
+          <p class="forgot-password-link">
+            <a routerLink="/forgot-password">Forgot password?</a>
+          </p>
 
-        <p class="auth-terms">
-          By continuing, you agree to ShopKart's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.
-        </p>
-      </form>
+          <p class="auth-terms">
+            By continuing, you agree to ShopKart's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.
+          </p>
+        </form>
+      } @else {
+        <form (ngSubmit)="submitTwoFactor()">
+          <h3>Two-factor authentication</h3>
+          <p>Enter the 6-digit code from your authenticator app.</p>
+          <div class="form-group">
+            <span class="material-icons form-icon">pin</span>
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              [(ngModel)]="twoFactorCode"
+              name="twoFactorCode"
+              placeholder="123456"
+              required
+            />
+          </div>
+          <button type="submit" class="btn-login-submit" [disabled]="isLoading">
+            {{ isLoading ? 'Verifying...' : 'Verify' }}
+          </button>
+        </form>
+      }
 
       <p class="auth-footer">
         New to ShopKart? <a routerLink="/register">Create an account</a>

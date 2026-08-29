@@ -21,6 +21,7 @@ public class AuthController : ControllerBase
     private readonly IEmailService _emailService;
     private readonly ISettingsProvider _settings;
     private readonly INotificationService _notificationService;
+    private readonly TwoFactorService _twoFactorService;
 
     public AuthController(
         IUserRepository userRepository,
@@ -29,7 +30,8 @@ public class AuthController : ControllerBase
         ILogger<AuthController> logger,
         IEmailService emailService,
         ISettingsProvider settings,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        TwoFactorService twoFactorService)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
@@ -38,6 +40,7 @@ public class AuthController : ControllerBase
         _emailService = emailService;
         _settings = settings;
         _notificationService = notificationService;
+        _twoFactorService = twoFactorService;
     }
 
     [HttpPost("register")]
@@ -66,8 +69,40 @@ public class AuthController : ControllerBase
         _logger.LogInformation("User registered: {Email}", user.Email);
 
         await _notificationService.SendWelcomeAsync(user);
+        await GenerateAndSendVerificationEmailAsync(user, cancellationToken);
 
         return await GenerateTokenResponse(user);
+    }
+
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
+        if (user == null || user.EmailVerificationTokenExpiry == null ||
+            !PasswordResetToken.IsValid(dto.Token, user.EmailVerificationTokenHash, user.EmailVerificationTokenExpiry))
+        {
+            return BadRequest(new { error = "Invalid or expired verification link." });
+        }
+
+        user.EmailVerified = true;
+        user.EmailVerificationTokenHash = null;
+        user.EmailVerificationTokenExpiry = null;
+        await _userRepository.UpdateAsync(user);
+
+        return Ok(new { message = "Email verified successfully. You can now place orders." });
+    }
+
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
+        if (user != null && !user.EmailVerified)
+        {
+            await GenerateAndSendVerificationEmailAsync(user, cancellationToken);
+        }
+
+        // Generic response regardless of whether the account exists — no enumeration.
+        return Ok(new { message = "If an unverified account exists for this email, a verification link has been sent." });
     }
 
     [HttpPost("login")]
@@ -130,6 +165,21 @@ public class AuthController : ControllerBase
             return Unauthorized(new { error = "Account is deactivated. Contact an administrator." });
         }
 
+        var enforce2fa = bool.TryParse(await _settings.GetRawAsync("Auth:Enforce2FA", cancellationToken), out var enforce) && enforce;
+        var isPrivilegedRole = user.Role == UserRoles.Admin || user.Role == UserRoles.SubAdmin;
+        if (user.TwoFactorEnabled || (enforce2fa && isPrivilegedRole))
+        {
+            if (!user.TwoFactorEnabled)
+                return StatusCode(StatusCodes.Status423Locked, new
+                {
+                    error = "Two-factor authentication is required for your account. Please enable it in your profile first, or contact an administrator.",
+                    code = "TWO_FACTOR_REQUIRED"
+                });
+
+            var twoFactorToken = _tokenService.GenerateTwoFactorToken(user);
+            return Ok(new { requiresTwoFactor = true, twoFactorToken });
+        }
+
         user.FailedLoginAttempts = 0;
         user.LockoutEnd = null;
         user.LockoutReason = null;
@@ -147,7 +197,7 @@ public class AuthController : ControllerBase
         if (user == null)
             return Unauthorized(new { error = "Invalid refresh token." });
 
-        var refreshToken = user.RefreshTokens.First(rt => rt.Token == dto.Token);
+        var refreshToken = user.RefreshTokens.First(rt => rt.TokenHash == PasswordResetToken.HashToken(dto.Token));
         refreshToken.RevokedAt = DateTime.UtcNow;
         refreshToken.ReplacedByToken = "rotation";
 
@@ -523,6 +573,109 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Password reset successful. Please log in." });
     }
 
+    [HttpPost("2fa/validate")]
+    public async Task<ActionResult<TokenResponseDto>> ValidateTwoFactor([FromBody] ValidateTwoFactorDto dto, CancellationToken cancellationToken = default)
+    {
+        var userId = _tokenService.GetUserIdFromTwoFactorToken(dto.TwoFactorToken);
+        if (userId == null)
+            return Unauthorized(new { error = "Invalid or expired two-factor session." });
+
+        var user = await _userRepository.GetByIdAsync(userId.Value, cancellationToken);
+        if (user == null || !user.IsActive)
+            return Unauthorized(new { error = "Invalid or expired two-factor session." });
+
+        var isTotp = _twoFactorService.VerifyCode(user.TwoFactorSecretEncrypted, dto.Code);
+        var isRecovery = _twoFactorService.TryConsumeRecoveryCode(user, dto.Code);
+        if (!isTotp && !isRecovery)
+            return BadRequest(new { error = "Invalid verification code." });
+
+        await _userRepository.UpdateAsync(user);
+        return await GenerateTokenResponse(user);
+    }
+
+    [HttpPost("2fa/setup")]
+    [Authorize]
+    public async Task<ActionResult<SetupTwoFactorResponseDto>> SetupTwoFactor(CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserEntityAsync(cancellationToken);
+        if (user == null) return Unauthorized();
+
+        var (secret, uri) = _twoFactorService.GenerateSetup(user.Email);
+        user.TwoFactorSecretEncrypted = _twoFactorService.ProtectSecret(secret);
+        await _userRepository.UpdateAsync(user);
+
+        return Ok(new SetupTwoFactorResponseDto { Secret = secret, OtpAuthUri = uri });
+    }
+
+    [HttpPost("2fa/verify")]
+    [Authorize]
+    public async Task<IActionResult> VerifyTwoFactor([FromBody] VerifyTwoFactorDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserEntityAsync(cancellationToken);
+        if (user == null) return Unauthorized();
+
+        if (!_twoFactorService.VerifyCode(user.TwoFactorSecretEncrypted, dto.Code))
+            return BadRequest(new { error = "Invalid verification code." });
+
+        user.TwoFactorEnabled = true;
+        var codes = _twoFactorService.GenerateRecoveryCodes();
+        await _userRepository.ClearRecoveryCodesAsync(user.Id, cancellationToken);
+        foreach (var (_, hash) in codes)
+            user.RecoveryCodes.Add(new RecoveryCode { CodeHash = hash });
+
+        await _userRepository.UpdateAsync(user);
+        return Ok(new { recoveryCodes = codes.Select(c => c.Plain).ToList() });
+    }
+
+    [HttpPost("2fa/disable")]
+    [Authorize]
+    public async Task<IActionResult> DisableTwoFactor([FromBody] DisableTwoFactorDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserEntityAsync(cancellationToken);
+        if (user == null) return Unauthorized();
+
+        if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password) != PasswordVerificationResult.Success)
+            return BadRequest(new { error = "Incorrect password." });
+
+        var isTotp = _twoFactorService.VerifyCode(user.TwoFactorSecretEncrypted, dto.Code);
+        var isRecovery = _twoFactorService.TryConsumeRecoveryCode(user, dto.Code);
+        if (!isTotp && !isRecovery)
+            return BadRequest(new { error = "Invalid verification code." });
+
+        user.TwoFactorEnabled = false;
+        user.TwoFactorSecretEncrypted = null;
+        await _userRepository.ClearRecoveryCodesAsync(user.Id, cancellationToken);
+
+        await _userRepository.UpdateAsync(user);
+        return Ok(new { message = "Two-factor authentication disabled." });
+    }
+
+    [HttpPost("2fa/recovery-codes")]
+    [Authorize]
+    public async Task<IActionResult> RegenerateRecoveryCodes(CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserEntityAsync(cancellationToken);
+        if (user == null) return Unauthorized();
+        if (!user.TwoFactorEnabled)
+            return BadRequest(new { error = "Two-factor authentication is not enabled." });
+
+        var codes = _twoFactorService.GenerateRecoveryCodes();
+        await _userRepository.ClearRecoveryCodesAsync(user.Id, cancellationToken);
+        foreach (var (_, hash) in codes)
+            user.RecoveryCodes.Add(new RecoveryCode { CodeHash = hash });
+
+        await _userRepository.UpdateAsync(user);
+        return Ok(new { recoveryCodes = codes.Select(c => c.Plain).ToList() });
+    }
+
+    private async Task<User?> GetCurrentUserEntityAsync(CancellationToken cancellationToken = default)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            return null;
+        return await _userRepository.GetByIdAsync(userId, cancellationToken);
+    }
+
     private async Task<ActionResult<TokenResponseDto>> GenerateTokenResponse(User user)
     {
         var accessToken = _tokenService.GenerateAccessToken(user);
@@ -538,7 +691,20 @@ public class AuthController : ControllerBase
             AccessToken = accessToken,
             RefreshToken = refreshToken.Token,
             ExpiresAt = _tokenService.GetAccessTokenExpiry(),
-            TokenType = "Bearer"
+            TokenType = "Bearer",
+            EmailVerified = user.EmailVerified
         });
+    }
+
+    private async Task GenerateAndSendVerificationEmailAsync(User user, CancellationToken cancellationToken)
+    {
+        var token = PasswordResetToken.GenerateToken();
+        user.EmailVerificationTokenHash = PasswordResetToken.HashToken(token);
+        user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
+        await _userRepository.UpdateAsync(user);
+
+        var baseUrl = await _settings.GetRawAsync("Client:BaseUrl", cancellationToken) ?? "http://localhost:4200";
+        var verifyUrl = $"{baseUrl.TrimEnd('/')}/verify-email?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
+        await _notificationService.SendVerificationEmailAsync(user, verifyUrl);
     }
 }

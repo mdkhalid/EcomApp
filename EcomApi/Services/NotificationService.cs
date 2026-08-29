@@ -11,6 +11,7 @@ public interface INotificationService
     Task SendOrderConfirmationAsync(Order order);
     Task SendTrackingUpdateAsync(Order order);
     Task SendWelcomeAsync(User user);
+    Task SendVerificationEmailAsync(User user, string verifyUrl);
     Task<int> GetUnreadNotificationCountAsync();
     Task<List<AdminNotification>> GetNotificationsAsync(int page = 1, int pageSize = 20);
     Task MarkNotificationReadAsync(int id);
@@ -93,6 +94,22 @@ public class NotificationService : INotificationService
             Subject = "Welcome to Ecom!",
             HtmlBody = EmailTemplates.Welcome(user.FirstName ?? user.Username, user.Email),
             TextBody = $"Welcome to Ecom, {user.Username}!"
+        };
+
+        return _queue.EnqueueAsync(message);
+    }
+
+    public Task SendVerificationEmailAsync(User user, string verifyUrl)
+    {
+        _logger.LogInformation("Verification email queued for {Email}", user.Email);
+
+        var message = new NotificationMessage
+        {
+            Type = NotificationType.Welcome,
+            Email = user.Email,
+            Subject = "Verify your email - Ecom",
+            HtmlBody = EmailTemplates.VerifyEmail(user.FirstName ?? user.Username, verifyUrl),
+            TextBody = $"Verify your email: {verifyUrl}"
         };
 
         return _queue.EnqueueAsync(message);

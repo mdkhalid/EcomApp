@@ -1,4 +1,33 @@
 /* ============================================
+   Email Verification Banner
+   ============================================ */
+.verify-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  border-bottom: 1px solid #fed7aa;
+  padding: 10px 16px;
+  font-size: 14px;
+
+  .material-icons { font-size: 20px; }
+
+  &__resend {
+    margin-left: auto;
+    background: #ea580c;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.6; cursor: default; }
+  }
+}
+
+/* ============================================
    Header - Flipkart Inspired
    ============================================ */
 .header {

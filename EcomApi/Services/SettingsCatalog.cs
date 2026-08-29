@@ -27,7 +27,9 @@ public static class SettingsCatalog
         new("Notification:Sms:Enabled", "Notifications", "Send SMS", false, "false"),
         new("Notification:WhatsApp:Enabled", "Notifications", "Send WhatsApp", false, "false"),
 
-        new("Client:BaseUrl", "General", "Frontend base URL (for email links)", false, "http://localhost:4200")
+        new("Client:BaseUrl", "General", "Frontend base URL (for email links)", false, "http://localhost:4200"),
+        new("Cors:AllowedOrigins", "Security", "Comma-separated allowed CORS origins (requires restart)", false, "http://localhost:4200"),
+        new("Auth:Enforce2FA", "Security", "Require 2FA for Admin/SubAdmin logins", false, "false")
     };
 
     public static SettingDescriptor? Find(string key) => All.FirstOrDefault(x => x.Key == key);
