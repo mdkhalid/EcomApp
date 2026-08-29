@@ -1,3 +1,4 @@
+using System.Text.Json;
 using EcomApi.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -108,7 +109,10 @@ public class InvoiceService : IInvoiceService
 
             col.Item().PaddingTop(8).AlignRight().Column(c =>
             {
-                var subtotal = order.Items.Sum(i => i.TotalPrice);
+                var subtotal = order.SubtotalAmount > 0
+                    ? order.SubtotalAmount
+                    : order.Items.Sum(i => i.TotalPrice);
+
                 c.Item().Row(r =>
                 {
                     r.RelativeItem().Text("Subtotal:").FontSize(11).AlignRight();
@@ -121,6 +125,36 @@ public class InvoiceService : IInvoiceService
                     {
                         r.RelativeItem().Text($"Discount ({order.CouponCode}):").FontSize(11).AlignRight().FontColor(Colors.Green.Medium);
                         r.ConstantItem(80).Text($"-${order.DiscountAmount:F2}").FontSize(11).AlignRight().FontColor(Colors.Green.Medium);
+                    });
+                }
+
+                if (order.ShippingCost > 0)
+                {
+                    c.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Shipping:").FontSize(11).AlignRight();
+                        r.ConstantItem(80).Text($"${order.ShippingCost:F2}").FontSize(11).AlignRight();
+                    });
+                }
+
+                if (order.TaxAmount > 0)
+                {
+                    var taxName = "Tax";
+                    if (!string.IsNullOrEmpty(order.TaxBreakdownJson))
+                    {
+                        try
+                        {
+                            var taxMeta = JsonSerializer.Deserialize<JsonElement>(order.TaxBreakdownJson);
+                            if (taxMeta.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == JsonValueKind.String)
+                                taxName = nameEl.GetString()!;
+                        }
+                        catch { /* keep default label */ }
+                    }
+
+                    c.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text($"{taxName}:").FontSize(11).AlignRight();
+                        r.ConstantItem(80).Text($"${order.TaxAmount:F2}").FontSize(11).AlignRight();
                     });
                 }
 

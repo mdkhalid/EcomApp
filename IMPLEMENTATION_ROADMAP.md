@@ -129,7 +129,7 @@ The codebase has matured significantly since the June audit. These are verified 
 
 ### 2.5 Tax (GST) — fixes G10b ✅ Done
 - `TaxRate` table (percent per zone/class), computed server-side in the same totals pipeline as 2.4, stored as `TaxAmount` + `TaxBreakdownJson` snapshot on Order (audit-proof). ✅ Done
-- Show breakdown on checkout summary + invoice PDF (`InvoiceService` gains shipping/tax lines). (invoice PDF line pending)
+- Show breakdown on checkout summary + invoice PDF (`InvoiceService` gains shipping/tax lines). ✅ Done
 
 ### 2.6 Real refunds — fixes G11 ✅ Done (backend)
 - Approving a return in admin → optional "issue refund" action → `IPaymentGateway.RefundAsync` with the original `GatewayPaymentId` → payment status updated, refund email dispatched (existing channel + template). ✅ Done (`POST /api/payments/refund` admin endpoint + `PaymentWebhookProcessor` refund path)
