@@ -29,25 +29,26 @@ The codebase has matured significantly since the June audit. These are verified 
 
 ## 1. Gap Register (verified missing as of today)
 
-| # | Gap | Severity | Phase |
-|---|-----|----------|-------|
-| G1 | No real payment gateway (payment = free-text string) | 🔴 Critical | 2 |
-| G2 | No 2FA for Admin/SubAdmin | 🔴 High | 1 |
-| G3 | No email verification on signup | 🟠 High | 1 |
-| G4 | No Docker / docker-compose | 🟠 High | 3 |
-| G5 | No CI/CD pipeline | 🟠 High | 3 |
-| G6 | Zero frontend tests (`*.spec.ts`) | 🟡 Medium | 3 |
-| G7 | No security-headers middleware (CSP, X-Frame-Options, nosniff) | 🟡 Medium | 1 |
-| G8 | Refresh tokens stored as plain Base64 | 🟡 Medium | 1 |
-| G9 | Rate limiting in-memory, auth endpoints only | 🟡 Medium | 1 |
-| G10 | No shipping cost / tax (GST) calculation | 🟡 Medium | 2 |
-| G11 | Refunds have no money movement | 🟡 Medium | 2 |
-| G12 | CORS hard-coded to `localhost:4200` | 🟡 Medium | 1 |
-| G13 | `Database.Migrate()` on every startup | 🟡 Medium | 3 |
-| G14 | Admin god-component (~1,233 lines) | 🟡 Medium | 3 |
-| G15 | `returnUrl` not validated (open redirect) | 🟡 Medium | 1 |
-| G16 | No map-inbound-claims normalization on JWT | 🟢 Low | 1 |
-| G17 | Frontend route `**` silently redirects (no 404 page) | 🟢 Low | 3 |
+| # | Gap | Severity | Phase | Status |
+|---|-----|----------|-------|--------|
+| G1 | No real payment gateway (payment = free-text string) | 🔴 Critical | 2 | ✅ Resolved (Phase 2) |
+| G2 | No 2FA for Admin/SubAdmin | 🔴 High | 1 | ✅ Resolved (Phase 1) |
+| G3 | No email verification on signup | 🟠 High | 1 | ✅ Resolved (Phase 1) |
+| G4 | No Docker / docker-compose | 🟠 High | 3 | ⬜ Open |
+| G5 | No CI/CD pipeline | 🟠 High | 3 | ⬜ Open |
+| G6 | Zero frontend tests (`*.spec.ts`) | 🟡 Medium | 3 | ⬜ Open |
+| G7 | No security-headers middleware (CSP, X-Frame-Options, nosniff) | 🟡 Medium | 1 | ✅ Resolved (Phase 1) |
+| G8 | Refresh tokens stored as plain Base64 | 🟡 Medium | 1 | ✅ Resolved (Phase 1) |
+| G9 | Rate limiting in-memory, auth endpoints only | 🟡 Medium | 1 | 🟡 Partial (auth endpoints covered; not global) |
+| G10 | No shipping cost / tax (GST) calculation | 🟡 Medium | 2 | ✅ Resolved (Phase 2) |
+| G11 | Refunds have no money movement | 🟡 Medium | 2 | ✅ Resolved (Phase 2) |
+| G12 | CORS hard-coded to `localhost:4200` | 🟡 Medium | 1 | ✅ Resolved (Phase 1) |
+| G13 | `Database.Migrate()` on every startup | 🟡 Medium | 3 | ⬜ Open |
+| G14 | Admin god-component (~1,233 lines) | 🟡 Medium | 3 | ⬜ Open (also breaks `ng build --prod` budget) |
+| G15 | `returnUrl` not validated (open redirect) | 🟡 Medium | 1 | ✅ Resolved (Phase 1) |
+| G16 | No map-inbound-claims normalization on JWT | 🟢 Low | 1 | ✅ Resolved (Phase 1) |
+| G17 | Frontend route `**` silently redirects (no 404 page) | 🟢 Low | 3 | ⬜ Open |
+| G18 | Stripe prod secrets not yet wired (dev runs Mock gateway; need gitignored `appsettings.Production.json`) | 🟠 High | 2/3 | ⬜ Open |
 
 ---
 
