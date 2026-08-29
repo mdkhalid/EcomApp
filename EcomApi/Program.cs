@@ -72,6 +72,10 @@ builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
 builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<TwoFactorService>();
+builder.Services.AddScoped<StripeGateway>();
+builder.Services.AddScoped<PaymentGatewayFactory>();
+builder.Services.AddScoped<PricingService>();
+builder.Services.AddScoped<PaymentWebhookProcessor>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 

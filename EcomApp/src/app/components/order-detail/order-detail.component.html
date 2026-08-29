@@ -34,6 +34,23 @@
         </div>
       </div>
       <p class="order-date">Placed on {{ order()!.createdAt | date:'fullDate' }}</p>
+
+      @if (isAwaitingPayment()) {
+        <div class="complete-payment-panel">
+          <p>This order is awaiting payment. Complete payment to confirm your order.</p>
+          @if (!stripeReady()) {
+            <button type="button" class="btn-complete-payment" (click)="completePayment()" [disabled]="paying()">
+              {{ paying() ? 'Processing...' : 'Complete Payment' }}
+            </button>
+          } @else {
+            <div #stripeCard class="stripe-card"></div>
+            @if (stripeError()) { <p class="stripe-error">{{ stripeError() }}</p> }
+            <button type="button" class="btn-complete-payment" (click)="confirmStripe()" [disabled]="paying()">
+              {{ paying() ? 'Processing...' : 'Pay & Confirm Order' }}
+            </button>
+          }
+        </div>
+      }
     </div>
 
     <!-- Order Tracking Timeline -->

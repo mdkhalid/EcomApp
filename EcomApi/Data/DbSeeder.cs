@@ -16,6 +16,37 @@ public static class DbSeeder
         SeedAddresses(context);
         SeedCoupons(context);
         SeedReturnPolicy(context);
+        SeedPayments(context);
+    }
+
+    private static void SeedPayments(ApplicationDbContext context)
+    {
+        if (!context.TaxRates.Any())
+        {
+            context.TaxRates.Add(new TaxRate
+            {
+                Name = "GST",
+                Zone = null,
+                Percentage = 18.00m,
+                IsDefault = true
+            });
+        }
+
+        if (!context.ShippingZones.Any())
+        {
+            context.ShippingZones.Add(new ShippingZone
+            {
+                Name = "All India",
+                Regions = "ALL",
+                Rates = new List<ShippingRate>
+                {
+                    new ShippingRate { Method = "Standard", Rate = 49m, FreeOverAmount = 499m, MinOrderAmount = 0, IsActive = true },
+                    new ShippingRate { Method = "Express", Rate = 99m, FreeOverAmount = 999m, MinOrderAmount = 0, IsActive = true }
+                }
+            });
+        }
+
+        context.SaveChanges();
     }
 
     private static void SeedUsers(ApplicationDbContext context)

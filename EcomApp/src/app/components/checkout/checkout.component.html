@@ -169,9 +169,20 @@
               <input type="text" [(ngModel)]="orderForm.shippingZip" name="shippingZip" required placeholder="ZIP" />
             </div>
           </div>
-          <button type="submit" class="btn-place-order" [disabled]="checkoutForm.invalid || placing()">
+          <button type="submit" class="btn-place-order" [disabled]="checkoutForm.invalid || placing() || paying()">
             {{ placing() ? 'Placing Order...' : 'Place Order' }}
           </button>
+
+          @if (stripeReady()) {
+            <div class="stripe-payment">
+              <p>Complete your payment to confirm the order.</p>
+              <div #stripeCard class="stripe-card"></div>
+              @if (stripeError()) { <p class="stripe-error">{{ stripeError() }}</p> }
+              <button type="button" class="btn-place-order" (click)="confirmStripe()" [disabled]="paying()">
+                {{ paying() ? 'Processing...' : 'Pay & Confirm Order' }}
+              </button>
+            </div>
+          }
         </form>
       </div>
 

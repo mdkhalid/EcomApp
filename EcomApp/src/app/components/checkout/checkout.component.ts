@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, ViewChild, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, signal, ViewChild, DestroyRef, ElementRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -9,7 +9,7 @@ import { CouponService } from '../../services/coupon.service';
 import { NotificationService } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
 import { Cart } from '../../models/cart.model';
-import { CreateOrder, SavedAddress } from '../../models/order.model';
+import { CreateOrder, Order, SavedAddress } from '../../models/order.model';
 import { Address, CreateAddressRequest } from '../../models/auth.model';
 import { ValidateCouponResponse } from '../../models/coupon.model';
 import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
@@ -32,10 +32,15 @@ export class CheckoutComponent implements OnInit {
   protected readonly notifications = this.notification.notifications;
 
   @ViewChild('checkoutForm') checkoutForm!: NgForm;
+  @ViewChild('stripeCard') stripeCardRef!: ElementRef<HTMLDivElement>;
 
   cart = signal<Cart | null>(null);
   loading = signal(true);
   placing = signal(false);
+  paying = signal(false);
+  pendingOrder = signal<Order | null>(null);
+  stripeReady = signal(false);
+  stripeError = signal('');
   savedAddresses = signal<SavedAddress[]>([]);
   selectedSavedAddress = signal<number | null>(null);
 
@@ -223,13 +228,97 @@ export class CheckoutComponent implements OnInit {
     this.orderService.createOrder(orderData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (order) => {
         this.cartService.resetCount();
-        this.notification.showSuccess('Order placed successfully!');
-        this.router.navigate(['/orders', order.id]);
+        this.placing.set(false);
+        this.payOrder(order);
       },
       error: (err) => {
         this.notification.showError(err.error?.error || 'Failed to place order');
         this.placing.set(false);
       }
+    });
+  }
+
+  private payOrder(order: Order): void {
+    this.pendingOrder.set(order);
+    this.paying.set(true);
+    this.orderService.getPaymentConfig().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (cfg) => {
+        if (cfg.gateway === 'Mock') {
+          this.orderService.mockConfirm(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: () => {
+              this.paying.set(false);
+              this.notification.showSuccess('Payment successful! Your order is confirmed.');
+              this.router.navigate(['/orders', order.id]);
+            },
+            error: (err) => {
+              this.paying.set(false);
+              this.notification.showError(err.error?.error || 'Payment failed');
+            }
+          });
+        } else {
+          this.prepareStripePayment(order, cfg.publishableKey);
+        }
+      },
+      error: () => {
+        this.paying.set(false);
+        this.notification.showError('Could not load payment configuration');
+      }
+    });
+  }
+
+  private prepareStripePayment(order: Order, publishableKey: string | null): void {
+    this.orderService.createPaymentIntent(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (intent) => {
+        this.loadStripe(publishableKey).then((stripe: any) => {
+          if (!stripe || !this.stripeCardRef) { this.paying.set(false); return; }
+          const elements = stripe.elements();
+          const card = elements.create('card');
+          card.mount(this.stripeCardRef.nativeElement);
+          (this as any)._stripe = stripe;
+          (this as any)._card = card;
+          this.stripeReady.set(true);
+          this.paying.set(false);
+          (this as any)._clientSecret = intent.clientSecret;
+        });
+      },
+      error: (err) => {
+        this.paying.set(false);
+        this.notification.showError(err.error?.error || 'Could not initialise payment');
+      }
+    });
+  }
+
+  confirmStripe(): void {
+    const stripe = (this as any)._stripe;
+    const card = (this as any)._card;
+    const clientSecret = (this as any)._clientSecret;
+    if (!stripe || !card || !clientSecret) return;
+    this.paying.set(true);
+    this.stripeError.set('');
+    stripe.confirmCardPayment(clientSecret, { payment_method: { card } }).then((result: any) => {
+      if (result.error) {
+        this.stripeError.set(result.error.message || 'Payment failed');
+        this.paying.set(false);
+      } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+        const order = this.pendingOrder();
+        this.paying.set(false);
+        this.notification.showSuccess('Payment successful! Your order is confirmed.');
+        if (order) this.router.navigate(['/orders', order.id]);
+      } else {
+        this.paying.set(false);
+      }
+    });
+  }
+
+  private loadStripe(publishableKey: string | null): Promise<any> {
+    return new Promise((resolve) => {
+      const existing = (window as any).Stripe;
+      if (existing) { resolve(publishableKey ? existing(publishableKey) : existing); return; }
+      const script = document.createElement('script');
+      script.src = 'https://js.stripe.com/v3/';
+      script.onload = () => resolve((window as any).Stripe(publishableKey));
+      script.onerror = () => { this.stripeError.set('Failed to load payment provider'); resolve(null); };
+      document.head.appendChild(script);
     });
   }
 

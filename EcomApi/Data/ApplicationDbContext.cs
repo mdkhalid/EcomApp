@@ -17,6 +17,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<ProcessedWebhookEvent> ProcessedWebhookEvents => Set<ProcessedWebhookEvent>();
+    public DbSet<ShippingZone> ShippingZones => Set<ShippingZone>();
+    public DbSet<ShippingRate> ShippingRates => Set<ShippingRate>();
+    public DbSet<TaxRate> TaxRates => Set<TaxRate>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
     public DbSet<Category> Categories => Set<Category>();
@@ -81,6 +86,57 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.GatewayPaymentId);
+            entity.Property(e => e.GatewayPaymentId).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Currency).HasMaxLength(10);
+            entity.Property(e => e.IdempotencyKey).HasMaxLength(100);
+            entity.Property(e => e.Amount).HasPrecision(18, 2);
+            entity.HasOne(e => e.Order)
+                .WithMany(o => o.Payments)
+                .HasForeignKey(e => e.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProcessedWebhookEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.EventId).IsUnique();
+            entity.Property(e => e.EventId).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Gateway).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<ShippingZone>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Regions).HasMaxLength(1000);
+            entity.HasMany(e => e.Rates)
+                .WithOne(r => r.Zone)
+                .HasForeignKey(r => r.ShippingZoneId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ShippingRate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Method).HasMaxLength(50);
+            entity.Property(e => e.Rate).HasPrecision(18, 2);
+            entity.Property(e => e.MinOrderAmount).HasPrecision(18, 2);
+            entity.Property(e => e.FreeOverAmount).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<TaxRate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Zone).HasMaxLength(200);
+            entity.Property(e => e.Percentage).HasPrecision(18, 4);
+        });
+
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -142,6 +198,9 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ShippingCity).IsRequired().HasMaxLength(100);
             entity.Property(e => e.ShippingZip).IsRequired().HasMaxLength(20);
             entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+            entity.Property(e => e.SubtotalAmount).HasPrecision(18, 2);
+            entity.Property(e => e.ShippingCost).HasPrecision(18, 2);
+            entity.Property(e => e.TaxAmount).HasPrecision(18, 2);
             entity.Property(e => e.CouponCode).HasMaxLength(50);
             entity.Property(e => e.DiscountAmount).HasPrecision(18, 2);
             entity.Property(e => e.TrackingNumber).HasMaxLength(100);

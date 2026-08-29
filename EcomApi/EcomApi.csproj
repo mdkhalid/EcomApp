@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
     <PackageReference Include="Otp.NET" Version="1.4.1" />
     <PackageReference Include="QuestPDF" Version="2026.5.0" />
+    <PackageReference Include="Stripe.net" Version="52.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 

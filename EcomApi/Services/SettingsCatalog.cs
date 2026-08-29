@@ -29,7 +29,11 @@ public static class SettingsCatalog
 
         new("Client:BaseUrl", "General", "Frontend base URL (for email links)", false, "http://localhost:4200"),
         new("Cors:AllowedOrigins", "Security", "Comma-separated allowed CORS origins (requires restart)", false, "http://localhost:4200"),
-        new("Auth:Enforce2FA", "Security", "Require 2FA for Admin/SubAdmin logins", false, "false")
+        new("Auth:Enforce2FA", "Security", "Require 2FA for Admin/SubAdmin logins", false, "false"),
+        new("Stripe:SecretKey", "Payments", "Stripe secret API key (empty = Mock gateway)", true, ""),
+        new("Stripe:PublishableKey", "Payments", "Stripe publishable key (frontend)", false, ""),
+        new("Stripe:WebhookSecret", "Payments", "Stripe webhook signing secret", true, ""),
+        new("Shipping:DefaultRate", "Payments", "Fallback shipping fee when no zone matches", false, "49")
     };
 
     public static SettingDescriptor? Find(string key) => All.FirstOrDefault(x => x.Key == key);

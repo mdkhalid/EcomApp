@@ -79,9 +79,7 @@ public class OrdersController : ControllerBase
             return BadRequest(new { error = "Cart is empty. Add items before placing an order." });
         }
 
-        // Send confirmation notification
-        await _notificationService.SendOrderConfirmationAsync(order);
-
+        // Confirmation email is sent once payment succeeds (webhook / mock-confirm).
         return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, MapOrder(order));
     }
 

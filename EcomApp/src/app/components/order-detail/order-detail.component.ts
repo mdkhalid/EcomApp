@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef, ViewChild, ElementRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -39,6 +39,11 @@ export class OrderDetailComponent implements OnInit {
   returnComment = signal('');
   submittingReturn = signal(false);
   returnReasons = ['Defective', 'WrongItem', 'NotAsDescribed', 'SizeIssue', 'ChangedMind', 'Other'];
+
+  @ViewChild('stripeCard') stripeCardRef!: ElementRef<HTMLDivElement>;
+  paying = signal(false);
+  stripeReady = signal(false);
+  stripeError = signal('');
 
   statusSteps = ['Pending', 'Processing', 'Shipped', 'OutForDelivery', 'Delivered'];
 
@@ -152,6 +157,93 @@ export class OrderDetailComponent implements OnInit {
 
   getFullImageUrl(path: string): string {
     return buildImageUrl(path);
+  }
+
+  isAwaitingPayment(): boolean {
+    return this.order()?.status === 'AwaitingPayment';
+  }
+
+  completePayment(): void {
+    const order = this.order();
+    if (!order) return;
+    this.paying.set(true);
+    this.orderService.getPaymentConfig().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (cfg) => {
+        if (cfg.gateway === 'Mock') {
+          this.orderService.mockConfirm(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: () => {
+              this.paying.set(false);
+              this.notification.showSuccess('Payment successful! Your order is confirmed.');
+              this.orderService.getById(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(o => this.order.set(o));
+            },
+            error: (err) => {
+              this.paying.set(false);
+              this.notification.showError(err.error?.error || 'Payment failed');
+            }
+          });
+        } else {
+          this.prepareStripePayment(order, cfg.publishableKey);
+        }
+      },
+      error: () => { this.paying.set(false); this.notification.showError('Could not load payment configuration'); }
+    });
+  }
+
+  private prepareStripePayment(order: Order, publishableKey: string | null): void {
+    this.orderService.createPaymentIntent(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (intent) => {
+        this.loadStripe(publishableKey).then((stripe: any) => {
+          if (!stripe || !this.stripeCardRef) { this.paying.set(false); return; }
+          const elements = stripe.elements();
+          const card = elements.create('card');
+          card.mount(this.stripeCardRef.nativeElement);
+          (this as any)._stripe = stripe;
+          (this as any)._card = card;
+          (this as any)._clientSecret = intent.clientSecret;
+          this.stripeReady.set(true);
+          this.paying.set(false);
+        });
+      },
+      error: (err) => {
+        this.paying.set(false);
+        this.notification.showError(err.error?.error || 'Could not initialise payment');
+      }
+    });
+  }
+
+  confirmStripe(): void {
+    const stripe = (this as any)._stripe;
+    const card = (this as any)._card;
+    const clientSecret = (this as any)._clientSecret;
+    const order = this.order();
+    if (!stripe || !card || !clientSecret) return;
+    this.paying.set(true);
+    this.stripeError.set('');
+    stripe.confirmCardPayment(clientSecret, { payment_method: { card } }).then((result: any) => {
+      if (result.error) {
+        this.stripeError.set(result.error.message || 'Payment failed');
+        this.paying.set(false);
+      } else if (result.paymentIntent?.status === 'succeeded') {
+        this.paying.set(false);
+        this.stripeReady.set(false);
+        this.notification.showSuccess('Payment successful! Your order is confirmed.');
+        if (order) this.orderService.getById(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(o => this.order.set(o));
+      } else {
+        this.paying.set(false);
+      }
+    });
+  }
+
+  private loadStripe(publishableKey: string | null): Promise<any> {
+    return new Promise((resolve) => {
+      const existing = (window as any).Stripe;
+      if (existing) { resolve(publishableKey ? existing(publishableKey) : existing); return; }
+      const script = document.createElement('script');
+      script.src = 'https://js.stripe.com/v3/';
+      script.onload = () => resolve((window as any).Stripe(publishableKey));
+      script.onerror = () => { this.stripeError.set('Failed to load payment provider'); resolve(null); };
+      document.head.appendChild(script);
+    });
   }
 
   formatDate(dateStr?: string): string {

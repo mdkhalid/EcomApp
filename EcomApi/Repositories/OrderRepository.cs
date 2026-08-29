@@ -1,6 +1,7 @@
 using EcomApi.Data;
 using EcomApi.DTOs;
 using EcomApi.Models;
+using EcomApi.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcomApi.Repositories;
@@ -9,11 +10,13 @@ public class OrderRepository : IOrderRepository
 {
     private readonly ApplicationDbContext _context;
     private readonly ICouponRepository _couponRepository;
+    private readonly PricingService _pricing;
 
-    public OrderRepository(ApplicationDbContext context, ICouponRepository couponRepository)
+    public OrderRepository(ApplicationDbContext context, ICouponRepository couponRepository, PricingService pricing)
     {
         _context = context;
         _couponRepository = couponRepository;
+        _pricing = pricing;
     }
 
     public async Task<Order?> CreateFromCartAsync(string identifier, CreateOrderDto createDto, CancellationToken cancellationToken = default)
@@ -85,18 +88,21 @@ public class OrderRepository : IOrderRepository
 
         order.TotalAmount = order.Items.Sum(i => i.TotalPrice);
 
+        var subtotal = order.Items.Sum(i => i.TotalPrice);
+        var discount = 0m;
+
         // Apply coupon if provided
         if (!string.IsNullOrWhiteSpace(createDto.CouponCode))
         {
             var validation = await _couponRepository.ValidateAndCalculateAsync(
-                createDto.CouponCode, order.TotalAmount, cart.UserId, cancellationToken);
+                createDto.CouponCode, subtotal, cart.UserId, cancellationToken);
 
             if (!validation.IsValid)
                 return null;
 
             order.CouponCode = validation.Code;
             order.DiscountAmount = validation.DiscountAmount;
-            order.TotalAmount -= validation.DiscountAmount;
+            discount = validation.DiscountAmount;
 
             var coupon = await _couponRepository.GetByCodeAsync(createDto.CouponCode, cancellationToken);
             if (coupon != null)
@@ -112,6 +118,30 @@ public class OrderRepository : IOrderRepository
                 });
             }
         }
+
+        // Recompute shipping + tax server-side (never trust client totals)
+        var pricing = await _pricing.ComputeTotalsAsync(subtotal, discount, createDto.ShippingCity, createDto.ShippingZip, cancellationToken);
+
+        order.SubtotalAmount = subtotal;
+        order.DiscountAmount = discount;
+        order.ShippingCost = pricing.Shipping;
+        order.TaxAmount = pricing.Tax;
+        order.TaxBreakdownJson = pricing.TaxName != null
+            ? System.Text.Json.JsonSerializer.Serialize(new { name = pricing.TaxName, percentage = pricing.TaxPercentage })
+            : null;
+        order.TotalAmount = pricing.Total;
+        order.Status = OrderStatus.AwaitingPayment;
+        order.PaymentStatus = PaymentStatus.Pending;
+        order.StatusHistory = new List<OrderStatusHistory>
+        {
+            new OrderStatusHistory
+            {
+                Status = OrderStatus.AwaitingPayment,
+                Note = "Order created — awaiting payment",
+                Location = "Online",
+                CreatedAt = DateTime.UtcNow
+            }
+        };
 
         foreach (var item in cart.Items)
         {

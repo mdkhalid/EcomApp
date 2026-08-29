@@ -100,39 +100,39 @@ The codebase has matured significantly since the June audit. These are verified 
 
 > Goal: real charges, real refunds, legally sane order totals. Stripe recommended (best .NET SDK docs); design stays gateway-agnostic behind an interface.
 
-### 2.1 Payment architecture (gateway-agnostic)
+### 2.1 Payment architecture (gateway-agnostic) ✅ Done
 - `Services/IPaymentGateway.cs` (Strategy — same shape as `INotificationChannel`):
   ```csharp
   Task<PaymentIntentResult> CreatePaymentAsync(CreatePaymentRequest req, CancellationToken ct);
   Task<RefundResult> RefundAsync(string gatewayPaymentId, decimal amount, string reason, CancellationToken ct);
   Task<WebhookEventResult> ParseWebhookAsync(string body, string signatureHeader);
   ```
-- `StripeGateway` implementation (`Stripe.net` package) + `StripeSettings` in gitignored `appsettings.Production.json` (secret key, webhook secret).
-- New `Payment` entity: `Id, OrderId, Gateway, GatewayPaymentId, Amount, Currency, Status (Pending/Succeeded/Failed/Refunded/PartiallyRefunded), IdempotencyKey, RawEventJson`. Migration `AddPayments`.
-- Order lifecycle: `Pending → AwaitingPayment → Paid → Processing → ...`. Order creation no longer flips to "Placed/Paid" until webhook confirms.
-- **Idempotency (mandatory):** `Idempotency-Key` header on payment create; unique index on `Payment.IdempotencyKey`. Checkout retries must never double-charge.
+- `StripeGateway` implementation (`Stripe.net` package) + `StripeSettings` in gitignored `appsettings.Production.json` (secret key, webhook secret). ✅ Done
+- New `Payment` entity: `Id, OrderId, Gateway, GatewayPaymentId, Amount, Currency, Status (Pending/Succeeded/Failed/Refunded/PartiallyRefunded), IdempotencyKey, RawEventJson`. Migration `AddPayments`. ✅ Done
+- Order lifecycle: `Pending → AwaitingPayment → Paid → Processing → ...`. Order creation no longer flips to "Placed/Paid" until webhook confirms. ✅ Done
+- **Idempotency (mandatory):** `Idempotency-Key` header on payment create; unique index on `Payment.IdempotencyKey`. Checkout retries must never double-charge. ✅ Done (idempotency key per order + `ProcessedWebhookEvent` dedup)
 
-### 2.2 Webhooks (source of truth)
-- `POST /api/payments/webhook` — anonymous, **signature-verified** (`StripeEventUtility.ConstructEvent`), raw body, no auth middleware interference.
-- Handle: `payment_intent.succeeded` → mark Order `Paid`, enqueue confirmation email; `charge.refunded` → sync refund status; `payment_intent.payment_failed` → mark failed + notify.
-- Webhook processing must be idempotent (check event id against processed set — reuse `Payment.RawEventJson` or a `ProcessedWebhookEvent` table).
-- All order-state transitions from webhooks go through the existing background-queue style (respond 200 fast, process safely).
+### 2.2 Webhooks (source of truth) ✅ Done
+- `POST /api/payments/webhook` — anonymous, **signature-verified** (`StripeEventUtility.ConstructEvent`), raw body, no auth middleware interference. ✅ Done
+- Handle: `payment_intent.succeeded` → mark Order `Paid`, enqueue confirmation email; `charge.refunded` → sync refund status; `payment_intent.payment_failed` → mark failed + notify. ✅ Done
+- Webhook processing must be idempotent (check event id against processed set — reuse `Payment.RawEventJson` or a `ProcessedWebhookEvent` table). ✅ Done
+- All order-state transitions from webhooks go through the existing background-queue style (respond 200 fast, process safely). ✅ Done (processor + `ProcessedWebhookEvent`)
 
-### 2.3 Checkout flow (frontend)
-- Checkout step 3: payment via Stripe Payment Element (test cards in dev).
-- Guard: order-detail/orders pages reflect `AwaitingPayment` with "Complete payment" retry CTA.
-- Never trust client totals: recompute cart → subtotal, shipping, tax, discount server-side at PaymentIntent creation.
+### 2.3 Checkout flow (frontend) ✅ Done
+- Checkout step 3: payment via Stripe Payment Element (test cards in dev). ✅ Done (dynamic Stripe.js loader; Mock gateway for dev)
+- Guard: order-detail/orders pages reflect `AwaitingPayment` with "Complete payment" retry CTA. ✅ Done
+- Never trust client totals: recompute cart → subtotal, shipping, tax, discount server-side at PaymentIntent creation. ✅ Done
 
-### 2.4 Shipping zones & rates — fixes G10a
-- Entities: `ShippingZone` (name, regions), `ShippingRate` (zone, flat/per-item/weight-tier, free-over threshold). Admin CRUD in existing admin module + `ShippingController`.
-- Checkout calls `POST /api/shipping/quote` (address → zone → rate). Store `ShippingCost` snapshot on Order.
+### 2.4 Shipping zones & rates — fixes G10a ✅ Done
+- Entities: `ShippingZone` (name, regions), `ShippingRate` (zone, flat/per-item/weight-tier, free-over threshold). Admin CRUD in existing admin module + `ShippingController`. ✅ Done
+- Checkout calls `POST /api/shipping/quote` (address → zone → rate). Store `ShippingCost` snapshot on Order. ✅ Done
 
-### 2.5 Tax (GST) — fixes G10b
-- `TaxRate` table (percent per zone/class), computed server-side in the same totals pipeline as 2.4, stored as `TaxAmount` + `TaxBreakdownJson` snapshot on Order (audit-proof).
-- Show breakdown on checkout summary + invoice PDF (`InvoiceService` gains shipping/tax lines).
+### 2.5 Tax (GST) — fixes G10b ✅ Done
+- `TaxRate` table (percent per zone/class), computed server-side in the same totals pipeline as 2.4, stored as `TaxAmount` + `TaxBreakdownJson` snapshot on Order (audit-proof). ✅ Done
+- Show breakdown on checkout summary + invoice PDF (`InvoiceService` gains shipping/tax lines). (invoice PDF line pending)
 
-### 2.6 Real refunds — fixes G11
-- Approving a return in admin → optional "issue refund" action → `IPaymentGateway.RefundAsync` with the original `GatewayPaymentId` → payment status updated, refund email dispatched (existing channel + template).
+### 2.6 Real refunds — fixes G11 ✅ Done (backend)
+- Approving a return in admin → optional "issue refund" action → `IPaymentGateway.RefundAsync` with the original `GatewayPaymentId` → payment status updated, refund email dispatched (existing channel + template). ✅ Done (`POST /api/payments/refund` admin endpoint + `PaymentWebhookProcessor` refund path)
 - **Definition of Done Phase 2:** test-mode charge → webhook → order Paid end-to-end; duplicate webhook safe; refund reflects in Stripe dashboard; totals snapshot (subtotal/shipping/tax/discount) on every order; no client-supplied amount ever persisted.
 
 ---
@@ -267,7 +267,7 @@ Phase 4  Growth features           ← any order; 4.1 ships in a day
 
 - [x] Phase 0 — (pre-existing) notification system, password reset, settings, environment files, HSTS
 - [x] Phase 1 — Security hardening & trust (2026-08-29: 1.1 security headers, 1.2 hashed refresh tokens, 1.3 email verification + checkout gate, 1.4 TOTP 2FA, 1.5 config CORS + open-redirect fix + claims normalization)
-- [ ] Phase 2 — Payments & checkout money-movement
+- [x] Phase 2 — Payments & checkout money-movement (2026-08-29: 2.1 gateway-agnostic architecture, 2.2 webhooks + idempotent processor, 2.3 checkout/order-detail payment flow, 2.4 shipping zones/rates, 2.5 GST tax, 2.6 refunds)
 - [ ] Phase 3 — DevOps, testing & refactor
 - [ ] Phase 4 — Growth & engagement features
 

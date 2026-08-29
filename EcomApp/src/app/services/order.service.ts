@@ -43,4 +43,25 @@ export class OrderService {
       catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
+
+  private readonly paymentsUrl = API_URL + '/payments';
+
+  getPaymentConfig(): Observable<{ gateway: string; publishableKey: string | null }> {
+    return this.http.get<{ gateway: string; publishableKey: string | null }>(`${this.paymentsUrl}/config`).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  createPaymentIntent(orderId: number): Observable<{ clientSecret: string | null; gatewayPaymentId: string; gateway: string }> {
+    return this.http.post<{ clientSecret: string | null; gatewayPaymentId: string; gateway: string }>(
+      `${this.paymentsUrl}/intent`,
+      { orderId }
+    ).pipe(catchError(err => { console.error(err); return throwError(() => err); }));
+  }
+
+  mockConfirm(orderId: number): Observable<any> {
+    return this.http.post(`${this.paymentsUrl}/mock-confirm`, { orderId }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
 }
