@@ -16,6 +16,7 @@ public interface ISettingsProvider
     Task<T> GetAsync<T>(string key, T defaultValue, CancellationToken cancellationToken = default);
     Task UpsertAsync(string key, string? value, CancellationToken cancellationToken = default);
     Task InvalidateAsync(string key, CancellationToken cancellationToken = default);
+    string GetBaseUrl();
 }
 
 public class SettingsProvider : ISettingsProvider
@@ -76,5 +77,12 @@ public class SettingsProvider : ISettingsProvider
     {
         await _repository.UpsertAsync(key, value, cancellationToken);
         _cache.Remove(CacheKey(key));
+    }
+
+    public string GetBaseUrl()
+    {
+        // Priority: DB setting > appsettings > default
+        var baseUrl = _configuration["App:BaseUrl"] ?? _configuration["FrontendUrl"] ?? "http://localhost:4200";
+        return baseUrl.TrimEnd('/');
     }
 }

@@ -502,6 +502,52 @@
 
 /* Action Buttons */
 
+.add-cart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--flipkart-blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+
+  .material-icons { font-size: 18px; }
+
+  &:hover:not(:disabled) {
+    background: var(--flipkart-blue-dark);
+    box-shadow: 0 4px 12px rgba(40, 116, 240, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.notify-btn {
+  background: #fff;
+  color: var(--flipkart-blue);
+  border: 2px solid var(--flipkart-blue);
+
+  &:hover:not(:disabled) {
+    background: var(--flipkart-blue);
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 
 .pd-wishlist-btn {
   display: flex;

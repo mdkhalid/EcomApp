@@ -105,3 +105,20 @@ public class UpdateProductDto
     [StringLength(100)]
     public string? Brand { get; set; }
 }
+
+public class CreateStockAlertDto
+{
+    [Range(1, int.MaxValue)]
+    public int ProductId { get; set; }
+
+    public int? VariantId { get; set; }
+}
+
+public class StockAlertDto
+{
+    public int Id { get; set; }
+    public int ProductId { get; set; }
+    public int? VariantId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? NotifiedAt { get; set; }
+}

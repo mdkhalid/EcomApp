@@ -84,6 +84,14 @@ public static class EmailTemplates
         <p>This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
         """);
 
+    public static string BackInStock(string name, string productName, string productUrl, string unsubscribeLink) => Wrap($"Back in Stock: {productName}", $"""
+        <h2>Good news{(!string.IsNullOrWhiteSpace(name) ? $", {name}" : "")}!</h2>
+        <p><strong>{productName}</strong> is back in stock and ready to ship.</p>
+        <p><a href="{productUrl}" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Shop Now</a></p>
+        <p style="font-size:12px;color:#71717a;">This is a one-time notification. You won't receive further emails unless you subscribe again.</p>
+        <p style="font-size:12px;color:#71717a;"><a href="{unsubscribeLink}">Unsubscribe from stock alerts</a></p>
+        """);
+
     private static string EstimatedDelivery(Order order) =>
         order.EstimatedDeliveryDate.HasValue
             ? $"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>"

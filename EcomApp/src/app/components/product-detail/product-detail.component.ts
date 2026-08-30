@@ -13,6 +13,7 @@ import { ActivityService } from '../../services/activity.service';
 import { Product, ProductVariant } from '../../models/product.model';
 import { Review, CreateReview } from '../../models/review.model';
 import { RecentlyViewedProduct } from '../../models/activity.model';
+import { StockAlertService, CreateStockAlertDto } from '../../services/stock-alert.service';
 import { getFullImageUrl as buildImageUrl } from '../../utils/api-config';
 
 @Component({
@@ -33,8 +34,11 @@ export class ProductDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly activityService = inject(ActivityService);
+  private readonly stockAlertService = inject(StockAlertService);
   protected readonly notifications = this.notification.notifications;
   protected readonly Math = Math;
+
+  subscribingToAlert = signal(false);
 
   product = signal<Product | null>(null);
   reviews = signal<Review[]>([]);
@@ -211,6 +215,30 @@ export class ProductDetailComponent implements OnInit {
 
   getFullImageUrl(path: string): string {
     return buildImageUrl(path);
+  }
+
+  subscribeToStockAlert(): void {
+    const p = this.product();
+    if (!p) return;
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: `/products/${p.id}` } });
+      return;
+    }
+
+    const variantId = this.selectedVariant()?.id;
+    const dto: CreateStockAlertDto = { productId: p.id, variantId: variantId ?? undefined };
+
+    this.subscribingToAlert.set(true);
+    this.stockAlertService.createAlert(dto).subscribe({
+      next: () => {
+        this.notification.showSuccess('You will be notified when this product is back in stock!');
+        this.subscribingToAlert.set(false);
+      },
+      error: (err) => {
+        this.notification.showError(err.error?.error || 'Failed to subscribe to stock alert');
+        this.subscribingToAlert.set(false);
+      }
+    });
   }
 
   loadAlsoBought(productId: number): void {

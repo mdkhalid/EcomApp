@@ -8,7 +8,8 @@ public enum NotificationType
     OrderDelivered,
     OrderStatusUpdate,
     TrackingUpdate,
-    PasswordReset
+    PasswordReset,
+    BackInStock
 }
 
 public class NotificationMessage

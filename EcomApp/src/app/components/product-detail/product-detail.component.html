@@ -191,10 +191,17 @@
           }
 
           <!-- Action Buttons -->
-          <button class="add-cart-btn" (click)="addToCart()" [disabled]="effectiveStock === 0">
-            <span class="material-icons">shopping_cart</span>
-            Add to Cart
-          </button>
+          @if (effectiveStock > 0) {
+            <button class="add-cart-btn" (click)="addToCart()">
+              <span class="material-icons">shopping_cart</span>
+              Add to Cart
+            </button>
+          } @else {
+            <button class="add-cart-btn notify-btn" (click)="subscribeToStockAlert()" [disabled]="subscribingToAlert()">
+              <span class="material-icons">notifications</span>
+              {{ subscribingToAlert() ? 'Subscribing...' : 'Notify Me' }}
+            </button>
+          }
 
           <button class="pd-wishlist-btn" [class.wishlisted]="wishlistService.isWishlisted(p.id)" (click)="toggleWishlist()">
             <span class="material-icons">{{ wishlistService.isWishlisted(p.id) ? 'favorite' : 'favorite_border' }}</span>
