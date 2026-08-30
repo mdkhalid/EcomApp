@@ -6,6 +6,8 @@ export interface AdminSetting {
   isSensitive: boolean;
   value: string | null;
   defaultValue: string;
+  type?: string;
+  isPublic?: boolean;
 }
 
 /** Shape sent to PUT /api/admin/settings */

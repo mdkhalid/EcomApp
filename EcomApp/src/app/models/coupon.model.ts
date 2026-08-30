@@ -19,8 +19,8 @@ export interface CreateCoupon {
   type: string;
   value: number;
   minCartValue: number;
-  maxUses: number;
-  expiresAt: string;
+  maxUses?: number;
+  expiresAt?: string;
   isActive: boolean;
 }
 

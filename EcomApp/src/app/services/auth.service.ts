@@ -4,7 +4,7 @@ import { Observable, tap, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { API_URL } from '../utils/api-config';
 
-import { User, RegisterRequest, LoginRequest, TokenResponse, ChangePasswordRequest, Address, CreateAddressRequest, UpdateAddressRequest } from '../models/auth.model';
+import { User, RegisterRequest, LoginRequest, TokenResponse, ChangePasswordRequest, Address, CreateAddressRequest, UpdateAddressRequest, TwoFactorChallenge } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'

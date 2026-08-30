@@ -126,13 +126,27 @@ MappingConfig.ConfigureMapping();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+var runMigrations = builder.Configuration.GetValue<bool>("Migration:RunOnStartup");
+var runSeeder = builder.Configuration.GetValue<bool>("Seed:Enabled");
+
+if (runMigrations || runSeeder)
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
-    DbSeeder.Seed(context);
 
+    if (runMigrations)
+    {
+        context.Database.Migrate();
+    }
+
+    if (runSeeder)
+    {
+        DbSeeder.Seed(context);
+    }
+}
+
+if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ecom API v1"));

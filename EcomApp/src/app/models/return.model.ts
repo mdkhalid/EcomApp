@@ -3,12 +3,16 @@ export interface ReturnRequest {
   orderId: number;
   userId: number;
   userName: string;
+  productId: number;
+  productName: string;
+  quantity: number;
   reason: string;
   comment?: string;
   status: string;
   adminNote?: string;
   createdAt: string;
   updatedAt: string;
+  requestedAt?: string;
 }
 
 export interface CreateReturnRequest {

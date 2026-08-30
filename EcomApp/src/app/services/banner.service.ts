@@ -48,4 +48,10 @@ export class BannerService {
       catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
+
+  uploadImage(id: number, formData: FormData): Observable<Banner> {
+    return this.http.post<Banner>(`${this.apiUrl}/${id}/image`, formData).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
 }

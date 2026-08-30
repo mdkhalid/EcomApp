@@ -1,0 +1,68 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    groups:
+      dotnet-core:
+        patterns:
+          - "Microsoft.*"
+          - "System.*"
+          - "EntityFrameworkCore*"
+      auth:
+        patterns:
+          - "Microsoft.AspNetCore.Authentication*"
+          - "Microsoft.IdentityModel*"
+      testing:
+        patterns:
+          - "xunit*"
+          - "Moq*"
+          - "Microsoft.NET.Test.Sdk*"
+      security:
+        patterns:
+          - "Otp.NET*"
+          - "Stripe.net*"
+          - "MailKit*"
+
+  - package-ecosystem: "npm"
+    directory: "/EcomApp"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+          - "@angular/cli*"
+          - "@angular/compiler*"
+      rxjs:
+        patterns:
+          - "rxjs*"
+      testing:
+        patterns:
+          - "vitest*"
+          - "@testing-library/*"
+          - "jsdom*"
+      chart:
+        patterns:
+          - "chart.js*"
+      build:
+        patterns:
+          - "typescript*"
+          - "eslint*"
+          - "prettier*"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5

@@ -1,10 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { debounceTime, distinctUntilChanged, Observable, of, switchMap, throwError } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { API_URL } from '../utils/api-config';
 
-import { Product, CreateProduct, UpdateProduct, SearchFilter, SearchResult, SearchSuggestion, FilterMetadata, PriceRange } from '../models/product.model';
+import { Product, CreateProduct, UpdateProduct, SearchFilter, SearchResult, SearchSuggestion, FilterMetadata, PriceRange, ProductVariant, CreateProductVariant, ProductImage } from '../models/product.model';
 
 @Injectable({
   providedIn: 'root'
@@ -97,10 +97,52 @@ export class ProductService {
     );
   }
 
-  uploadImage(id: number, file: File): Observable<Product> {
+  getAll(): Observable<Product[]> {
+    return this.search({ pageNumber: 1, pageSize: 1000 }).pipe(
+      map(res => res.items),
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  uploadImage(id: number, file: File | FormData): Observable<Product> {
+    if (file instanceof FormData) {
+      return this.http.post<Product>(`${this.apiUrl}/${id}/image`, file).pipe(
+        catchError(err => { console.error(err); return throwError(() => err); })
+      );
+    }
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<Product>(`${this.apiUrl}/${id}/image`, formData).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  deleteImage(imageId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/images/${imageId}`).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  getVariants(productId: number): Observable<ProductVariant[]> {
+    return this.http.get<ProductVariant[]>(`${this.apiUrl}/${productId}/variants`).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  addVariant(productId: number, variant: CreateProductVariant): Observable<ProductVariant> {
+    return this.http.post<ProductVariant>(`${this.apiUrl}/${productId}/variants`, variant).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  updateVariant(productId: number, variantId: number, variant: CreateProductVariant): Observable<ProductVariant> {
+    return this.http.put<ProductVariant>(`${this.apiUrl}/${productId}/variants/${variantId}`, variant).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  deleteVariant(productId: number, variantId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${productId}/variants/${variantId}`).pipe(
       catchError(err => { console.error(err); return throwError(() => err); })
     );
   }

@@ -20,6 +20,23 @@ export const routes: Routes = [
   { path: 'wishlist', loadComponent: () => import('./components/wishlist/wishlist.component').then(m => m.WishlistComponent), canActivate: [customerGuard] },
   { path: 'profile', loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent), canActivate: [authGuard] },
   { path: 'return-policy', loadComponent: () => import('./components/return-policy/return-policy.component').then(m => m.ReturnPolicyComponent) },
-  { path: 'admin', loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent), canActivate: [adminGuard] },
-  { path: '**', redirectTo: '/products' }
+  {
+    path: 'admin',
+    canActivate: [adminGuard],
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', loadComponent: () => import('./components/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent) },
+      { path: 'products', loadComponent: () => import('./components/admin/products/admin-products.component').then(m => m.AdminProductsComponent) },
+      { path: 'orders', loadComponent: () => import('./components/admin/orders/admin-orders.component').then(m => m.AdminOrdersComponent) },
+      { path: 'users', loadComponent: () => import('./components/admin/users/admin-users.component').then(m => m.AdminUsersComponent) },
+      { path: 'categories', loadComponent: () => import('./components/admin/categories/admin-categories.component').then(m => m.AdminCategoriesComponent) },
+      { path: 'banners', loadComponent: () => import('./components/admin/banners/admin-banners.component').then(m => m.AdminBannersComponent) },
+      { path: 'coupons', loadComponent: () => import('./components/admin/coupons/admin-coupons.component').then(m => m.AdminCouponsComponent) },
+      { path: 'returns', loadComponent: () => import('./components/admin/returns/admin-returns.component').then(m => m.AdminReturnsComponent) },
+      { path: 'analytics', loadComponent: () => import('./components/admin/analytics/admin-analytics.component').then(m => m.AdminAnalyticsComponent) },
+      { path: 'settings', loadComponent: () => import('./components/admin/settings/admin-settings.component').then(m => m.AdminSettingsComponent) }
+    ]
+  },
+  { path: '404', loadComponent: () => import('./components/not-found/not-found.component').then(m => m.NotFoundComponent) },
+  { path: '**', redirectTo: '/404' }
 ];

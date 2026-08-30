@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ecom-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${SA_PASSWORD:-YourStrong@Passw0rd}
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - ecom-network
+
+  api:
+    build:
+      context: .
+      dockerfile: EcomApi/Dockerfile
+    container_name: ecom-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=EcomDb;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Passw0rd};TrustServerCertificate=True
+      - Jwt__SecretKey=${JWT_SECRET_KEY}
+      - Jwt__Issuer=EcomApi
+      - Jwt__Audience=EcomApp
+      - Cors__AllowedOrigins__0=http://localhost:4200
+      - Cors__AllowedOrigins__1=http://localhost
+      - Migration__RunOnStartup=false
+      - Seed__Enabled=false
+    ports:
+      - "5068:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - ecom-network
+
+  web:
+    build:
+      context: .
+      dockerfile: EcomApp/Dockerfile
+    container_name: ecom-web
+    ports:
+      - "4200:80"
+    depends_on:
+      - api
+    networks:
+      - ecom-network
+
+volumes:
+  sqlserver_data:
+
+networks:
+  ecom-network:
+    driver: bridge

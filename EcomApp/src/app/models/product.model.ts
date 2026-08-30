@@ -18,6 +18,8 @@ export interface Product {
 export interface ProductImage {
   id: number;
   imageUrl: string;
+  url?: string;
+  altText?: string;
   sortOrder: number;
 }
 

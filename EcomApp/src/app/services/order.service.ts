@@ -64,4 +64,10 @@ export class OrderService {
       catchError(err => { console.error(err); return throwError(() => err); })
     );
   }
+
+  updateStatus(orderId: number, status: string): Observable<Order> {
+    return this.http.put<Order>(`${this.apiUrl}/${orderId}/status`, { status }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
 }
