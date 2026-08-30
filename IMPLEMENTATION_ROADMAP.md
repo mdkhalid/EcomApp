@@ -34,20 +34,20 @@ The codebase has matured significantly since the June audit. These are verified 
 | G1 | No real payment gateway (payment = free-text string) | 🔴 Critical | 2 | ✅ Resolved (Phase 2) |
 | G2 | No 2FA for Admin/SubAdmin | 🔴 High | 1 | ✅ Resolved (Phase 1) |
 | G3 | No email verification on signup | 🟠 High | 1 | ✅ Resolved (Phase 1) |
-| G4 | No Docker / docker-compose | 🟠 High | 3 | ⬜ Open |
-| G5 | No CI/CD pipeline | 🟠 High | 3 | ⬜ Open |
-| G6 | Zero frontend tests (`*.spec.ts`) | 🟡 Medium | 3 | ⬜ Open |
+| G4 | No Docker / docker-compose | 🟠 High | 3 | ✅ Resolved (Phase 3) |
+| G5 | No CI/CD pipeline | 🟠 High | 3 | ✅ Resolved (Phase 3) |
+| G6 | Zero frontend tests (`*.spec.ts`) | 🟡 Medium | 3 | ✅ Resolved (Phase 3) |
 | G7 | No security-headers middleware (CSP, X-Frame-Options, nosniff) | 🟡 Medium | 1 | ✅ Resolved (Phase 1) |
 | G8 | Refresh tokens stored as plain Base64 | 🟡 Medium | 1 | ✅ Resolved (Phase 1) |
 | G9 | Rate limiting in-memory, auth endpoints only | 🟡 Medium | 1 | 🟡 Partial (auth endpoints covered; not global) |
 | G10 | No shipping cost / tax (GST) calculation | 🟡 Medium | 2 | ✅ Resolved (Phase 2) |
 | G11 | Refunds have no money movement | 🟡 Medium | 2 | ✅ Resolved (Phase 2) |
 | G12 | CORS hard-coded to `localhost:4200` | 🟡 Medium | 1 | ✅ Resolved (Phase 1) |
-| G13 | `Database.Migrate()` on every startup | 🟡 Medium | 3 | ⬜ Open |
-| G14 | Admin god-component (~1,233 lines) | 🟡 Medium | 3 | ⬜ Open (also breaks `ng build --prod` budget) |
+| G13 | `Database.Migrate()` on every startup | 🟡 Medium | 3 | ✅ Resolved (Phase 3) |
+| G14 | Admin god-component (~1,233 lines) | 🟡 Medium | 3 | ✅ Resolved (Phase 3) |
 | G15 | `returnUrl` not validated (open redirect) | 🟡 Medium | 1 | ✅ Resolved (Phase 1) |
 | G16 | No map-inbound-claims normalization on JWT | 🟢 Low | 1 | ✅ Resolved (Phase 1) |
-| G17 | Frontend route `**` silently redirects (no 404 page) | 🟢 Low | 3 | ⬜ Open |
+| G17 | Frontend route `**` silently redirects (no 404 page) | 🟢 Low | 3 | ✅ Resolved (Phase 3) |
 | G18 | Stripe prod secrets not yet wired (dev runs Mock gateway; need gitignored `appsettings.Production.json`) | 🟠 High | 2/3 | ⬜ Open |
 
 ---
@@ -269,7 +269,7 @@ Phase 4  Growth features           ← any order; 4.1 ships in a day
 - [x] Phase 0 — (pre-existing) notification system, password reset, settings, environment files, HSTS
 - [x] Phase 1 — Security hardening & trust (2026-08-29: 1.1 security headers, 1.2 hashed refresh tokens, 1.3 email verification + checkout gate, 1.4 TOTP 2FA, 1.5 config CORS + open-redirect fix + claims normalization)
 - [x] Phase 2 — Payments & checkout money-movement (2026-08-29: 2.1 gateway-agnostic architecture, 2.2 webhooks + idempotent processor, 2.3 checkout/order-detail payment flow, 2.4 shipping zones/rates, 2.5 GST tax, 2.6 refunds)
-- [ ] Phase 3 — DevOps, testing & refactor
+- [x] Phase 3 — DevOps, testing & refactor (2026-08-30: 3.1 Docker/Docker Compose, 3.2 GitHub Actions CI/CD, 3.3 frontend unit tests + E2E, 3.4 admin god-component split, 3.5 404 page, ESLint/Prettier)
 - [ ] Phase 4 — Growth & engagement features
 
 *Created: 2026-08-28. Update checkboxes as phases complete; add findings to the Gap Register rather than new documents.*
