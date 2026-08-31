@@ -330,7 +330,7 @@ public class AuthController : ControllerBase
         return Ok(new { message = "User account unlocked." });
     }
 
-    [HttpPut("profile")]
+[HttpPut("profile")]
     [Authorize]
     public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateProfileDto dto, CancellationToken cancellationToken = default)
     {
@@ -338,6 +338,69 @@ public class AuthController : ControllerBase
         var user = await _userRepository.UpdateProfileAsync(userId, dto.FirstName, dto.LastName, dto.Phone, dto.Gender, dto.DateOfBirth);
         _logger.LogInformation("User updated profile: {Email}", user.Email);
         return Ok(user.Adapt<UserDto>());
+    }
+
+    [HttpPut("profile/abandoned-cart-opt-out")]
+    [Authorize]
+    public async Task<IActionResult> SetAbandonedCartOptOut([FromBody] AbandonedCartOptOutDto dto, CancellationToken cancellationToken = default)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (user == null) return NotFound();
+
+        user.AbandonedCartOptOut = dto.OptOut;
+        await _userRepository.UpdateAsync(user, cancellationToken);
+        _logger.LogInformation("User {Email} set abandoned-cart opt-out to {OptOut}.", user.Email, dto.OptOut);
+        return Ok(new { abandonedCartOptOut = user.AbandonedCartOptOut });
+    }
+
+    [HttpGet("abandoned-cart/unsubscribe")]
+    [AllowAnonymous]
+    public async Task<IActionResult> UnsubscribeAbandonedCart([FromQuery] string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return BadRequest(new { error = "Missing token." });
+
+        // Token format: SHA-256("<userId>-abandoned-cart-opt-out-YYYYMMDD") where YYYYMMDD rotates daily.
+        // Compare against the hash for each active user; the daily rotation caps the search window.
+        // Mirrors the BackInStock unsubscribe-link pattern (ProductsController.NotifyStockAlertsAsync).
+        var today = DateTime.UtcNow.ToString("yyyyMMdd");
+        var yesterday = DateTime.UtcNow.AddDays(-1).ToString("yyyyMMdd");
+
+        var pageSize = 200;
+        var page = 1;
+        User? matched = null;
+        while (matched == null)
+        {
+            var batch = await _userRepository.GetAllAsync(page, pageSize, null, null, cancellationToken);
+            foreach (var user in batch.Items)
+            {
+                var todayHash = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes($"{user.Id}-abandoned-cart-opt-out-{today}")));
+                var yesterdayHash = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes($"{user.Id}-abandoned-cart-opt-out-{yesterday}")));
+                if (token == todayHash || token == yesterdayHash)
+                {
+                    matched = user;
+                    break;
+                }
+            }
+            if (matched != null || batch.Items.Count() < pageSize) break;
+            page++;
+            if (page > 1000) break; // safety cap
+        }
+
+        // Always return a generic success — we never want to leak whether an email exists. The next
+        // scan will skip this address because any future notification re-evaluates AbandonedCartOptOut.
+        if (matched != null)
+        {
+            matched.AbandonedCartOptOut = true;
+            await _userRepository.UpdateAsync(matched, cancellationToken);
+            _logger.LogInformation("User {Email} unsubscribed from abandoned-cart emails via email link.", matched.Email);
+        }
+
+        var baseUrl = await _settings.GetRawAsync("Client:BaseUrl", cancellationToken) ?? "http://localhost:4200";
+        return Redirect($"{baseUrl.TrimEnd('/')}/profile?unsubscribed=abandoned-cart");
     }
 
     [HttpPost("users")]

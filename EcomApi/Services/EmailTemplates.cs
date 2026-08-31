@@ -92,6 +92,16 @@ public static class EmailTemplates
         <p style="font-size:12px;color:#71717a;"><a href="{unsubscribeLink}">Unsubscribe from stock alerts</a></p>
         """);
 
+    public static string AbandonedCart(string name, string cartUrl, string? couponCode, decimal couponAmount, DateTime? couponExpiresAt, string unsubscribeLink) => Wrap("You left items in your cart", $"""
+        <h2>You left something behind{(!string.IsNullOrWhiteSpace(name) ? $", {name}" : "")}</h2>
+        <p>Your cart is still waiting for you. Pick up where you left off — your items are reserved.</p>
+        {(!string.IsNullOrWhiteSpace(couponCode) && couponAmount > 0 && couponExpiresAt.HasValue
+            ? $"<p>As a welcome back, use code <strong>{couponCode}</strong> for ₹{couponAmount:N0} off your order, valid until {couponExpiresAt:dd MMM yyyy}.</p>"
+            : "")}
+        <p><a href="{cartUrl}" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Complete Your Order</a></p>
+        <p style="font-size:12px;color:#71717a;"><a href="{unsubscribeLink}">Unsubscribe from abandoned-cart reminders</a></p>
+        """);
+
     private static string EstimatedDelivery(Order order) =>
         order.EstimatedDeliveryDate.HasValue
             ? $"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>"

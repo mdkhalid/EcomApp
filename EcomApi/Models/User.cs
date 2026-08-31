@@ -31,6 +31,9 @@ public class User
     public bool TwoFactorEnabled { get; set; } = false;
     public string? TwoFactorSecretEncrypted { get; set; }
 
+    public bool AbandonedCartOptOut { get; set; } = false;
+    public DateTime? LastAbandonedCartNotifiedAt { get; set; }
+
     public bool IsLockedOut => LockoutEnd.HasValue && LockoutEnd.Value > DateTime.UtcNow;
 
     public List<Cart> Carts { get; set; } = new();

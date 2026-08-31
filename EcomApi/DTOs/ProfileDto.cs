@@ -20,6 +20,11 @@ public class UpdateProfileDto
     public DateTime? DateOfBirth { get; set; }
 }
 
+public class AbandonedCartOptOutDto
+{
+    public bool OptOut { get; set; }
+}
+
 public class AddressDto
 {
     public int Id { get; set; }

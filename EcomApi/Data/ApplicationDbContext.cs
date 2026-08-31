@@ -62,6 +62,7 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Role);
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.LockoutEnd);
+            entity.HasIndex(e => e.LastAbandonedCartNotifiedAt);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Username).IsRequired().HasMaxLength(50);
             entity.Property(e => e.PasswordHash).IsRequired();

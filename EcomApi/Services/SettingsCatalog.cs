@@ -33,7 +33,14 @@ public static class SettingsCatalog
         new("Stripe:SecretKey", "Payments", "Stripe secret API key (empty = Mock gateway)", true, ""),
         new("Stripe:PublishableKey", "Payments", "Stripe publishable key (frontend)", false, ""),
         new("Stripe:WebhookSecret", "Payments", "Stripe webhook signing secret", true, ""),
-        new("Shipping:DefaultRate", "Payments", "Fallback shipping fee when no zone matches", false, "49")
+        new("Shipping:DefaultRate", "Payments", "Fallback shipping fee when no zone matches", false, "49"),
+
+        new("Cart:AbandonmentHours", "Cart", "Hours of cart inactivity before triggering a recovery email", false, "24"),
+        new("Cart:RecoveryCouponEnabled", "Cart", "Attach a one-time coupon to abandoned-cart emails", false, "false"),
+        new("Cart:RecoveryCouponAmount", "Cart", "Flat discount (₹) attached to each abandoned-cart recovery email", false, "100"),
+        new("Cart:ResendDays", "Cart", "Cooldown days between abandoned-cart emails per user", false, "7"),
+        new("Cart:ScanIntervalMinutes", "Cart", "How often the background worker scans for abandoned carts", false, "60"),
+        new("Cart:MinCartTotal", "Cart", "Minimum cart subtotal required to send a recovery email", false, "100")
     };
 
     public static SettingDescriptor? Find(string key) => All.FirstOrDefault(x => x.Key == key);
