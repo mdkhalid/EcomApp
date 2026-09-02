@@ -106,4 +106,24 @@ public static class EmailTemplates
         order.EstimatedDeliveryDate.HasValue
             ? $"<p><strong>Estimated Delivery:</strong> {order.EstimatedDeliveryDate:dd MMM yyyy}</p>"
             : "";
+
+    public static string DailyDigest(DateTime date, int ordersCount, decimal ordersRevenue, int newUsers, int pendingReturns, List<(string Name, int Stock)> lowStockProducts) => Wrap($"Daily Digest — {date:dd MMM yyyy}", $"""
+        <h2>Daily Digest — {date:dd MMM yyyy}</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;line-height:1.6;">
+          <tr><td><strong>Orders (yesterday):</strong></td><td style="text-align:right;">{ordersCount}</td></tr>
+          <tr><td><strong>Revenue (yesterday):</strong></td><td style="text-align:right;">₹{ordersRevenue:N2}</td></tr>
+          <tr><td><strong>New Users (yesterday):</strong></td><td style="text-align:right;">{newUsers}</td></tr>
+          <tr><td><strong>Pending Returns:</strong></td><td style="text-align:right;">{pendingReturns}</td></tr>
+        </table>
+        {(lowStockProducts.Count > 0 ? $"""
+        <h3 style="margin-top:24px;">Low-Stock Products (≤ {lowStockProducts.Max(p => p.Stock)} units)</h3>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-top:8px;">
+          <thead><tr style="background:#f4f4f5;"><th style="text-align:left;padding:8px;">Product</th><th style="text-align:right;padding:8px;">Stock</th></tr></thead>
+          <tbody>
+          {string.Join("", lowStockProducts.Select(p => $"<tr><td style=\"padding:8px;\">{p.Name}</td><td style=\"text-align:right;padding:8px;\">{p.Stock}</td></tr>"))}
+          </tbody>
+        </table>
+        """ : "<p style=\"color:#71717a;margin-top:16px;\">No low-stock products.</p>")}
+        <p style="margin-top:24px;font-size:12px;color:#71717a;">This is an automated daily digest from Ecom.</p>
+        """);
 }

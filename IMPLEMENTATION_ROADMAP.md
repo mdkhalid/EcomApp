@@ -215,9 +215,11 @@ The codebase has matured significantly since the June audit. These are verified 
 - Frontend: table + bar chart in existing analytics tab; export CSV (already a roadmap ask in `suggestion.md`). ✅ Coupon Performance card in `admin-analytics` (date range + Apply, summary chips, Chart.js bar chart of revenue vs discount, per-coupon table, client-side CSV export) — rendered for super admins only.
 - Tests: 2 xUnit tests in `EcomApi.Tests/AnalyticsRepositoryTests.cs` (per-coupon aggregation + coupon/non-coupon split, date-range filtering + guest-user handling).
 
-### 4.6 Admin daily digest
-- Scheduled `BackgroundService` (23:00 local, configurable): yesterday's orders count/revenue, new users, pending returns, low-stock list → single email to `Admin:DigestRecipient` setting.
-- Reuses everything: settings catalog, email channel, analytics queries.
+### 4.6 Admin daily digest ✅ Done (2026-09-02)
+- Scheduled `BackgroundService` (23:00 local, configurable): yesterday's orders count/revenue, new users, pending returns, low-stock list → single email to `Admin:DigestRecipient` setting. ✅ `DailyDigestBackgroundService` with configurable time via `Digest:Time`, runs on server local time; `DailyDigestRunner` aggregates orders (excl. cancelled/returned), new users, pending returns (Requested+Approved), low-stock products.
+- Reuses everything: settings catalog (`Digest:Enabled`, `Digest:Time`, `Digest:Recipient`, `Digest:LowStockThreshold`), email channel, `INotificationQueue`.
+- Settings added to `SettingsCatalog` for admin UI management.
+- Tests: 3 xUnit tests in `EcomApi.Tests/DailyDigestRunnerTests.cs` (disabled, no recipient, full data aggregation).
 
 ---
 
@@ -277,6 +279,6 @@ Phase 4  Growth features           ← any order; 4.1 ships in a day
 - [x] Phase 1 — Security hardening & trust (2026-08-29: 1.1 security headers, 1.2 hashed refresh tokens, 1.3 email verification + checkout gate, 1.4 TOTP 2FA, 1.5 config CORS + open-redirect fix + claims normalization)
 - [x] Phase 2 — Payments & checkout money-movement (2026-08-29: 2.1 gateway-agnostic architecture, 2.2 webhooks + idempotent processor, 2.3 checkout/order-detail payment flow, 2.4 shipping zones/rates, 2.5 GST tax, 2.6 refunds)
 - [x] Phase 3 — DevOps, testing & refactor (2026-08-30: 3.1 Docker/Docker Compose, 3.2 GitHub Actions CI/CD, 3.3 frontend unit tests + E2E, 3.4 admin god-component split, 3.5 404 page, ESLint/Prettier)
-- [x] Phase 4 — Growth & engagement features (4.1 order tracking timeline UI ✅, 4.2 back-in-stock Notify Me ✅, 4.3 abandoned-cart recovery ✅, 4.4 invoice PDF on order confirmation ✅, 4.5 coupon performance report ✅)
+- [x] Phase 4 — Growth & engagement features (4.1 order tracking timeline UI ✅, 4.2 back-in-stock Notify Me ✅, 4.3 abandoned-cart recovery ✅, 4.4 invoice PDF on order confirmation ✅, 4.5 coupon performance report ✅, 4.6 admin daily digest ✅)
 
 *Created: 2026-08-28. Update checkboxes as phases complete; add findings to the Gap Register rather than new documents.*

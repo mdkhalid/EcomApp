@@ -79,6 +79,7 @@ builder.Services.AddScoped<PaymentWebhookProcessor>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<AbandonedCartScanRunner>();
+builder.Services.AddScoped<DailyDigestRunner>();
 
 // Settings (admin-configurable, DB-backed with config fallback)
 builder.Services.AddMemoryCache();
@@ -99,6 +100,7 @@ builder.Services.AddSingleton<INotificationQueue, NotificationQueue>();
 builder.Services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
 builder.Services.AddHostedService<NotificationBackgroundService>();
 builder.Services.AddHostedService<AbandonedCartBackgroundService>();
+builder.Services.AddHostedService<DailyDigestBackgroundService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>

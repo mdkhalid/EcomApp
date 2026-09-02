@@ -40,7 +40,12 @@ public static class SettingsCatalog
         new("Cart:RecoveryCouponAmount", "Cart", "Flat discount (₹) attached to each abandoned-cart recovery email", false, "100"),
         new("Cart:ResendDays", "Cart", "Cooldown days between abandoned-cart emails per user", false, "7"),
         new("Cart:ScanIntervalMinutes", "Cart", "How often the background worker scans for abandoned carts", false, "60"),
-        new("Cart:MinCartTotal", "Cart", "Minimum cart subtotal required to send a recovery email", false, "100")
+        new("Cart:MinCartTotal", "Cart", "Minimum cart subtotal required to send a recovery email", false, "100"),
+
+        new("Digest:Enabled", "Digest", "Enable daily admin digest email", false, "false"),
+        new("Digest:Time", "Digest", "Local time to send daily digest (HH:mm 24h)", false, "23:00"),
+        new("Digest:Recipient", "Digest", "Admin email recipient for daily digest", false, ""),
+        new("Digest:LowStockThreshold", "Digest", "Low-stock threshold for products included in digest", false, "10")
     };
 
     public static SettingDescriptor? Find(string key) => All.FirstOrDefault(x => x.Key == key);
