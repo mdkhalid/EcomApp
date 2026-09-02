@@ -1,3 +1,4 @@
+using EcomApi.Models;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,7 @@ public class EmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task SendAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
+    public async Task SendAsync(string to, string subject, string htmlBody, IReadOnlyList<EmailAttachment>? attachments = null, CancellationToken cancellationToken = default)
     {
         var host = await _settings.GetRawAsync("Smtp:Host", cancellationToken);
         var from = await _settings.GetRawAsync("Smtp:From", cancellationToken);
@@ -36,7 +37,16 @@ public class EmailService : IEmailService
         message.From.Add(new MailboxAddress(fromName, from));
         message.To.Add(MailboxAddress.Parse(to));
         message.Subject = subject;
-        message.Body = new BodyBuilder { HtmlBody = htmlBody }.ToMessageBody();
+
+        var body = new BodyBuilder { HtmlBody = htmlBody };
+        if (attachments != null)
+        {
+            foreach (var attachment in attachments)
+            {
+                body.Attachments.Add(attachment.FileName, attachment.Data, ContentType.Parse(attachment.ContentType));
+            }
+        }
+        message.Body = body.ToMessageBody();
 
         try
         {

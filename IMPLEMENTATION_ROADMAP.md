@@ -206,9 +206,9 @@ The codebase has matured significantly since the June audit. These are verified 
 - EF migration `AddAbandonedCartRecovery` adds the two User columns + index.
 - 14 xUnit tests in `EcomApi.Tests/AbandonedCartRecoveryTests.cs` cover: enqueue, recent-cart skip, opt-out, lockout, cooldown, min-total, coupon on/off, coupon-failure-resilience, timestamp update, empty case, email-template structure.
 
-### 4.4 Invoice PDF attached to order confirmation email
-- `InvoiceService` already generates PDFs — in the order-confirmation dispatch, generate + attach (`MimeEntity` attachment in `EmailChannel`).
-- Store generated invoices under `wwwroot/invoices/{orderId}.pdf` (gitignored) or regenerate on demand — prefer regenerate (no PII at rest).
+### 4.4 Invoice PDF attached to order confirmation email ✅ Done (2026-09-02)
+- `InvoiceService` already generates PDFs — in the order-confirmation dispatch, generate + attach (`MimeEntity` attachment in `EmailChannel`). ✅ Regenerated on demand in `EmailChannel` when the message type is `OrderConfirmation` (loads order via `IOrderRepository`, generates via `IInvoiceService`, attaches as `invoice-{orderId}.pdf`). Attachment plumbing added to `IEmailService.SendAsync`/`EmailService` (`BodyBuilder.Attachments`).
+- Store generated invoices under `wwwroot/invoices/{orderId}.pdf` (gitignored) or regenerate on demand — prefer regenerate (no PII at rest). ✅ Regenerate on demand chosen (no PII/bytes persisted in the queue); generation failure degrades to body-only email so confirmations are never lost.
 
 ### 4.5 Coupon performance report (admin analytics)
 - Backend: `GET /api/analytics/coupons?from&to` — per coupon: redemptions, discounted total, revenue attributable (orders with coupon vs. not), unique customers. `[Authorize(Roles = "Admin")]` (matches revenue-only rule you already apply).
@@ -276,6 +276,6 @@ Phase 4  Growth features           ← any order; 4.1 ships in a day
 - [x] Phase 1 — Security hardening & trust (2026-08-29: 1.1 security headers, 1.2 hashed refresh tokens, 1.3 email verification + checkout gate, 1.4 TOTP 2FA, 1.5 config CORS + open-redirect fix + claims normalization)
 - [x] Phase 2 — Payments & checkout money-movement (2026-08-29: 2.1 gateway-agnostic architecture, 2.2 webhooks + idempotent processor, 2.3 checkout/order-detail payment flow, 2.4 shipping zones/rates, 2.5 GST tax, 2.6 refunds)
 - [x] Phase 3 — DevOps, testing & refactor (2026-08-30: 3.1 Docker/Docker Compose, 3.2 GitHub Actions CI/CD, 3.3 frontend unit tests + E2E, 3.4 admin god-component split, 3.5 404 page, ESLint/Prettier)
-- [x] Phase 4 — Growth & engagement features (4.1 order tracking timeline UI ✅, 4.2 back-in-stock Notify Me ✅, 4.3 abandoned-cart recovery ✅)
+- [x] Phase 4 — Growth & engagement features (4.1 order tracking timeline UI ✅, 4.2 back-in-stock Notify Me ✅, 4.3 abandoned-cart recovery ✅, 4.4 invoice PDF on order confirmation ✅)
 
 *Created: 2026-08-28. Update checkboxes as phases complete; add findings to the Gap Register rather than new documents.*
