@@ -1,7 +1,7 @@
 # EcomApp — Implementation Roadmap (Aug 2026)
 
 **Stack:** .NET 10 Web API + Angular 21 + SQL Server (EF Core) + MailKit
-**Basis:** Verified against live code on 2026-08-28. Supersedes `PRODUCTION_AUDIT.md` items that are already fixed and extends `suggestion.md`.
+**Basis:** Verified against live code on 2026-08-28 (re-verified 2026-09-02). Supersedes `PRODUCTION_AUDIT.md` items that are already fixed and extends `suggestion.md`.
 
 ---
 
@@ -19,9 +19,9 @@ The codebase has matured significantly since the June audit. These are verified 
 | `environment.ts` / `environment.prod.ts` | ✅ Done | No hard-coded API host left |
 | HSTS + HTTPS redirect | ✅ Done | `Program.cs:136-139` |
 | JWT secret hygiene | ✅ Done | `appsettings.json` empty; real key only in gitignored `appsettings.Production.json` |
-| Backend tests (`EcomApi.Tests`) | ✅ Started | 13 passing — keep growing alongside new features |
+| Backend tests (`EcomApi.Tests`) | ✅ Growing | 44 passing (incl. Payment, 2FA, AbandonedCartRecovery, EmailChannel) — keep growing alongside new features |
 | Lazy-loaded routes, Signals, functional guards/interceptors | ✅ Done | Modern Angular 21 idioms |
-| Admin settings UI (uncommitted) | ⚠️ Finish & commit | `admin-settings.service.ts` + model exist but are untracked |
+| Admin settings UI | ✅ Done | `admin-settings.component` + service + model committed; editable via `SettingsCatalog`/`ISettingsProvider` |
 
 **Verdict: design and code quality are good.** The remaining work is hardening, money-movement, DevOps, and growth features — not a rewrite.
 
