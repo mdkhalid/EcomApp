@@ -15,4 +15,5 @@ public interface IAnalyticsRepository
     Task<List<TopPageDto>> GetTopPagesAsync(string period, CancellationToken cancellationToken = default);
     Task<List<TopSearchDto>> GetTopSearchesAsync(string period, CancellationToken cancellationToken = default);
     Task TrackPageViewAsync(PageView pageView);
+    Task<CouponPerformanceReportDto> GetCouponPerformanceAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default);
 }

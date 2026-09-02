@@ -77,3 +77,22 @@ export interface AnalyticsOverview {
   pageViewsToday: number;
   uniqueVisitorsToday: number;
 }
+
+export interface CouponPerformance {
+  code: string;
+  redemptions: number;
+  uniqueCustomers: number;
+  discountedTotal: number;
+  revenue: number;
+}
+
+export interface CouponPerformanceReport {
+  from: string;
+  to: string;
+  ordersWithCoupon: number;
+  revenueWithCoupon: number;
+  totalDiscount: number;
+  ordersWithoutCoupon: number;
+  revenueWithoutCoupon: number;
+  coupons: CouponPerformance[];
+}

@@ -7,6 +7,7 @@ import { API_URL } from '../utils/api-config';
 import {
   AnalyticsOverview,
   CategoryBreakdown,
+  CouponPerformanceReport,
   LowStockProduct,
   OrderStatusBreakdown,
   PageViewSummary,
@@ -79,6 +80,13 @@ export class AnalyticsService {
   getTopSearches(period = '7d'): Observable<TopSearch[]> {
     const params = new HttpParams().set('period', period);
     return this.http.get<TopSearch[]>(`${this.apiUrl}/top-searches`, { params }).pipe(
+      catchError(err => { console.error(err); return throwError(() => err); })
+    );
+  }
+
+  getCouponPerformance(from: string, to: string): Observable<CouponPerformanceReport> {
+    const params = new HttpParams().set('from', from).set('to', to);
+    return this.http.get<CouponPerformanceReport>(`${this.apiUrl}/coupons`, { params }).pipe(
       catchError(err => { console.error(err); return throwError(() => err); })
     );
   }

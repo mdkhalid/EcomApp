@@ -96,3 +96,24 @@ public class AnalyticsOverviewDto
     public int PageViewsToday { get; set; }
     public int UniqueVisitorsToday { get; set; }
 }
+
+public class CouponPerformanceDto
+{
+    public string Code { get; set; } = string.Empty;
+    public int Redemptions { get; set; }
+    public int UniqueCustomers { get; set; }
+    public decimal DiscountedTotal { get; set; }
+    public decimal Revenue { get; set; }
+}
+
+public class CouponPerformanceReportDto
+{
+    public DateTime From { get; set; }
+    public DateTime To { get; set; }
+    public int OrdersWithCoupon { get; set; }
+    public decimal RevenueWithCoupon { get; set; }
+    public decimal TotalDiscount { get; set; }
+    public int OrdersWithoutCoupon { get; set; }
+    public decimal RevenueWithoutCoupon { get; set; }
+    public List<CouponPerformanceDto> Coupons { get; set; } = new();
+}

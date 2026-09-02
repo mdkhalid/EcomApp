@@ -340,6 +340,65 @@ public class AnalyticsRepository : IAnalyticsRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<CouponPerformanceReportDto> GetCouponPerformanceAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var fromDate = (from ?? now.Date.AddDays(-29)).Date;
+        var toDate = (to ?? now.Date).Date;
+        var toExclusive = toDate.AddDays(1);
+        if (toExclusive <= fromDate)
+            toExclusive = fromDate.AddDays(1);
+
+        var couponRows = await _context.CouponUsages
+            .AsNoTracking()
+            .Where(cu => cu.UsedAt >= fromDate && cu.UsedAt < toExclusive
+                && cu.Order.Status != OrderStatus.Cancelled
+                && cu.Order.Status != OrderStatus.Returned)
+            .Select(cu => new
+            {
+                Code = cu.Coupon.Code,
+                cu.UserId,
+                cu.DiscountAmount,
+                OrderTotal = cu.Order.TotalAmount
+            })
+            .ToListAsync(cancellationToken);
+
+        var coupons = couponRows
+            .GroupBy(r => r.Code)
+            .Select(g => new CouponPerformanceDto
+            {
+                Code = g.Key,
+                Redemptions = g.Count(),
+                UniqueCustomers = g.Where(r => r.UserId > 0).Select(r => r.UserId).Distinct().Count(),
+                DiscountedTotal = g.Sum(r => r.DiscountAmount),
+                Revenue = g.Sum(r => r.OrderTotal)
+            })
+            .OrderByDescending(c => c.Redemptions)
+            .ThenBy(c => c.Code)
+            .ToList();
+
+        var nonCouponOrders = await _context.Orders
+            .AsNoTracking()
+            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt < toExclusive
+                && (o.CouponCode == null || o.CouponCode == "")
+                && o.Status != OrderStatus.Cancelled
+                && o.Status != OrderStatus.Returned)
+            .Select(o => o.TotalAmount)
+            .ToListAsync(cancellationToken);
+
+        return new CouponPerformanceReportDto
+        {
+            From = fromDate,
+            To = toDate,
+            OrdersWithCoupon = couponRows.Count,
+            RevenueWithCoupon = couponRows.Sum(r => r.OrderTotal),
+            TotalDiscount = couponRows.Sum(r => r.DiscountAmount),
+            OrdersWithoutCoupon = nonCouponOrders.Count,
+            RevenueWithoutCoupon = nonCouponOrders.Sum(),
+            Coupons = coupons
+        };
+    }
+
     private static DateTime GetPeriodStart(string period)
     {
         return period switch

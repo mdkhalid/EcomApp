@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, signal, viewChild, ElementRef, OnInit, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,7 @@ import { Chart, registerables } from 'chart.js';
 import { AnalyticsService } from '../../../services/analytics.service';
 import { NotificationService } from '../../../services/notification.service';
 import { AuthService } from '../../../services/auth.service';
-import { AnalyticsOverview, RevenueSummary, TopProduct, CategoryBreakdown, OrderStatusBreakdown, PageViewSummary, TopPage, TopSearch } from '../../../models/analytics.model';
+import { AnalyticsOverview, RevenueSummary, TopProduct, CategoryBreakdown, OrderStatusBreakdown, PageViewSummary, TopPage, TopSearch, CouponPerformanceReport } from '../../../models/analytics.model';
 
 Chart.register(...registerables);
 
@@ -86,6 +86,68 @@ Chart.register(...registerables);
           </div>
         </div>
       </div>
+
+      @if (isSuperAdmin) {
+        <div class="charts-grid">
+          <div class="chart-card full-width">
+            <div class="chart-header">
+              <h3>Coupon Performance</h3>
+              <div class="report-controls">
+                <label>From <input type="date" [value]="couponFrom()" (input)="couponFrom.set($any($event.target).value)" /></label>
+                <label>To <input type="date" [value]="couponTo()" (input)="couponTo.set($any($event.target).value)" /></label>
+                <button class="btn-primary" (click)="loadCouponReport()" [disabled]="couponLoading()">Apply</button>
+                <button class="btn-secondary" (click)="exportCouponCsv()" [disabled]="!couponReport() || couponReport()!.coupons.length === 0">Export CSV</button>
+              </div>
+            </div>
+
+            @if (couponLoading()) {
+              <p class="muted">Loading coupon report…</p>
+            } @else if (couponReport() && couponReport()!.coupons.length > 0) {
+              <div class="coupon-summary">
+                <div class="coupon-summary-item">
+                  <span class="summary-label">With coupon</span>
+                  <span class="summary-value">{{ couponReport()!.ordersWithCoupon }} orders · ₹{{ couponReport()!.revenueWithCoupon | number:'1.0-0' }}</span>
+                </div>
+                <div class="coupon-summary-item">
+                  <span class="summary-label">Without coupon</span>
+                  <span class="summary-value">{{ couponReport()!.ordersWithoutCoupon }} orders · ₹{{ couponReport()!.revenueWithoutCoupon | number:'1.0-0' }}</span>
+                </div>
+                <div class="coupon-summary-item">
+                  <span class="summary-label">Total discount given</span>
+                  <span class="summary-value">₹{{ couponReport()!.totalDiscount | number:'1.0-0' }}</span>
+                </div>
+              </div>
+
+              <canvas #couponChart></canvas>
+
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>Coupon Code</th>
+                    <th>Redemptions</th>
+                    <th>Unique Customers</th>
+                    <th>Discounted Total</th>
+                    <th>Attributable Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (coupon of couponReport()!.coupons; track coupon.code) {
+                    <tr>
+                      <td class="coupon-code">{{ coupon.code }}</td>
+                      <td>{{ coupon.redemptions }}</td>
+                      <td>{{ coupon.uniqueCustomers }}</td>
+                      <td>₹{{ coupon.discountedTotal | number:'1.2-2' }}</td>
+                      <td>₹{{ coupon.revenue | number:'1.2-2' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <p class="muted">No coupon redemptions in the selected range.</p>
+            }
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -114,6 +176,23 @@ Chart.register(...registerables);
     .top-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--surface-variant, #fafafa); border-radius: 6px; }
     .top-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .top-value { color: var(--on-surface-variant, #666); font-size: 0.875rem; }
+    .report-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .report-controls label { display: flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; color: var(--on-surface-variant, #666); }
+    .report-controls input[type='date'] { padding: 0.375rem 0.5rem; border: 1px solid var(--border-color, #ddd); border-radius: 4px; background: white; }
+    .btn-primary { padding: 0.375rem 0.875rem; border: none; border-radius: 4px; background: #2874F0; color: #fff; cursor: pointer; font-size: 0.875rem; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary { padding: 0.375rem 0.875rem; border: 1px solid var(--border-color, #ddd); border-radius: 4px; background: white; color: var(--on-surface, #333); cursor: pointer; font-size: 0.875rem; }
+    .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .muted { color: var(--on-surface-variant, #888); }
+    .coupon-summary { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .coupon-summary-item { flex: 1 1 220px; padding: 0.875rem 1rem; background: var(--surface-variant, #fafafa); border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem; }
+    .summary-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--on-surface-variant, #666); }
+    .summary-value { font-size: 1.05rem; font-weight: 600; }
+    .report-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.875rem; }
+    .report-table th, .report-table td { text-align: left; padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--border-color, #eee); }
+    .report-table th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--on-surface-variant, #666); }
+    .report-table tbody tr:hover { background: var(--surface-variant, #fafafa); }
+    .coupon-code { font-weight: 600; }
   `]
 })
 export class AdminAnalyticsComponent implements OnInit {
@@ -121,6 +200,8 @@ export class AdminAnalyticsComponent implements OnInit {
   private readonly analyticsService = inject(AnalyticsService);
   private readonly notificationService = inject(NotificationService);
   private readonly authService = inject(AuthService);
+
+  readonly isSuperAdmin = this.authService.isSuperAdmin();
 
   revenuePeriod = signal<'daily' | 'weekly' | 'monthly'>('monthly');
   visitorPeriod = signal('7d');
@@ -133,14 +214,24 @@ export class AdminAnalyticsComponent implements OnInit {
   topPages = signal<TopPage[]>([]);
   topSearches = signal<TopSearch[]>([]);
 
+  couponFrom = signal(this.toInputDate(new Date(Date.now() - 29 * 24 * 60 * 60 * 1000)));
+  couponTo = signal(this.toInputDate(new Date()));
+  couponReport = signal<CouponPerformanceReport | null>(null);
+  couponLoading = signal(false);
+  private readonly couponChartCanvas = viewChild<ElementRef<HTMLCanvasElement>>('couponChart');
+
   private revenueChart?: Chart;
   private orderStatusChart?: Chart;
   private topProductsChart?: Chart;
   private categoryChart?: Chart;
   private pageViewsChart?: Chart;
+  private couponChart?: Chart;
 
   ngOnInit(): void {
     this.loadAnalytics();
+    if (this.isSuperAdmin) {
+      this.loadCouponReport();
+    }
   }
 
   loadAnalytics(): void {
@@ -192,6 +283,91 @@ export class AdminAnalyticsComponent implements OnInit {
       next: (data) => this.topSearches.set(data),
       error: () => this.notificationService.showError('Failed to load top searches')
     });
+  }
+
+  loadCouponReport(): void {
+    const from = this.couponFrom();
+    const to = this.couponTo();
+    if (!from || !to) return;
+
+    this.couponLoading.set(true);
+    this.analyticsService.getCouponPerformance(from, to).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        this.couponReport.set(data);
+        this.couponLoading.set(false);
+        this.renderCouponChart();
+      },
+      error: () => {
+        this.couponLoading.set(false);
+        this.notificationService.showError('Failed to load coupon report');
+      }
+    });
+  }
+
+  exportCouponCsv(): void {
+    const report = this.couponReport();
+    if (!report || report.coupons.length === 0) return;
+
+    const esc = (value: string | number) => {
+      const text = String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    const lines = [
+      ['Coupon Code', 'Redemptions', 'Unique Customers', 'Discounted Total', 'Attributable Revenue'].join(','),
+      ...report.coupons.map(c => [c.code, c.redemptions, c.uniqueCustomers, c.discountedTotal.toFixed(2), c.revenue.toFixed(2)].map(esc).join(','))
+    ];
+
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `coupon-performance-${report.from.slice(0, 10)}_${report.to.slice(0, 10)}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  }
+
+  private renderCouponChart(): void {
+    const canvas = this.couponChartCanvas()?.nativeElement;
+    const report = this.couponReport();
+    if (!canvas || !report || report.coupons.length === 0) return;
+
+    const items = report.coupons.slice(0, 12);
+    this.couponChart?.destroy();
+    this.couponChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: items.map(c => c.code),
+        datasets: [
+          {
+            label: 'Revenue (₹)',
+            data: items.map(c => c.revenue),
+            backgroundColor: 'rgba(40, 116, 240, 0.85)',
+            borderRadius: 4
+          },
+          {
+            label: 'Discounted (₹)',
+            data: items.map(c => c.discountedTotal),
+            backgroundColor: 'rgba(251, 100, 27, 0.85)',
+            borderRadius: 4,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } }
+      }
+    });
+  }
+
+  private toInputDate(date: Date): string {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${month}-${day}`;
   }
 
   private renderAllCharts(): void {

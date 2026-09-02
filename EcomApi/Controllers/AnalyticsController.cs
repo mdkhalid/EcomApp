@@ -63,6 +63,13 @@ public class AnalyticsController : ControllerBase
         return Ok(await _analytics.GetOrderStatusBreakdownAsync());
     }
 
+    [HttpGet("coupons")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<CouponPerformanceReportDto>> GetCouponPerformance([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, CancellationToken cancellationToken = default)
+    {
+        return Ok(await _analytics.GetCouponPerformanceAsync(from, to, cancellationToken));
+    }
+
     [HttpGet("low-stock")]
     public async Task<ActionResult<List<LowStockProductDto>>> GetLowStock([FromQuery] int threshold = 10, CancellationToken cancellationToken = default)
     {
